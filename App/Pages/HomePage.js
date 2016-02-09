@@ -9,3 +9,58 @@
  * @providesModule HomePage
  * @flow
  */
+
+'use strict';
+
+var React = require('react-native');
+
+var {
+    Animated,
+    AppState,
+    AsyncStorage,
+    DatePickerIOS,
+    Image,
+    InteractionManager,
+    LayoutAnimation,
+    PixelRatio,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    ScrollView,
+    StyleSheet,
+    View
+    } = React;
+
+var Dimensions = require('Dimensions');
+
+var SCREEN_HEIGHT = Dimensions.get('window').height;
+var SCREEN_WIDTH = Dimensions.get('window').width;
+
+var HomePage = React.createClass({
+   render() {
+       return (
+       <View style={styles.container}>
+           <Image
+               source={require('../../img/home_background.png')}
+               style={styles.backdrop}
+               />
+       </View>
+       )
+   }
+});
+
+const styles = {
+    backdrop: {
+        width: SCREEN_WIDTH,
+        height: SCREEN_HEIGHT
+    },
+    container: {
+        flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center'
+    }
+};
+
+module.exports = HomePage;
+

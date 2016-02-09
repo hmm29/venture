@@ -11,50 +11,52 @@
  */
 
 'use strict';
-import React, {
-  AppRegistry,
-  Component,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
 
-class VentureApp extends Component {
+var React = require('react-native');
+var {
+    AppRegistry,
+    NavigatorIOS,
+    StatusBarIOS,
+    StyleSheet,
+    View
+} = React;
+
+var HomePage = require('./App/Pages/HomePage');
+var Orientation = require('react-native-orientation');
+
+var VentureApp = React.createClass({
+  componentDidMount() {
+      Orientation.lockToPortrait();
+      StatusBarIOS.setStyle('light-content', true);
+  },
+
   render() {
     return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.ios.js
-        </Text>
-        <Text style={styles.instructions}>
-          Press Cmd+R to reload,{'\n'}
-          Cmd+D or shake for dev menu
-        </Text>
-      </View>
+        <View style={{flex: 1}}>
+          <NavigatorIOS
+              ref="nav"
+              itemWrapperStyle={styles.itemWrapperStyle}
+              style={styles.container}
+              initialRoute={{
+                    title: 'HomePage',
+                    component: HomePage,
+                    navigationBarHidden: true
+                  }}
+              />
+        </View>
     );
   }
-}
+});
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    flex: 1
   },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
+  itemWrapperStyle: {
+    backgroundColor: '#FFF'
+  }
 });
 
 AppRegistry.registerComponent('VentureApp', () => VentureApp);
+
+module.exports = VentureApp;

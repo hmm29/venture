@@ -32,7 +32,7 @@ var {
     } = React;
 
 var Dimensions = require('Dimensions');
-var FiltersModal = require('../Partials/Modals/FiltersModal');
+var LoadingModal = require('../Partials/Modals/LoadingModal');
 
 var {height, width} = Dimensions.get('window');
 
@@ -44,7 +44,7 @@ var HomePage = React.createClass({
                     source={require('../../img/home_background.png')}
                     style={styles.backdrop}
                     >
-                    <FiltersModal />
+                    <LoadingModal />
                 </Image>
             </View>
         )
@@ -56,7 +56,7 @@ const styles = {
         width,
         height,
         paddingTop: 10,
-        alignItems: 'center',
+        alignItems: 'center'
     },
     container: {
         flex: 1,

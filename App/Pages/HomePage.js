@@ -32,9 +32,7 @@ var {
     } = React;
 
 var Dimensions = require('Dimensions');
-
-var SCREEN_HEIGHT = Dimensions.get('window').height;
-var SCREEN_WIDTH = Dimensions.get('window').width;
+var {height, width} = Dimensions.get('window');
 
 var HomePage = React.createClass({
    render() {
@@ -51,8 +49,8 @@ var HomePage = React.createClass({
 
 const styles = {
     backdrop: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT
+        width,
+        height
     },
     container: {
         flex: 1,

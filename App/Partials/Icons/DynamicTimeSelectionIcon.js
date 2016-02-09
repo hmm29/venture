@@ -6,7 +6,7 @@
  * Proprietary and confidential
  * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
  *
- * @providesModule ChevronIcon
+ * @providesModule DynamicTimeSelectionIcon
  * @flow
  */
 
@@ -20,32 +20,33 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Entypo';
-
-const DIRECTIONS = ['up','down','right','left'];
+import Icon from 'react-native-vector-icons/Ionicons';
 
 type Props = {
+    selected: React.PropTypes.bool.isRequired,
     color: React.PropTypes.string,
-    direction: React.PropTypes.string,
-    onPress: React.PropTypes.func.isRequired,
+    onPress: React.PropTypes.func,
     size: React.PropTypes.number,
     style: View.propTypes.style
 };
 
-class ChevronIcon extends Component {
+class DynamicTimeSelectionIcon extends Component {
     constructor(props:Props) {
         super(props);
-        this.state = {};
+        this.state = {selected: props.selected};
     };
 
     render() {
         return (
             <TouchableOpacity
                 activeOpacity={0.3}
-                onPress={this.props.onPress}
+                onPress={() => {
+                    this.props.onPress();
+                    this.setState({selected: !this.state.selected});
+                }}
                 style={[this.props.style, styles.icon]}>
                 <Icon
-                    name={"chevron-thin-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ? this.props.direction : 'up')}
+                    name={this.state.selected ? "checkmark-circled" : "clock"}
                     size={this.props.size || 25}
                     color={this.props.color || '#ccc'}
                     />
@@ -60,4 +61,4 @@ const styles = StyleSheet.create({
     }
 });
 
-module.exports = ChevronIcon;
+module.exports = DynamicTimeSelectionIcon;

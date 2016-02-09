@@ -32,7 +32,7 @@ var {
     } = React;
 
 var Dimensions = require('Dimensions');
-var SentRequestIcon = require('../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
+var FiltersModal = require('../Partials/Modals/FiltersModal');
 
 var {height, width} = Dimensions.get('window');
 
@@ -44,9 +44,7 @@ var HomePage = React.createClass({
                     source={require('../../img/home_background.png')}
                     style={styles.backdrop}
                     >
-                    <SentRequestIcon
-                        onPress={() => alert('hey')}
-                        />
+                    <FiltersModal />
                 </Image>
             </View>
         )

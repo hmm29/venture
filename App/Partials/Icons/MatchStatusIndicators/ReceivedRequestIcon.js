@@ -30,7 +30,10 @@ type Props = {
 };
 
 class ReceivedRequestIcon extends Component {
-    props: Props;
+    constructor(props:Props) {
+        super(props);
+        this.state = {};
+    };
 
     render() {
         return (

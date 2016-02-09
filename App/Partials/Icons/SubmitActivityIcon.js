@@ -6,7 +6,7 @@
  * Proprietary and confidential
  * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
  *
- * @providesModule ChevronIcon
+ * @providesModule SubmitActivityIcon
  * @flow
  */
 
@@ -22,17 +22,14 @@ import React, {
 
 import Icon from 'react-native-vector-icons/Entypo';
 
-const DIRECTIONS = ['up','down','right','left'];
-
 type Props = {
     color: React.PropTypes.string,
-    direction: React.PropTypes.string,
     onPress: React.PropTypes.func.isRequired,
     size: React.PropTypes.number,
     style: View.propTypes.style
 };
 
-class ChevronIcon extends Component {
+class SubmitActivityIcon extends Component {
     constructor(props:Props) {
         super(props);
         this.state = {};
@@ -45,7 +42,7 @@ class ChevronIcon extends Component {
                 onPress={this.props.onPress}
                 style={[this.props.style, styles.icon]}>
                 <Icon
-                    name={"chevron-thin-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ? this.props.direction : 'up')}
+                    name="controller-play"
                     size={this.props.size || 25}
                     color={this.props.color || '#ccc'}
                     />
@@ -60,4 +57,4 @@ const styles = StyleSheet.create({
     }
 });
 
-module.exports = ChevronIcon;
+module.exports = SubmitActivityIcon;

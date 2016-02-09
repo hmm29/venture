@@ -9,3 +9,15 @@
  * @providesModule TabBarLayout
  * @flow
  */
+
+var React = require('react-native');
+var {
+    StyleSheet,
+    TabBarIOS,
+    Text,
+    View,
+    } = React;
+
+var TabBarLayout = React.createClass({
+
+});

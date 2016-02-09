@@ -6,15 +6,6 @@
  * Proprietary and confidential
  * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
  *
- * @providesModule DrawerLayout
+ * @providesModule AttendeeListModal
  * @flow
  */
-
-var React = require('react-native');
-var {
-    DrawerLayoutAndroid
-    } = React;
-
-var TabBarLayout = React.createClass({
-
-});

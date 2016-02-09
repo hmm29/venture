@@ -32,25 +32,33 @@ var {
     } = React;
 
 var Dimensions = require('Dimensions');
+var SentRequestIcon = require('../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
+
 var {height, width} = Dimensions.get('window');
 
 var HomePage = React.createClass({
-   render() {
-       return (
-       <View style={styles.container}>
-           <Image
-               source={require('../../img/home_background.png')}
-               style={styles.backdrop}
-               />
-       </View>
-       )
-   }
+    render() {
+        return (
+            <View style={styles.container}>
+                <Image
+                    source={require('../../img/home_background.png')}
+                    style={styles.backdrop}
+                    >
+                    <SentRequestIcon
+                        onPress={() => alert('hey')}
+                        />
+                </Image>
+            </View>
+        )
+    }
 });
 
 const styles = {
     backdrop: {
         width,
-        height
+        height,
+        paddingTop: 10,
+        alignItems: 'center',
     },
     container: {
         flex: 1,

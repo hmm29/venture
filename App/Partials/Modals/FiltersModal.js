@@ -6,6 +6,6 @@
  * Proprietary and confidential
  * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
  *
- * @providesModule FiltersPage
+ * @providesModule FiltersModal
  * @flow
  */

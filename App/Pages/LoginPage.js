@@ -9,3 +9,28 @@
  * @providesModule LoginPage
  * @flow
  */
+
+'use strict';
+
+var React = require('react-native');
+var {
+    StyleSheet,
+    View
+    } = React;
+
+var LoginPage = React.createClass({
+    render() {
+        return (
+            <View style={styles.container} />
+        );
+    }
+});
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'blue'
+    }
+});
+
+module.exports = LoginPage;

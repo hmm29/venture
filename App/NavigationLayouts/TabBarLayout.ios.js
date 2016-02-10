@@ -129,34 +129,19 @@ class TabBarLayout extends Component {
                   }}>
                     {this._renderContent('users')}
                 </Icon.TabBarItem>
-                {this.state.chatCount > 0 ?
-                    <Icon.TabBarItem
-                        title="Chats"
-                        badgeValue={JSON.stringify(this.state.chatCount)}
-                        iconName="ios-chatboxes-outline"
-                        selectedIconName="ios-chatboxes"
-                        selected={this.state.selectedTab === 'chats'}
-                        onPress={() => {
+                <Icon.TabBarItem
+                    title="Chats"
+                    badge={this.state.chatCount > 0 ? this.state.chatCount : undefined}
+                    iconName="ios-chatboxes-outline"
+                    selectedIconName="ios-chatboxes"
+                    selected={this.state.selectedTab === 'chats'}
+                    onPress={() => {
                     this.setState({
                       selectedTab: 'chats'
                     });
-                  }}>
-                        {this._renderContent('chats')}
-                    </Icon.TabBarItem>
-                    :
-                    <Icon.TabBarItem
-                        title="Chats"
-                        iconName="ios-chatboxes-outline"
-                        selectedIconName="ios-chatboxes"
-                        selected={this.state.selectedTab === 'chats'}
-                        onPress={() => {
-                    this.setState({
-                      selectedTab: 'chats'
-                    });
-                  }}>
-                        {this._renderContent('chats')}
-                    </Icon.TabBarItem>
-                }
+                }}>
+                    {this._renderContent('chats')}
+                </Icon.TabBarItem>
                 <Icon.TabBarItem
                     title="Profile"
                     iconName="ios-person-outline"

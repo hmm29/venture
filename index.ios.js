@@ -36,11 +36,11 @@ var VentureApp = React.createClass({
           <NavigatorIOS
               ref="nav"
               itemWrapperStyle={styles.itemWrapperStyle}
+              navigationBarHidden={true}
               style={styles.container}
               initialRoute={{
                     title: 'HomePage',
                     component: HomePage,
-                    navigationBarHidden: true
                   }}
               />
         </View>

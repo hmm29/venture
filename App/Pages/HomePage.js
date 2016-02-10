@@ -41,36 +41,41 @@ var {height, width} = Dimensions.get('window');
 var HomePage = React.createClass({
     getInitialState() {
         return {
-
+            firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/')
         }
     },
 
     render() {
-        if(Platform.OS === 'ios') {
-            return (
-                <View style={styles.container}>
-                    <Image
-                        source={require('../../img/home_background.png')}
-                        style={styles.backdrop}
-                        >
-                        <SubmitActivityIcon
-                            onPress={() => this.props.navigator.push({
+        let submitActivityIcon;
+
+        if (Platform.OS === 'ios') {
+            submitActivityIcon = (
+                <SubmitActivityIcon
+                    onPress={() => this.props.navigator.push({
                             title: 'Users',
                             component: TabBarLayout,
                             passProps: {
                                 currentUserFriends: [],
                                 currentUserLocationCoords: [],
-                                firebaseRef: "peep",
+                                firebaseRef: this.state.firebaseRef,
                                 selectedTab: 'users',
                                 ventureId: ""
-                            }})}/>
-                    </Image>
-                </View>
-            )
+                            }})
+                            }/>
+            );
+        } else {
+            submitActivityIcon = <View />;
         }
 
         return (
-            <View />
+            <View style={styles.container}>
+                <Image
+                    source={require('../../img/home_background.png')}
+                    style={styles.backdrop}
+                    >
+                    {submitActivityIcon}
+                </Image>
+            </View>
         )
     }
 });

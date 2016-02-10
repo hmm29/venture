@@ -23,6 +23,7 @@ var {
     InteractionManager,
     LayoutAnimation,
     PixelRatio,
+    Platform,
     Text,
     TextInput,
     TouchableOpacity,
@@ -32,26 +33,49 @@ var {
     } = React;
 
 var Dimensions = require('Dimensions');
-var LoadingModal = require('../Partials/Modals/LoadingModal');
+var SubmitActivityIcon = require('../Partials/Icons/SubmitActivityIcon');
+var TabBarLayout = require('../NavigationLayouts/TabBarLayout.ios');
 
 var {height, width} = Dimensions.get('window');
 
 var HomePage = React.createClass({
+    getInitialState() {
+        return {
+
+        }
+    },
+
     render() {
+        if(Platform.OS === 'ios') {
+            return (
+                <View style={styles.container}>
+                    <Image
+                        source={require('../../img/home_background.png')}
+                        style={styles.backdrop}
+                        >
+                        <SubmitActivityIcon
+                            onPress={() => this.props.navigator.push({
+                            title: 'Users',
+                            component: TabBarLayout,
+                            passProps: {
+                                currentUserFriends: [],
+                                currentUserLocationCoords: [],
+                                firebaseRef: "peep",
+                                selectedTab: 'users',
+                                ventureId: ""
+                            }})}/>
+                    </Image>
+                </View>
+            )
+        }
+
         return (
-            <View style={styles.container}>
-                <Image
-                    source={require('../../img/home_background.png')}
-                    style={styles.backdrop}
-                    >
-                    <LoadingModal />
-                </Image>
-            </View>
+            <View />
         )
     }
 });
 
-const styles = {
+const styles = StyleSheet.create({
     backdrop: {
         width,
         height,
@@ -62,9 +86,8 @@ const styles = {
         flex: 1,
         flexDirection: 'column',
         justifyContent: 'center',
-        alignItems: 'center'
     }
-};
+});
 
 module.exports = HomePage;
 

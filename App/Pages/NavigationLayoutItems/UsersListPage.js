@@ -9,3 +9,28 @@
  * @providesModule UsersListPage
  * @flow
  */
+
+'use strict';
+
+var React = require('react-native');
+var {
+    StyleSheet,
+    View
+    } = React;
+
+var UsersListPage = React.createClass({
+    render() {
+        return (
+            <View style={styles.container} />
+        );
+    }
+});
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'red'
+    }
+});
+
+module.exports = UsersListPage;

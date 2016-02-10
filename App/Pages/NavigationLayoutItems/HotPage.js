@@ -9,3 +9,28 @@
  * @providesModule HotPage
  * @flow
  */
+
+'use strict';
+
+var React = require('react-native');
+var {
+    StyleSheet,
+    View
+    } = React;
+
+var HotPage = React.createClass({
+    render() {
+        return (
+            <View style={styles.container} />
+        );
+    }
+});
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'red'
+    }
+});
+
+module.exports = HotPage;

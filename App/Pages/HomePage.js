@@ -16,8 +16,9 @@ var React = require('react-native');
 
 var {
     Animated,
-    AppState,
+    AppStateIOS,
     AsyncStorage,
+    Component,
     DatePickerIOS,
     Image,
     InteractionManager,
@@ -32,67 +33,757 @@ var {
     View
     } = React;
 
+var _ = require('lodash');
 var Dimensions = require('Dimensions');
+var Firebase = require('firebase');
 var SubmitActivityIcon = require('../Partials/Icons/SubmitActivityIcon');
 var TabBarLayout = require('../NavigationLayouts/TabBarLayout.ios');
+
+var ChatsListPageIcon = require('../Partials/Icons/NavigationButtons/ChatsListPageIcon');
+var Header = require('../Partials/Header');
+var BrandLogo = require('../Partials/BrandLogo');
+var LoginPage = require('../Pages/LoginPage');
+var ProfilePageIcon = require('../Partials/Icons/NavigationButtons/ProfilePageIcon');
+
+var DynamicCheckBoxIcon = require('../Partials/Icons/DynamicCheckBoxIcon');
+var ChevronIcon = require('../Partials/Icons/ChevronIcon');
+var DynamicTimeSelectionIcon = require('../Partials/Icons/DynamicTimeSelectionIcon');
+var TimerMixin = require('react-timer-mixin');
+var VentureAppPage = require('./Base/VentureAppPage');
+
+var ADD_INFO_BUTTON_SIZE = 28;
+var ACTIVITY_TEXT_INPUT_PADDING = 5;
+var ACTIVITY_TITLE_INPUT_REF = 'activityTitleInput'
+var LOGO_WIDTH = 200;
+var LOGO_HEIGHT = 120;
+var MAX_TEXT_INPUT_VAL_LENGTH = 15;
+var NEXT_BUTTON_SIZE = 28;
+var TAG_SELECTION_INPUT_REF = 'tagSelectionInput';
+var TAG_TEXT_INPUT_PADDING = 3;
 
 var {height, width} = Dimensions.get('window');
 
 var HomePage = React.createClass({
     getInitialState() {
         return {
-            firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/')
+            activeTimeOption: 'now',
+            activityTitleInput: '',
+            contentOffsetXVal: 0,
+            currentAppState: AppStateIOS.currentState,
+            currentUserLocationCoords: null,
+            date: new Date(),
+            events: [],
+            firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
+            hasIshSelected: false,
+            hasKeyboardSpace: false,
+            hasSpecifiedTime: false,
+            isLoggedIn: false,
+            ready: false,
+            showAddInfoBox: false,
+            showAddInfoButton: true,
+            showNextButton: false,
+            showTextInput: false,
+            showTimeSpecificationOptions: false,
+            showTrendingItems: false,
+            tagsArr: [],
+            tagInput: '',
+            timeZoneOffsetInHours: (-1) * (new Date()).getTimezoneOffset() / 60,
+            trendingContent: 'YALIES',
+            trendingContentOffsetXVal: 0,
+            ventureId: '',
+            viewStyle: {
+                marginHorizontal: 0,
+                borderRadius: 0
+            },
+            yalies: []
         }
     },
 
+    mixins: [TimerMixin],
+
+    componentWillMount() {
+        //@hmm: wait for async storage account to update on login
+        InteractionManager.runAfterInteractions(() => {
+            let _this = this;
+
+
+            _this.setTimeout(() => {
+                AsyncStorage.getItem('@AsyncStorage:Venture:account')
+                    .then((account:string) => {
+                        account = JSON.parse(account);
+
+                        if(account === null) {
+                            this.navigateToLogin();
+                            return;
+                        }
+
+
+                        this.setState({isLoggedIn: true, showTextInput: true});
+
+                        let currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${account.ventureId}`),
+                            trendingItemsRef = this.state.firebaseRef && this.state.firebaseRef.child('trending'),
+                            usersListRef = this.state.firebaseRef && this.state.firebaseRef.child('users'),
+                            chatRoomsRef = this.state.firebaseRef && this.state.firebaseRef.child('chat_rooms'),
+                            _this = this;
+
+                        trendingItemsRef.once('value', snapshot => {
+                                _this.setState({
+                                    currentUserRef,
+                                    events: snapshot.val() && snapshot.val().events && _.slice(snapshot.val().events, 0, 1),
+                                    yalies: snapshot.val() && snapshot.val().yalies  && _.slice(snapshot.val().yalies, 0, 3),
+                                    showTrendingItems: true
+                                })
+                                LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                            }
+                        );
+
+                        //@hmm: get current user location & save to firebase object
+                        // make sure this fires before navigating away!
+
+                        navigator.geolocation.getCurrentPosition(
+                            (currentPosition) => {
+                                currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
+                                this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
+                            },
+                            (error) => {
+                                console.error(error);
+                            },
+                            {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+                        );
+
+                        chatRoomsRef.once('value', snapshot => {
+                            snapshot.val() && _.each(snapshot.val(), (chatRoom) => {
+                                if (chatRoom._id && chatRoom._id.indexOf(account.ventureId) > -1) {
+                                    chatRoomsRef.child(chatRoom._id).set(null);
+                                }
+                            });
+                        });
+
+                        // @hmm: at restart reset all timer vals & chats
+
+                        currentUserRef.child('match_requests').once('value', snapshot => {
+                            snapshot.val() && _.each(snapshot.val(), (match) => {
+                                if (match && match.timerVal) {
+                                    currentUserRef.child(`match_requests/${match._id}/timerVal`).set(null);
+                                    usersListRef.child(`${match._id}/match_requests/${account.ventureId}/timerVal`).set(null);
+                                    usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
+                                        usersListRef.child(`${match._id}/chatCount`).set(snapshot.val() - 1);
+                                    });
+
+                                }
+                            });
+                            currentUserRef.child('chatCount').set(0);
+                        });
+
+                        // @hmm: at restart reset all event invite matches & chats
+
+                        currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
+                            snapshot.val() && _.each(snapshot.val(), (match) => {
+                                if (match && match.timerVal) {
+                                    currentUserRef.child(`event_invite_match_requests/${match._id}/timerVal`).set(null);
+                                    usersListRef.child(`${match._id}/event_invite_match_requests/${account.ventureId}/timerVal`).set(null);
+                                    usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
+                                        usersListRef.child(`${match._id}/chatCount`).set(snapshot.val() - 1);
+                                    });
+
+                                }
+                            });
+                        });
+
+                        this.setState({ventureId: account.ventureId});
+
+                        AppStateIOS.addEventListener('change', this._handleAppStateChange);
+
+                    })
+                    .catch((error) => console.log(error.message))
+                    .done();
+            }, 0); //@hmm: this time has to be less than time spent on home page
+        });
+    },
+
+    componentDidMount(){
+        if(this.state.currentUserLocationCoords === null) {
+            navigator.geolocation.getCurrentPosition(
+                (currentPosition) => {
+                    this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
+                },
+                (error) => {
+                    console.error(error);
+                },
+                {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+            );
+        }
+
+        AsyncStorage.getItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL')
+            .then((friendsAPICallURL) => friendsAPICallURL)
+            .then((friendsAPICallURL) => {
+                AsyncStorage.getItem('@AsyncStorage:Venture:currentUserFriends')
+                    .then((currentUserFriends) => {
+
+                        currentUserFriends = JSON.parse(currentUserFriends);
+
+                        if(currentUserFriends) this.setState({currentUserFriends});
+
+                        else {
+                            AsyncStorage.getItem('@AsyncStorage:Venture:isOnline')
+                                .then((isOnline) => {
+                                    if(isOnline === 'true') {
+                                        fetch(friendsAPICallURL)
+                                            .then(response => response.json())
+                                            .then(responseData => {
+
+                                                AsyncStorage.setItem('@AsyncStorage:Venture:currentUserFriends', JSON.stringify(responseData.data))
+                                                    .catch(error => console.log(error.message))
+                                                    .done();
+
+                                                this.setState({currentUserFriends: responseData.data});
+                                            })
+                                            .done();
+                                    }
+                                })
+                                .done()
+                        }
+                    })
+                    .catch(error => console.log(error.message))
+                    .done();
+            })
+            .catch(error => console.log(error.message))
+            .done();
+    },
+
+    componentWillUnmount() {
+        AppStateIOS.removeEventListener('change', this._handleAppStateChange);
+    },
+
+    animateViewLayout(text:string) {
+        this.setState({
+            viewStyle: {
+                borderRadius: text.length ? 10 : 0
+            }
+        });
+    },
+
+    _createTrendingItem(type, uri, i) {
+        if(type === 'user') return (
+            <TouchableOpacity key={i} style={styles.trendingItem}>
+                <Image
+                    style={styles.trendingUserImg}
+                    source={{uri}}/>
+            </TouchableOpacity>
+        )
+
+        return (
+            <TouchableOpacity key={i} onPress={() => {
+                    this.props.navigator.push({title: 'Events', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'events', ventureId: this.state.ventureId}});
+            }} style={styles.trendingItem}>
+                <Image style={styles.trendingEventImg} source={{uri}}/>
+            </TouchableOpacity>
+        )
+
+    },
+
+    _createTag(tag:string) {
+        return (
+            <TouchableOpacity onPress={() => {
+                            this.setState({tagsArr: _.remove(this.state.tagsArr,
+                                (tagVal) => {
+                                return tagVal !== tag;
+                                }
+                            )});
+                        }} style={styles.tag}><Text
+                style={styles.tagText}>{tag}</Text>
+            </TouchableOpacity>
+        )
+    },
+
+    _getTimeString(date) {
+        var t = date.toLocaleTimeString();
+        t = t.replace(/\u200E/g, '');
+        t = t.replace(/^([^\d]*\d{1,2}:\d{1,2}):\d{1,2}([^\d]*)$/, '$1$2');
+        // @hmm: get rid of time zone
+        t = t.substr(0, t.length - 4);
+
+        if (this.state.hasIshSelected) return t.split(' ')[0] + '-ish ' + t.split(' ')[1]; // e.g. 9:10ish PM
+        return t;
+    },
+
+
+    _handleAppStateChange(currentAppState) {
+        let previousAppState = this.state.currentAppState;
+
+        this.setState({currentAppState, previousAppState});
+
+        if(previousAppState === 'background' && currentAppState === 'active') {
+            navigator.geolocation.getCurrentPosition(
+                (currentPosition) => {
+                    this.state.currentUserRef && this.state.currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
+                    this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
+                },
+                (error) => {
+                    console.error(error);
+                },
+                {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+            );
+        }
+    },
+
+    navigateToLogin() {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        this.props.navigator.push({title: 'Login', component: LoginPage});
+    },
+
+    _onBlur() {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+        this.setState({hasKeyboardSpace: false, showAddInfoButton: true, showNextButton: !!this.state.activityTitleInput, showTextInput: true});
+    },
+
+    onDateChange(date): void {
+        this.setState({date: date});
+    },
+
+    _onFocus() {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
+        this.setState({hasKeyboardSpace: true, showAddInfoButton: false, showNextButton: false, showTextInput: false});
+    },
+
+    onSubmitActivity() {
+        let activityTitleInputWithoutPunctuation = (this.state.activityTitleInput).replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' '),
+            activityPreferenceChange = {
+                title: activityTitleInputWithoutPunctuation + '?',
+                tags: this.state.tagsArr,
+                status: this.state.activeTimeOption.toUpperCase(),
+                start: {
+                    time: (this.state.activeTimeOption === 'specify' ? this._getTimeString(this.state.date) : ''),
+                    dateTime: this.state.date,
+                    timeZoneOffsetInHours: this.state.timeZoneOffsetInHours
+                },
+                createdAt: new Date(),
+                updatedAt: new Date()
+            },
+            firebaseRef = this.state.firebaseRef;
+
+        // @hmm: have to manually blur the text input,
+        // since were not using navigator.push()
+
+        firebaseRef.child(`users/${this.state.ventureId}/activityPreference`).set(activityPreferenceChange);
+        this.props.navigator.push({title: 'Users', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'users', ventureId: this.state.ventureId}});
+
+        this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
+    },
+
+    _roundDateDownToNearestXMinutes(date, num) {
+        var coeff = 1000 * 60 * num;
+        return new Date(Math.floor(date.getTime() / coeff) * coeff);
+    },
+
     render() {
+        let content,
+            isAtScrollViewStart = this.state.contentOffsetXVal === 0,
+            isAtTrendingScrollViewStart = this.state.trendingContentOffsetXVal === 0,
+            tagSelection;
+
+        let activityTitleInput = (
+            <TextInput
+                ref={ACTIVITY_TITLE_INPUT_REF}
+                autoCapitalize='none'
+                autoCorrect={false}
+                maxLength={15}
+                onChangeText={(text) => {
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                        this.animateViewLayout(text);
+                        if(!text) this.setState({showTimeSpecificationOptions: false});
+                        this.setState({activityTitleInput: text.toUpperCase(), showNextButton: !!text});
+                    }}
+                placeholder={'What do you want to do?'}
+                placeholderTextColor={'rgba(255,255,255,1.0)'}
+                returnKeyType='done'
+                style={[styles.activityTitleInput, this.state.viewStyle, {marginTop: height/8}]}
+                value={this.state.activityTitleInput}/>
+        );
+
+        let addInfoButton = (
+            <View style={[styles.addInfoButtonContainer]}>
+                    <ChevronIcon
+                        direction='up'
+                        onPress={() => {
+                            this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                            this.setState({activeTimeOption: 'now', date: new Date(), showAddInfoBox: !this.state.showAddInfoBox, tagInput: '', tags: []})
+                        }}
+                        />
+            </View>
+        );
+
         let submitActivityIcon;
 
         if (Platform.OS === 'ios') {
             submitActivityIcon = (
+            <View style={styles.submitActivityIconContainer}>
                 <SubmitActivityIcon
-                    onPress={() => this.props.navigator.push({
-                            title: 'Users',
-                            component: TabBarLayout,
-                            passProps: {
-                                currentUserFriends: [],
-                                currentUserLocationCoords: [],
-                                firebaseRef: this.state.firebaseRef,
-                                selectedTab: 'users',
-                                ventureId: ""
-                            }})
-                            }/>
+                    onPress={this.onSubmitActivity}/>
+                </View>
             );
         } else {
             submitActivityIcon = <View />;
         }
 
-        return (
-            <View style={styles.container}>
-                <Image
-                    source={require('../../img/home_background.png')}
-                    style={styles.backdrop}
-                    >
-                    {submitActivityIcon}
-                </Image>
+        let trendingItemsCarousel = (
+            <View style={styles.trendingItemsCarousel}>
+                <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContent}</Text></Title>
+                <ScrollView
+                    automaticallyAdjustContentInsets={false}
+                    canCancelContentTouches={false}
+                    contentOffset={{x: this.state.trendingContentOffsetXVal, y: 0}}
+                    horizontal={true}
+                    directionalLockEnabled={true}
+                    showsHorizontalScrollIndicator={true}
+                    style={[styles.scrollView, styles.horizontalScrollView, {marginTop: 10}]}>
+                    {this.state.yalies && this.state.yalies.map(this._createTrendingItem.bind(null, 'user'))}
+                    {this.state.events && this.state.events.map(this._createTrendingItem.bind(null, 'event'))}
+                </ScrollView>
+                <View style={[styles.scrollbarArrow, {bottom: height / 15}, (isAtTrendingScrollViewStart ? {right: 5} : {left: 5})]}>
+                    <ChevronIcon
+                        color='rgba(255,255,255,0.8)'
+                        size={20}
+                        direction={isAtTrendingScrollViewStart ? 'right' : 'left'}
+                        onPress={() => {
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                            this.setState({trendingContentOffsetXVal: (isAtTrendingScrollViewStart ? width / 1.31 : 0), trendingContent: (isAtTrendingScrollViewStart ? 'EVENTS' : 'YALIES')})
+                            }}/>
+                </View>
             </View>
-        )
+        );
+
+        if (this.state.showTimeSpecificationOptions)
+            content = (
+                <View style={styles.timeSpecificationOptions}>
+                    <DatePickerIOS
+                        date={this.state.date}
+                        mode="time"
+                        timeZoneOffsetInMinutes={this.state.timeZoneOffsetInHours * 60}
+                        onDateChange={this.onDateChange}
+                        minuteInterval={5}
+                        style={styles.timeSpecificationDatePicker}/>
+                    <View style={styles.timeSpecificationButtons}>
+                        <DynamicTimeSelectionIcon
+                            active={false}
+                            caption='Done'
+                            captionStyle={{color: '#fff'}}
+                            onPress={() => this.setState({showTimeSpecificationOptions: false})}/>
+                        <DynamicCheckBoxIcon
+                            active={this.state.hasIshSelected}
+                            caption='-ish'
+                            captionStyle={{color: '#fff'}}
+                            onPress={() => this.setState({hasIshSelected: !this.state.hasIshSelected})}/>
+                    </View>
+
+                </View>
+            );
+        else
+            content = (
+                <View style={styles.addTimeInfoContainer}>
+                    <ScrollView
+                        automaticallyAdjustContentInsets={false}
+                        canCancelContentTouches={false}
+                        centerContent={true}
+                        contentContainerStyle={{flex: 1, flexDirection: 'row', width: width * 1.18, alignItems: 'center'}}
+                        contentOffset={{x: this.state.contentOffsetXVal, y: 0}}
+                        decelerationRate={0.7}
+                        horizontal={true}
+                        directionalLockEnabled={true}
+                        style={[styles.scrollView, styles.horizontalScrollView, {paddingTop: 10}]}>
+                        <DynamicCheckBoxIcon
+                            active={this.state.activeTimeOption === 'now'}
+                            caption='now'
+                            captionStyle={styles.captionStyle}
+                            color='#7cff9d'
+                            onPress={() => this.setState({activeTimeOption: 'now', hasSpecifiedTime: false})}/>
+                        <DynamicCheckBoxIcon
+                            active={this.state.activeTimeOption === 'later'}
+                            caption='later'
+                            captionStyle={styles.captionStyle}
+                            color='#ffd65c'
+                            onPress={() => this.setState({activeTimeOption: 'later', hasSpecifiedTime: false})}/>
+                        <DynamicTimeSelectionIcon
+                            active={this.state.activeTimeOption === 'specify'}
+                            caption={this.state.hasSpecifiedTime ? this._getTimeString(this._roundDateDownToNearestXMinutes(this.state.date, 5)) : 'specify'}
+                            captionStyle={styles.captionStyle}
+                            onPress={() => {
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                            if(this.state.activeTimeOption === 'specify') this.setState({hasSpecifiedTime: true, showTimeSpecificationOptions: true});
+                            else this.setState({activeTimeOption: 'specify'})
+                        }}/>
+                    </ScrollView>
+                    <View style={[styles.scrollbarArrow, (isAtScrollViewStart ? {right: 10} : {left: 10})]}>
+                        <ChevronIcon
+                            size={20}
+                            direction={isAtScrollViewStart ? 'right' : 'left'}
+                            onPress={() => {
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                            this.setState({contentOffsetXVal: (isAtScrollViewStart ? width/2.65 : 0)})
+                            }}/>
+                    </View>
+                </View>
+            );
+
+        tagSelection = (
+            <View style={styles.tagSelection}>
+                <TextInput
+                    ref={TAG_SELECTION_INPUT_REF}
+                    onFocus={this._onFocus}
+                    onBlur={this._onBlur}
+                    autoCapitalize='none'
+                    autoCorrect={false}
+                    maxLength={MAX_TEXT_INPUT_VAL_LENGTH}
+                    onChangeText={(text) => {
+                        // @hmm: make sure emojis don't cause error - each emoji counts for 3 characters
+                        if(!text.match(/^[a-zA-Z]+$/) && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 1) return;
+                        this.setState({tagInput: text});
+                    }}
+                    onSubmitEditing={() => {
+                        let tagsArr = this.state.tagsArr,
+                            text = this.state.tagInput;
+
+                        //@hmm: check that tag isn't already present and that max num of tags is 5
+                        if(tagsArr.indexOf(text) < 0 && tagsArr.length <= 5) {
+                        tagsArr.push(text);
+                        }
+                        this.setState({tagsArr, tagInput: ''});
+                    }}
+                    placeholder={'Type a tag and submit. Tap to delete.'}
+                    placeholderTextColor={'rgba(0,0,0,0.8)'}
+                    returnKeyType='done'
+                    style={styles.tagsInputText}
+                    value={this.state.tagInput}/>
+                <ScrollView
+                    automaticallyAdjustContentInsets={false}
+                    centerContent={true}
+                    horizontal={true}
+                    directionalLockEnabled={true}
+                    showsHorizontalScrollIndicator={true}
+                    style={[styles.scrollView, {height: 20}]}>
+                    {this.state.tagsArr.map(this._createTag)}
+                </ScrollView>
+            </View>
+        );
+
+        // @hmm keep addInfoBox down here after assigning content and tagSelection
+        let addInfoBox = (
+            <View
+                style={[styles.addInfoBox, {bottom: (this.state.hasKeyboardSpace ? height/3 : height / 35)}]}>
+                <View style={{top: 5}}><Title>WHEN?</Title></View>
+                {content}
+                {tagSelection}
+            </View>
+        );
+
+        return (
+            <VentureAppPage>
+                <Image
+                    defaultSource={require('../../img/home_background.png')}
+                    source={require('../../img/home_background.png')}
+                    onLoad={() => {
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                        this.setState({ready: true})
+                    }}
+                    style={styles.backdrop}>
+                    {this.state.isLoggedIn && this.state.ready ?
+                        <View>
+                            <Header>
+                                <ProfilePageIcon style={{opacity: 0.4, bottom: height/34, right: 20}}
+                                                 onPress={() => {
+                                            if(!this.state.hasKeyboardSpace) this.props.navigator.push({title: 'Profile', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'profile', ventureId: this.state.ventureId}});
+                                         }} />
+                                <ChatsListPageIcon style={{opacity: 0.4, bottom: height/34, left: 20}}
+                                                   onPress={() => {
+                                            if(!this.state.hasKeyboardSpace) this.props.navigator.push({title: 'Chats', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'chats', ventureId: this.state.ventureId}});
+                                           }} />
+                            </Header>
+                            <View style={{alignSelf: 'center'}}>
+                            <BrandLogo
+                                logoContainerStyle={styles.logoContainerStyle}
+                                />
+                                </View>
+                            {this.state.showTextInput ? activityTitleInput : <View />}
+                            {this.state.showNextButton ? submitActivityIcon : <View />}
+                            {this.state.showAddInfoButton && !this.state.showTimeSpecificationOptions && this.state.activityTitleInput ? addInfoButton : <View />}
+                        </View>
+                        : <View />}
+                    {this.state.showAddInfoBox && this.state.activityTitleInput && this.state.isLoggedIn && this.state.ready ? addInfoBox : <View/>}
+                    {this.state.showTrendingItems && !this.state.showAddInfoBox && this.state.isLoggedIn && this.state.ready ? trendingItemsCarousel : <View/>}
+                </Image>
+            </VentureAppPage>
+        );
     }
 });
 
+class Title extends Component {
+    render() {
+        return (
+            <Text
+                style={[styles.title, {fontSize: this.props.fontSize}, this.props.titleStyle]}>{this.props.children}</Text>
+        );
+    }
+}
+
 const styles = StyleSheet.create({
+    activitySelection: {
+        height: height / 15
+    },
+    activityTitleInput: {
+        height: 52,
+        width,
+        textAlign: 'center',
+        fontSize: height / 23,
+        color: 'white',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        fontFamily: 'AvenirNextCondensed-UltraLight'
+    },
+    addInfoBox: {
+        position: 'absolute',
+        width: width / 1.2,
+        alignSelf: 'center',
+        backgroundColor: 'rgba(0,0,0,0.85)',
+        marginHorizontal: (width - (width / 1.2)) / 2,
+        padding: 2
+    },
+    addInfoButton: {
+    },
+    addInfoButtonContainer: {
+        backgroundColor: 'transparent',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        width: width,
+        marginTop: height / 40
+    },
+    addTimeInfoContainer: {},
     backdrop: {
+        flex: 1,
         width,
         height,
-        paddingTop: 10,
-        alignItems: 'center'
+        alignItems: 'center',
+        paddingTop: 10
+    },
+    captionStyle: {
+        color: '#fff',
+        fontFamily: 'AvenirNextCondensed-Regular'
     },
     container: {
         flex: 1,
         flexDirection: 'column',
         justifyContent: 'center',
+    },
+    horizontalScrollView: {
+        height: 85
+    },
+    logoContainerStyle: {
+    },
+    submitActivityIconContainer: {
+        bottom: 40,
+        right: width / 28,
+        alignSelf: 'flex-end'
+    },
+    scrollbarArrow: {
+        position: 'absolute',
+        bottom: height / 58
+    },
+    scrollView: {
+        backgroundColor: 'rgba(0,0,0,0.008)'
+    },
+    timeSpecificationOptions: {
+        flex: 1,
+        flexDirection: 'column'
+    },
+    timeSpecificationButtons: {
+        top: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-around'
+    },
+    title: {
+        color: '#fff',
+        fontFamily: 'AvenirNextCondensed-Regular',
+        fontSize: 20,
+        textAlign: 'center',
+        paddingTop: 5
+    },
+    tag: {
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        borderRadius: width / 10,
+        paddingHorizontal: width / 80,
+        marginHorizontal: width / 70,
+        paddingVertical: width / 300,
+        borderWidth: 0.5,
+        borderColor: 'rgba(255,255,255,0.4)',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        top: width / 90,
+        height: width / 15
+    },
+    tagsInputText: {
+        top: 5,
+        borderWidth: 0.5,
+        borderColor: '#0f0f0f',
+        backgroundColor: 'rgba(255,255,255,0.4)',
+        flex: 1,
+        padding: TAG_TEXT_INPUT_PADDING,
+        height: height / 158,
+        fontSize: height / 52,
+        color: '#000',
+        textAlign: 'center',
+        fontFamily: 'AvenirNextCondensed-Regular',
+        borderRadius: 5,
+        bottom: 8
+    },
+    tagSelection: {
+        marginTop: 8,
+        height: height / 6.6,
+        paddingTop: 19,
+        paddingHorizontal: 25,
+        bottom: 5
+    },
+    timeSpecificationDatePicker: {
+        top: 10,
+        height: 40,
+        justifyContent: 'center',
+        alignSelf: 'center',
+        backgroundColor: 'rgba(255,255,255,0.8)'
+    },
+    tagText: {
+        color: 'rgba(255,255,255,0.5)',
+        fontFamily: 'AvenirNextCondensed-Medium'
+    },
+    trendingItems: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    trendingItem: {
+        borderRadius: 3,
+        marginHorizontal: width / 29.9
+    },
+    trendingItemsCarousel: {
+        position: 'absolute',
+        bottom: height / 35,
+        width: width / 1.18,
+        alignSelf: 'center',
+        justifyContent: 'center',
+        marginHorizontal: (width - (width / 1.2)) / 2,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: 10
+    },
+    trendingUserImg: {
+        width: width / 5.3,
+        height: 64,
+        resizeMode: 'contain'
+    },
+    trendingEventImg: {
+        width: width / 1.34,
+        height: 64,
+        resizeMode: 'contain'
     }
 });
 
 module.exports = HomePage;
+
 

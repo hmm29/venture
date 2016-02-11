@@ -10,18 +10,6 @@
  * @flow
  */
 
-/**
- * Copyright (c) 2015-present, Venture Applications, LLC.
- * All rights reserved.
- *
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
- *
- * @providesModule ProfilePage
- * @flow
- */
-
 'use strict';
 
 var React = require('react-native');
@@ -30,6 +18,7 @@ var {
     ActivityIndicatorIOS,
     AsyncStorage,
     Image,
+    LayoutAnimation,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -42,32 +31,25 @@ var EditProfilePageIcon = require('../../Partials/Icons/NavigationButtons/EditPr
 var EditProfilePage = require('../EditProfilePage');
 var FBLogin = require('react-native-facebook-login');
 var Firebase = require('firebase');
+var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 var LoginPage = require('../LoginPage');
+var ModalBase = require('../../Partials/ModalBase');
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
+var VentureAppPage = require('../Base/VentureAppPage');
 
 var {height, width} = Dimensions.get('window');
 
-String.prototype.capitalize = function() {
+String.prototype.capitalize = function () {
     return this.charAt(0).toUpperCase() + this.slice(1);
-}
-
-var getInitialAgeRangeLimits = (ageVal:number, lim:string) => {
-    if (lim === 'upper') {
-        if (ageVal <= 18) return 19;
-        else return ageVal + (ageVal - 18);
-    } else {
-        if (ageVal <= 18) return 18;
-        else return ageVal - (ageVal - 18);
-    }
 };
 
 var hash = (msg:string) => sha256(sha256(sha256(msg)));
 
 var ProfilePage = React.createClass({
     statics: {
-        title: 'Profile Page',
+        title: '<ProfilePage/>',
         description: 'See current user info.'
     },
 
@@ -75,14 +57,10 @@ var ProfilePage = React.createClass({
 
     getInitialState() {
         return {
-            fetchedAccountObject: null,
+            asyncStorageAccountData: null,
             firebaseRef: this.props.firebaseRef,
             user: null
         }
-    },
-
-    componentWillMount(){
-        alert(this.state.firebaseRef);
     },
 
     componentWillUnmount() {
@@ -122,16 +100,32 @@ var ProfilePage = React.createClass({
         if (isOnline && loginStatusRef) loginStatusRef.set(isOnline);
 
         currentUserRef.once('value', snapshot => {
-            let fetchedAccountObject = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName', 'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
+            let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName', 'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
 
             // @hmm: slight defer to allow time for snapshot.val()
             this.setTimeout(() => {
-                AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(fetchedAccountObject))
+                AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
                     .then(() => this._navigateToNextPage())
                     .catch(error => console.log(error.message))
                     .done();
             }, 0);
         });
+    },
+
+
+    renderHeader() {
+        return (
+            <Header containerStyle={{backgroundColor: '#040A19'}}>
+                <HomePageIcon onPress={() => {
+                        this.props.navigator.popToTop();
+                    }} style={{right: 14}}/>
+                <Text>MY PROFILE</Text>
+                <EditProfilePageIcon
+                    onPress={() => {
+                          this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,  passProps: {firebaseRef: this.state.firebaseRef, ventureId: this.state.ventureId}});
+                    }} style={{left: 14}}/>
+            </Header>
+        )
     },
 
     render() {
@@ -140,13 +134,16 @@ var ProfilePage = React.createClass({
             ventureId = this.state.ventureId;
 
         return (
-            <View style={styles.container}>
-                <Image source={require('../../../img/about.png')}
+            <VentureAppPage>
+                <View>
+                    {this.renderHeader()}
+                </View>
+                <Image defaultSource={require('../../../img/about.png')}
                        style={styles.backdrop}>
                     <View style={styles.loginContainer}>
                         <View>
                             { user && <Photo user={user}/> }
-                            { user && ventureId && <Info ventureId={ventureId} user={user}/>}
+                            { user && ventureId && <Info firebaseRef={this.state.firebaseRef} ventureId={ventureId} user={user}/>}
                         </View>
 
                         <FBLogin style={styles.FBLoginButton}
@@ -155,8 +152,8 @@ var ProfilePage = React.createClass({
 
                                     _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
 
-                                    _this.setState({user : null, ventureId: null});
                                     if(user && ventureId) _this._updateUserLoginStatus(false);
+                                    _this.setState({user : null, ventureId: null});
 
                                      AsyncStorage.multiRemove(['@AsyncStorage:Venture:account', '@AsyncStorage:Venture:currentUser:friendsAPICallURL', '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'])
                                         .catch(error => console.log(error.message))
@@ -166,7 +163,6 @@ var ProfilePage = React.createClass({
                                  onLoginFound={function(data){
 
                                 _this.setState({ user : data.credentials, ventureId: hash(data.credentials.userId)});
-                                alert(_this.state.ventureId);
                                 console.log("Existing login found.");
 
                                 }}
@@ -193,24 +189,9 @@ var ProfilePage = React.createClass({
                             />
                     </View>
                 </Image>
-            </View>
+            </VentureAppPage>
         )
     },
-
-    renderHeader() {
-        return (
-            <Header containerStyle={{backgroundColor: '#040A19'}}>
-                <HomePageIcon onPress={() => {
-                        this.props.navigator.popToTop();
-                    }} style={{right: 14}}/>
-                <Text>MY PROFILE</Text>
-                <EditProfilePageIcon
-                    onPress={() => {
-                          this.props.navigator.push({title: 'Edit Profile',component: EditProfilePage,  passProps: {firebaseRef: this.state.firebaseRef, ventureId: this.state.ventureId}});
-                    }} style={{left: 14}}/>
-            </Header>
-        )
-    }
 });
 
 var Photo = React.createClass({
@@ -241,6 +222,7 @@ var Photo = React.createClass({
 
 var Info = React.createClass({
     propTypes: {
+        firebaseRef: React.PropTypes.string,
         user: React.PropTypes.object.isRequired,
         ventureId: React.PropTypes.string
     },
@@ -248,17 +230,18 @@ var Info = React.createClass({
     getInitialState() {
         return {
             info: null,
-            firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
-            renderLoadingView: true
+            firebaseRef: this.props.firebaseRef,
+            firebaseCurrentUserDataRef: null,
+            renderLoadingView: false
         };
     },
     componentWillMount() {
         let _this = this,
-            firebaseCurrentUserData = this.state.firebaseRef.child(`users/${this.props.ventureId}`);
+            firebaseCurrentUserDataRef = this.state.firebaseRef.child(`users/${this.props.ventureId}`);
 
-        firebaseCurrentUserData.on('value', snapshot =>
+        firebaseCurrentUserDataRef.on('value', snapshot =>
                 _this.setState({
-                    firebaseCurrentUserData,
+                    firebaseCurrentUserDataRef,
                     renderLoadingView: false,
                     info: {
                         firstName: snapshot.val() && snapshot.val().firstName,
@@ -271,15 +254,15 @@ var Info = React.createClass({
     },
 
     componentWillUnmount() {
-        this.state.firebaseCurrentUserData && this.state.firebaseCurrentUserData.off();
+        this.state.firebaseCurrentUserDataRef && this.state.firebaseCurrentUserDataRef.off();
     },
 
     render() {
-        let info = this.state.info;
-
         if (this.state.renderLoadingView) {
             return this._renderLoadingView();
         }
+
+        let info = this.state.info;
 
         return (
             <View style={styles.infoContent}>
@@ -294,14 +277,19 @@ var Info = React.createClass({
 
     _renderLoadingView() {
         return (
-            <View style={{alignSelf: 'center'}}>
-                <Text style={{color: '#fff'}}>Loading...</Text>
-                <ActivityIndicatorIOS
-                    color='#eee'
-                    animating={true}
-                    style={styles.loadingViewActivityIndicatorIOS}
-                    size="small"/>
-            </View>
+            <ModalBase
+                animated={true}
+                modalVisible={true}
+                transparent={false}>
+                <View style={{alignSelf: 'center', backgroundColor: 'green'}}>
+                    <Text style={{color: '#fff'}}>Loading...</Text>
+                    <ActivityIndicatorIOS
+                        color='#eee'
+                        animating={true}
+                        style={styles.loadingViewActivityIndicatorIOS}
+                        size="small"/>
+                </View>
+            </ModalBase>
         );
     }
 });
@@ -315,12 +303,8 @@ const styles = StyleSheet.create({
         width,
         backgroundColor: 'transparent'
     },
-    container: {
-        flex: 1,
-        backgroundColor: '#02030F'
-    },
     FBLoginButton: {
-        top: 70
+        top: height / 16
     },
     infoContent: {
         paddingLeft: 20,

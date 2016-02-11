@@ -17,26 +17,33 @@ import React, {
     Image,
     StyleSheet,
     TouchableOpacity,
+    View
 } from 'react-native';
 
-type Props = {
-    onPress: React.PropTypes.func
+type
+Props = {
+    onPress: React.PropTypes.func,
+    logoContainerStyle: View.propTypes.style,
 };
 
 class BrandLogo extends Component {
     constructor(props:Props) {
         super(props);
         this.state = {};
-    };
+    }
+
+;
 
     render() {
         return (
-            <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={this.props.onPress}>
-                <Image source={require('../../img/venture_brand_logo_white.png')}
-                       style={styles.logo}/>
-            </TouchableOpacity>
+            <View style={[styles.container, this.props.logoContainerStyle]}>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={this.props.onPress}>
+                    <Image source={require('../../img/venture_brand_logo_white.png')}
+                           style={styles.logo}/>
+                </TouchableOpacity>
+            </View>
         );
     }
 }

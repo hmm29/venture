@@ -26,7 +26,7 @@ const DIRECTIONS = ['up','down','right','left'];
 
 type Props = {
     color: React.PropTypes.string,
-    direction: React.PropTypes.string,
+    direction: React.PropTypes.string.isRequired,
     onPress: React.PropTypes.func.isRequired,
     size: React.PropTypes.number,
     style: View.propTypes.style
@@ -56,7 +56,7 @@ class ChevronIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        backgroundColor: 'transparent'
+        opacity: 1.0
     }
 });
 

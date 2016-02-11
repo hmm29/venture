@@ -44,7 +44,8 @@ class DefaultMatchStatusIcon extends Component {
                 <Icon
                     name="chevron-thin-right"
                     size={this.props.size || 25}
-                    color={this.props.color || '#ccc'}
+                    color={this.props.color || 'rgba(0,0,0,0.2)'}
+                    style={{width: (this.props.size || 25) * 1.16, height: (this.props.size || 25) * 1.16}}
                     />
             </TouchableOpacity>
         );

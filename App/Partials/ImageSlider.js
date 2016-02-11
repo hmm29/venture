@@ -9,3 +9,7 @@
  * @providesModule ImageSlider
  * @flow
  */
+
+// what component for this
+// slider with buttons
+

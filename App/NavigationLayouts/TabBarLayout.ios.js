@@ -54,11 +54,16 @@ class TabBarLayout extends Component {
         }
     };
 
+    _handleSelectedTabChange(selectedTab:string) {
+        alert('pop')
+    };
+
     _renderContent(title:string) {
         if(title === 'hot') {
             return <HotPage currentUserFriends={this.props.currentUserFriends}
                             currentUserLocationCoords={this.props.currentUserLocationCoords}
                             firebaseRef={this.props.firebaseRef}
+                            handleSelectedTabChange={this._handleSelectedTabChange}
                             navigator={this.props.navigator}
                             ventureId={this.props.ventureId}/>;
         }

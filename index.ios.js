@@ -40,7 +40,7 @@ var VentureApp = React.createClass({
               style={styles.container}
               initialRoute={{
                     title: 'HomePage',
-                    component: HomePage,
+                    component: HomePage
                   }}
               />
         </View>
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   itemWrapperStyle: {
-    backgroundColor: '#FFF'
+    backgroundColor: '#02030F'
   }
 });
 

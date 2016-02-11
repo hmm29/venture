@@ -9,3 +9,33 @@
  * @providesModule VentureAppPage
  * @flow
  */
+
+'use strict';
+
+import React, {
+    Component,
+    InteractionManager,
+    StyleSheet,
+    View
+} from 'react-native'
+
+class VentureAppPage extends Component {
+    render() {
+        return (
+            <View style={styles.container}>
+                {this.props.children}
+            </View>
+        )
+    }
+}
+
+const styles = StyleSheet.create({
+   container: {
+       flex: 1,
+       flexDirection: 'column',
+       justifyContent: 'center',
+       backgroundColor: '#02030F'
+   }
+});
+
+module.exports = VentureAppPage;

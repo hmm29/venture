@@ -57,7 +57,7 @@ class DynamicTimeSelectionIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        backgroundColor: 'transparent'
+        opacity: 1.0
     }
 });
 

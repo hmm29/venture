@@ -6,7 +6,7 @@
  * Proprietary and confidential
  * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
  *
- * @providesModule CheckBoxIcon
+ * @providesModule DynamicCheckBoxIcon
  * @flow
  */
 
@@ -57,7 +57,7 @@ class DynamicCheckBoxIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        backgroundColor: 'transparent'
+        opacity: 1.0
     }
 });
 

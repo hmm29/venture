@@ -44,7 +44,8 @@ class MatchSuccessIcon extends Component {
                 <Icon
                     name="chat"
                     size={this.props.size || 25}
-                    color={this.props.color || '#ccc'}
+                    color={this.props.color || 'rgba(0,0,0,0.2)'}
+                    style={{width: (this.props.size || 25) * 1.16, height: (this.props.size || 25) * 1.16}}
                     />
             </TouchableOpacity>
         );
@@ -53,7 +54,7 @@ class MatchSuccessIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        backgroundColor: 'transparent'
+        opacity: 1.0
     }
 });
 

@@ -14,22 +14,339 @@
 
 var React = require('react-native');
 var {
+    ActivityIndicatorIOS,
+    Animated,
+    Component,
+    Image,
+    PixelRatio,
+    ScrollView,
     StyleSheet,
-    View
+    Text,
+    TouchableOpacity,
+    View,
     } = React;
 
-var HotPage = React.createClass({
+var BrandLogo = require('../../Partials/BrandLogo');
+var ChevronIcon = require('../../Partials/Icons/ChevronIcon');
+var Dimensions = require('Dimensions');
+var Header = require('../../Partials/Header');
+var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
+var Icon = require('react-native-vector-icons/Ionicons');
+var ModalBase = require('../../Partials/ModalBase');
+var ReactFireMixin = require('reactfire');
+var TimerMixin = require('react-timer-mixin');
+var VentureAppPage = require('../Base/VentureAppPage');
+
+var {height, width} = Dimensions.get('window');
+var LOGO_WIDTH = 200;
+var LOGO_HEIGHT = 120;
+
+class Title extends Component {
     render() {
         return (
-            <View style={styles.container} />
+            <Text
+                style={[styles.title, {fontSize: this.props.fontSize}, this.props.titleStyle]}>{this.props.children}</Text>
         );
+    }
+}
+
+var HotPage = React.createClass({
+    propTypes: {
+        handleSelectedTabChange: React.PropTypes.func.isRequired
+    },
+
+    mixins: [TimerMixin, ReactFireMixin],
+
+    getInitialState() {
+        return {
+            events: [],
+            fadeAnim: new Animated.Value(0),
+            firebaseRef: this.props.firebaseRef,
+            showLoadingModal: false,
+            trendingItems: {},
+            yalies: []
+        };
+    },
+
+    componentWillMount() {
+        let _this = this,
+            trendingItemsRef = this.state.firebaseRef.child('trending');
+
+        trendingItemsRef.once('value', snapshot => {
+                _this.setState({
+                    events: snapshot.val() && snapshot.val().events,
+                    yalies: snapshot.val() && snapshot.val().yalies,
+                    trendingItemsRef,
+                    showLoadingModal: false
+                });
+                _this.startAnimation();
+            }
+        );
+    },
+
+    componentWillUnmount() {
+        this.state.trendingItemsRef && this.state.trendingItemsRef.off();
+    },
+
+    startAnimation() {
+        Animated.timing(this.state.fadeAnim, {
+            toValue: 1,
+            duration: 1000,
+        }).start();
+
+        this.setTimeout(() => {
+            Animated.timing(this.state.fadeAnim, {
+                toValue: 0,
+                duration: 500,
+            }).start();
+
+            this.setTimeout(() => {
+                Animated.timing(this.state.fadeAnim, {
+                    toValue: 1,
+                    duration: 1000,
+                }).start();
+
+                this.setTimeout(() => {
+                    Animated.timing(this.state.fadeAnim, {
+                        toValue: 0,
+                        duration: 500,
+                    }).start();
+
+                    this.setTimeout(() => {
+                        Animated.timing(this.state.fadeAnim, {
+                            toValue: 1,
+                            duration: 1000,
+                        }).start();
+
+                        this.setTimeout(() => {
+                            Animated.timing(this.state.fadeAnim, {
+                                toValue: 0.15,
+                                duration: 500,
+                            }).start();
+
+                        }, 1000);
+
+                    }, 1000);
+
+                }, 1000);
+
+            }, 1000);
+
+
+        }, 1000);
+
+    },
+
+    _createTrendingItem(type, uri, i) {
+        if(type === 'user') return (
+            <TouchableOpacity key={i} style={styles.trendingItem}>
+                <Image style={styles.trendingUserImg} source={{uri}}/>
+            </TouchableOpacity>
+        )
+
+        return (
+            <TouchableOpacity key={i} onPress={() => this.props.handleSelectedTabChange('events')} style={styles.trendingItem}>
+                <Image style={styles.trendingEventImg} source={{uri}}/>
+            </TouchableOpacity>
+        )
+
+    },
+
+    render() {
+        this.setTimeout(() => {
+            if(_.isEmpty(this.state.events && this.state.yalies)) this.setState({showLoadingModal: true});
+        }, 200);
+
+        return (
+            <View style={styles.container}>
+                {this._renderHeader()}
+                <View style={[styles.tabContent, {flex: 1}]}>
+                    <View style={[styles.trendingItemsCarousel, {height: height / 5}]}>
+                        <Title>TRENDING <Text style={{color: '#ee964b'}}>YALIES</Text></Title>
+                        <ScrollView
+                            automaticallyAdjustContentInsets={false}
+                            horizontal={true}
+                            pagingEnabled={true}
+                            directionalLockEnabled={true}
+                            onScroll={this.handleScroll}
+                            snapToAlignment='center'
+                            snapToInterval={64}
+                            showsHorizontalScrollIndicator={true}
+                            style={[styles.scrollView, styles.horizontalScrollView, {marginTop: 10}]}>
+                            {this.state.yalies && this.state.yalies.map(this._createTrendingItem.bind(null, 'user'))}
+                        </ScrollView>
+                        <View style={[styles.scrollbarArrow, {top: height / 10.6, left: width / 1.20, backgroundColor: 'transparent'}]}>
+                            {/*
+                             <Animated.View style={{opacity: this.state.fadeAnim}}>
+                             <ChevronIcon
+                             color='rgba(255,255,255,0.8)'
+                             size={20}
+                             direction={'right'}/>
+                             </Animated.View>
+                             */}
+                        </View>
+                    </View>
+
+                    <View style={styles.trendingItemsCarousel}>
+                        <Title>TRENDING <Text style={{color: '#ee964b'}}>EVENTS</Text></Title>
+                        <ScrollView
+                            automaticallyAdjustContentInsets={false}
+                            horizontal={true}
+                            pagingEnabled={true}
+                            directionalLockEnabled={true}
+                            onScroll={this.handleScroll}
+                            snapToAlignment='center'
+                            snapToInterval={width / 1.3}
+                            showsHorizontalScrollIndicator={true}
+                            style={[styles.scrollView, styles.horizontalScrollView, {marginTop: 10}]}>
+                            {this.state.events && this.state.events.map(this._createTrendingItem.bind(null, 'event'))}
+                        </ScrollView>
+                    </View>
+                </View>
+                <View style={{height: 48}} />
+                <ModalBase
+                    modalStyle={styles.modalStyle}
+                    animated={true}
+                    modalVisible={this.state.showLoadingModal}
+                    transparent={false}>
+                    <View style={styles.modalView}>
+                        <BrandLogo
+                            logoContainerStyle={styles.logoContainerStyle}
+                            logoStyle={styles.logoStyle}/>
+                        <ActivityIndicatorIOS
+                            color='#fff'
+                            animating={this.state.animating}
+                            style={styles.loadingModalActivityIndicatorIOS}
+                            size='small'/>
+                        <TouchableOpacity activeOpacity={0.8}>
+                            <Text
+                                style={styles.loadingModalFunFactText}>
+                                <Text style={styles.loadingModalFunFactTextTitle}>Did You Know ?</Text>
+                                {'\n\n'} The phrase "Let's grab a meal" has a 12% success rate.</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ModalBase>
+            </View>
+        );
+    },
+
+    _renderHeader() {
+        return (
+            <Header containerStyle={{backgroundColor: '#040A19'}}>
+                <HomePageIcon onPress={() => this.props.navigator.popToTop()} style={{right: 14}}/>
+                <Text>HOT</Text>
+                <Text/>
+            </Header>
+        )
     }
 });
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'red'
+        backgroundColor: '#000'
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#040A19',
+        paddingTop: 20,
+        paddingBottom: 5
+    },
+    headerTitle: {
+        color: '#fff',
+        fontSize: 22,
+        paddingVertical: 10,
+        fontFamily: 'AvenirNextCondensed-Medium'
+    },
+    horizontalScrollView: {
+        height: 125
+    },
+    loadingModalActivityIndicatorIOS: {
+        height: 80
+    },
+    loadingModalFunFactText: {
+        color: '#fff',
+        fontFamily: 'AvenirNextCondensed-Medium',
+        textAlign: 'center',
+        fontSize: 18,
+        alignSelf: 'center',
+        width: width / 1.4,
+        backgroundColor: 'transparent',
+        padding: width / 15,
+        borderRadius: width / 10
+    },
+    loadingModalFunFactTextTitle: {
+        fontSize: height / 30
+    },
+    loadingModalStyle: {
+        backgroundColor: '#02030F'
+    },
+    logoContainerStyle: {
+        marginHorizontal: (width - LOGO_WIDTH) / 2
+    },
+    logoStyle: {
+        width: LOGO_WIDTH,
+        height: LOGO_HEIGHT
+    },
+    modalStyle: {
+        backgroundColor: '#02030F'
+    },
+    modalView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    scrollbarArrow: {
+        position: 'absolute',
+    },
+    scrollView: {
+        backgroundColor: 'rgba(0,0,0,0.008)'
+    },
+    tabContent: {
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    tabText: {
+        color: 'white',
+        margin: 50
+    },
+    title: {
+        color: '#fff',
+        fontFamily: 'AvenirNextCondensed-Regular',
+        fontSize: 20,
+        textAlign: 'center',
+        paddingTop: 5
+    },
+    trendingItems: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    trendingItem: {
+        borderRadius: 3
+    },
+    trendingItemsCarousel: {
+        width: width / 1.2,
+        alignSelf: 'center',
+        justifyContent: 'center',
+        marginHorizontal: (width - (width / 1.2)) / 2,
+        padding: 10,
+        margin: 20,
+        borderRadius: 10
+    },
+    trendingUserImg: {
+        width: width / 5.2,
+        height: 64,
+        marginHorizontal: width/30,
+        resizeMode: 'contain'
+    },
+    trendingEventImg: {
+        width: width / 1.3,
+        height: 110,
+        resizeMode: 'contain'
     }
 });
 

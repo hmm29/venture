@@ -32,12 +32,18 @@ var {
 
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
+var BlankIcon = require('../../Partials/Icons/BlankIcon');
 var ChatPage = require('../ChatPage');
 var Dimensions = require('Dimensions');
 var FiltersModal = require('../../Partials/Modals/FiltersModal')
 var Firebase = require('firebase');
 var GeoFire = require('geofire');
+var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
+var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
+var DefaultMatchStatusIcon = require('../../Partials/Icons/MatchStatusIndicators/DefaultMatchStatusIcon');
+var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
+var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
 var TimerMixin = require('react-timer-mixin');
 
 var CHAT_DURATION_IN_MINUTES = 0.25;
@@ -80,8 +86,8 @@ var User = React.createClass({
         let distance = this.props.currentUserLocationCoords && this.props.data && this.props.data.location && this.props.data.location.coordinates && this.calculateDistance(this.props.currentUserLocationCoords, [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
             _this = this;
 
-        this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
-        && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).off();
+        //this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
+        //&& (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).off();
 
         this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
         && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).on('value', snapshot => {
@@ -102,8 +108,8 @@ var User = React.createClass({
         let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
             _this = this;
 
-        nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
-        && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).off();
+        //nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
+        //&& (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).off();
 
         nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
         && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).on('value', snapshot => {
@@ -161,11 +167,11 @@ var User = React.createClass({
     },
 
     _getTimerValue(currentTimeInMs:number) {
-        if(!(this.state.expireTime && currentTimeInMs)) return -1;
+        if (!(this.state.expireTime && currentTimeInMs)) return -1;
 
-        let timerValInSeconds = Math.floor((this.state.expireTime-currentTimeInMs)/1000);
+        let timerValInSeconds = Math.floor((this.state.expireTime - currentTimeInMs) / 1000);
 
-        if(timerValInSeconds >= 0) return timerValInSeconds;
+        if (timerValInSeconds >= 0) return timerValInSeconds;
 
         let targetUserIDHashed = this.props.data.ventureId,
             currentUserIDHashed = this.props.currentUserIDHashed,
@@ -247,7 +253,7 @@ var User = React.createClass({
                         // probably not because if youre going to match with someone youll be in same timezone
 
                         let currentTime = new Date().getTime(),
-                            expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES*60*1000)).getTime();
+                            expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
 
                         chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
                         chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
@@ -289,47 +295,34 @@ var User = React.createClass({
     },
 
     _renderStatusIcon() {
-        var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
-        var DefaultMatchStatusIcon = require('../../Partials/Icons/MatchStatusIndicators/DefaultMatchStatusIcon');
-        var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
-        var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
-
         switch (this.state.status) {
             case 'sent':
                 return <SentRequestIcon
                     color='rgba(0,0,0,0.2)'
-                    onPress={() => this.handleMatchInteraction()}
+                    onPress={this.handleMatchInteraction}
                     style={{left: 10, bottom: 6}}
                     />
             case 'received':
                 return <ReceivedRequestIcon
                     color='rgba(0,0,0,0.2)'
-                    onPress={() => this.handleMatchInteraction()}
+                    onPress={this.handleMatchInteraction}
                     style={{left: 10,  bottom: 6}}
                     />
             case 'matched':
                 return <MatchSuccessIcon
                     color='rgba(0,0,0,0.2)'
-                    onPress={() => this.handleMatchInteraction()}
+                    onPress={this.handleMatchInteraction}
                     style={{left: 10,  bottom: 6}}
                     />
             default:
                 return <DefaultMatchStatusIcon
-                    onPress={() => this.handleMatchInteraction()}
+                    onPress={this.handleMatchInteraction}
                     style={{left: 10, bottom: 6}}
                     />
         }
     },
 
     render() {
-        var LinearGradient = require('react-native-linear-gradient');
-
-        // important to have dummy icon for alignment in current user bar
-        let dummyIcon = (
-            <TouchableOpacity
-                style={{width: 18 * 1.6, height: 18 * 1.6}}/>
-        );
-
         let profileModal = (
             <View style={styles.profileModalContainer}>
                 <View
@@ -389,14 +382,15 @@ var User = React.createClass({
                                     </View>
                                 </Image>
                                 <Text
-                                    style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
-                                <Text style={styles.activityPreference}>
+                                    style={[styles.distance]}>{this.state.distance ? this.state.distance + ' mi' : '      '}</Text>
+                                <Text style={[styles.activityPreference]}>
                                     {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title}
                                 </Text>
                                 <View>
                                     {!this.props.isCurrentUser ?
                                         <View style={{top: 10, right: width/25}}>{this._renderStatusIcon()}</View> :
-                                        <View>{dummyIcon}</View>}
+                                        <View style={{top: 10, right: width/25}}><BlankIcon
+                                            style={{left: 10, bottom: 6}}/></View>}
                                 </View>
                             </View>
                         </LinearGradient>
@@ -524,11 +518,14 @@ var UsersListPage = React.createClass({
             }, 1000);
 
             // decrease chat count when chat destroyed, only need this here once on users list and not in chats page
-            firebaseRef.child('chat_rooms').on('child_removed', function(oldChildSnapshot) {
-                if(oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(_this.props.ventureId)) {
+            firebaseRef.child('chat_rooms').on('child_removed', function (oldChildSnapshot) {
+                if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(_this.props.ventureId)) {
                     firebaseRef.child(`users/${_this.props.ventureId}/chatCount`).once('value', snapshot => {
-                        firebaseRef.child(`users/${_this.props.ventureId}/chatCount`).set(snapshot.val()-1);
+                        firebaseRef.child(`users/${_this.props.ventureId}/chatCount`).set(snapshot.val() - 1);
                     });
+
+                    // remove
+
                 }
             });
 
@@ -617,7 +614,7 @@ var UsersListPage = React.createClass({
         if (user.ventureId === this.state.currentUserVentureId) return <View />;
 
         if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return
-            <View />;
+        <View />;
 
         return <User currentTimeInMs={this.state.currentTimeInMs}
                      currentUserData={this.state.currentUserData}
@@ -739,7 +736,7 @@ var styles = StyleSheet.create({
     },
     loadingModalActivityIndicatorIOS: {
         height: 80,
-        bottom: height/40
+        bottom: height / 40
     },
     loadingModalFunFactText: {
         color: '#fff',
@@ -813,7 +810,7 @@ var styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-around',
-        paddingHorizontal: width/10
+        paddingHorizontal: width / 10
     },
     searchTextInput: {
         color: '#222',

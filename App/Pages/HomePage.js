@@ -103,19 +103,14 @@ var HomePage = React.createClass({
 
     mixins: [TimerMixin],
 
-    componentWillMount() {
-        //@hmm: wait for async storage account to update on login
-    },
 
-    componentDidMount(){
+    componentWillMount(){
         AsyncStorage.getItem('@AsyncStorage:Venture:account')
             .then((account:string) => {
                 account = JSON.parse(account);
 
                 if (account === null) {
-                    this.setTimeout(() => {
-                        this.navigateToLogin();
-                    }, 0);
+                    this.navigateToLogin();
                     return;
                 }
 
@@ -123,7 +118,6 @@ var HomePage = React.createClass({
 
                 let currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${account.ventureId}`),
                     trendingItemsRef = this.state.firebaseRef && this.state.firebaseRef.child('trending'),
-                    usersListRef = this.state.firebaseRef && this.state.firebaseRef.child('users'),
                     chatRoomsRef = this.state.firebaseRef && this.state.firebaseRef.child('chat_rooms'),
                     _this = this;
 
@@ -156,38 +150,6 @@ var HomePage = React.createClass({
                     snapshot.val() && _.each(snapshot.val(), (chatRoom) => {
                         if (chatRoom._id && chatRoom._id.indexOf(account.ventureId) > -1) {
                             chatRoomsRef.child(chatRoom._id).set(null);
-                        }
-                    });
-                });
-
-                // @hmm: at restart reset all chat expire times & chats
-
-                currentUserRef.child('match_requests').once('value', snapshot => {
-                    snapshot.val() && _.each(snapshot.val(), (match) => {
-                        if (match && match.expireTime) {
-                            currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
-                            usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
-                            // for each chat ended set their chat count to one less
-                            usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
-                                usersListRef.child(`${match._id}/chatCount`).set(snapshot.val()-1);
-                            });
-
-                        }
-                    });
-                    currentUserRef.child('chatCount').set(0);
-                });
-
-                // @hmm: at restart reset all event invite matches & chats
-
-                currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
-                    snapshot.val() && _.each(snapshot.val(), (match) => {
-                        if (match && match.timerVal) {
-                            currentUserRef.child(`event_invite_match_requests/${match._id}/timerVal`).set(null);
-                            usersListRef.child(`${match._id}/event_invite_match_requests/${account.ventureId}/timerVal`).set(null);
-                            usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
-                                usersListRef.child(`${match._id}/chatCount`).set(snapshot.val() - 1);
-                            });
-
                         }
                     });
                 });
@@ -261,12 +223,18 @@ var HomePage = React.createClass({
 
     _createTrendingItem(type, uri, i) {
         if (type === 'user') return (
-            <TouchableOpacity key={i} style={styles.trendingItem}>
+            <TouchableOpacity key={i} onPress={() => {
+                this._handleTrendingContentChange(' : ' + uri.substring(uri.lastIndexOf("/")+1,uri.lastIndexOf("%")))
+            }} style={styles.trendingItem}>
                 <Image
+                    onLoadEnd={() => {
+                        // reset trending content title to yalies when image loads
+                        this.setState({trendingContent: 'YALIES'})
+                    }}
                     style={styles.trendingUserImg}
                     source={{uri}}/>
             </TouchableOpacity>
-        )
+        );
 
         return (
             <TouchableOpacity key={i} onPress={() => {
@@ -323,8 +291,12 @@ var HomePage = React.createClass({
         }
     },
 
+    _handleTrendingContentChange(trendingContent) {
+        this.setState({trendingContent})
+    },
+
     navigateToLogin() {
-        this.props.navigator.push({title: 'Login', component: LoginPage});
+        this.props.navigator.replace({title: 'Login', component: LoginPage});
     },
 
     _onBlur() {

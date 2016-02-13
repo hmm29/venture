@@ -15,6 +15,7 @@
 var React = require('react-native');
 
 var {
+    AlertIOS,
     AsyncStorage,
     Image,
     LayoutAnimation,
@@ -28,7 +29,6 @@ var _ = require('lodash');
 var Dimensions = require('Dimensions');
 var FBLogin = require('react-native-facebook-login');
 var Firebase = require('firebase');
-var ModalBase = require('../Partials/Modals/Base/ModalBase');
 var sha256 = require('sha256');
 var Swiper = require('react-native-swiper');
 var TimerMixin = require('react-timer-mixin');
@@ -53,53 +53,23 @@ var getInitialAgeRangeLimits = (ageVal:number, lim:string) => {
 
 var hash = (msg:string) => sha256(sha256(sha256(msg)));
 
-var Button = React.createClass({
-    getInitialState() {
-        return {
-            active: false,
-        };
-    },
-
-    _onHighlight() {
-        this.setState({active: true});
-    },
-
-    _onUnhighlight() {
-        this.setState({active: false});
-    },
-
-    render() {
-        var colorStyle = {
-            color: this.state.active ? '#fff' : '#000',
-        };
-        return (
-            <TouchableHighlight
-                onHideUnderlay={this._onUnhighlight}
-                onPress={this.props.onPress}
-                onShowUnderlay={this._onHighlight}
-                style={[styles.button, this.props.style]}
-                underlayColor="#a9d9d4">
-                <Text style={[styles.buttonText, colorStyle]}>{this.props.children}</Text>
-            </TouchableHighlight>
-        );
-    }
-});
-
 var LoginPage = React.createClass({
     statics: {
         title: '<LoginPage/>',
         description: 'Log into the Venture App.'
     },
 
+    propTypes: {
+        navigator: React.PropTypes.object
+    },
+
     mixins: [TimerMixin],
 
     getInitialState() {
         return {
-            ageSelectionModal: null,
             asyncStorageAccountData: null,
             firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
             user: null,
-            ventureId: null
         }
     },
 
@@ -123,9 +93,60 @@ var LoginPage = React.createClass({
                     this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(17);
                     this._setAsyncStorageAccountData();
                 }
-                else if(ageRange.max === 20 && ageRange.min === 18) this.setState({ageSelectionModal: {visible: true, minAge: 18, maxAge: 20}})
-                else if (ageRange.min === 21) this.setState({ageSelectionModal: {visible: true, minAge: 21, maxAge: 25}});
-                else return -1;
+
+                else if(ageRange.max === 20 && ageRange.min === 18) {
+                    AlertIOS.alert(
+                        'Venture: Specify Your Age',
+                        'Venture uses age to give you the best experience with activity partners.',
+                        [
+                            {text: '18', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(18);
+                                this._setAsyncStorageAccountData();
+                            }},
+                            {text: '19', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(19);
+                                this._setAsyncStorageAccountData();
+                            }},
+                            {text: '20', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(20);
+                                this._setAsyncStorageAccountData();
+                            }}
+                        ]
+                    )
+                }
+
+                else if (ageRange.min === 21) {
+                    AlertIOS.alert(
+                        'Venture: Specify Your Age',
+                        'Venture uses age to give you the best experience with activity partners.',
+                        [
+                            {text: '21', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(21);
+                                this._setAsyncStorageAccountData();
+                            }},
+                            {text: '22', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(22);
+                                this._setAsyncStorageAccountData();
+                            }},
+                            {text: '23', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(23);
+                                this._setAsyncStorageAccountData();
+                            }},
+                            {text: '24', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(24);
+                                this._setAsyncStorageAccountData();
+                            }},
+                            {text: '25', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(25);
+                                this._setAsyncStorageAccountData();
+                            }},
+                            {text: '25+', onPress: () => {
+                                this.state.firebaseRef.child(`users/${ventureId}/age/value`).set('25+');
+                                this._setAsyncStorageAccountData();
+                            }}
+                        ]
+                    )
+                }
 
                 let newUserData = {
                     ventureId,
@@ -176,23 +197,10 @@ var LoginPage = React.createClass({
             .done();
     },
 
-    _createAgeSelectionModalItem(value) {
-        return (
-            <Button
-                onPress={() => {
-                            this.state.firebaseRef.child(`users/${this.state.ventureId}/age/value`).set(value);
-                            this._setAsyncStorageAccountData();
-                        }}
-                >
-                {value === 25 ? "25+" : value}
-            </Button>
-        )
-    },
-
     _navigateToHomePage() {
         // @hmm: MUST MUST MUST include HomePage require here
         var HomePage = require('../Pages/HomePage');
-
+        // from Home page means that blank home was shown and directed user to login
         this.props.navigator.replace({title: 'Home', component: HomePage})
     },
 
@@ -240,17 +248,6 @@ var LoginPage = React.createClass({
 
     render() {
         let _this = this;
-            //ageSelectionModal = (
-            //    <ModalBase
-            //        animated={true}
-            //        modalVisible={true}
-            //        transparent={false}>
-            //        <View style={styles.ageSelectionModalContent}>
-            //            {(_.range(this.state.ageSelectionModal.minAge, this.state.ageSelectionModal.maxAge+1)).map(this._createAgeSelectionModalItem)}
-            //            </View>
-            //    </ModalBase>
-            //);
-
         return (
             <View>
                 <Image>

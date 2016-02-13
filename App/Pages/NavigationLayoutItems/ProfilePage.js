@@ -78,6 +78,7 @@ var ProfilePage = React.createClass({
 
         let ventureId = this.state.ventureId,
             usersListRef = this.state.firebaseRef && this.state.firebaseRef.child('users'),
+            chatRoomsRef = this.state.firebaseRef && this.state.firebaseRef.child('chat_rooms'),
             currentUserRef = usersListRef && usersListRef.child(ventureId),
             loginStatusRef = currentUserRef && currentUserRef.child(`status/isOnline`);
 
@@ -89,10 +90,16 @@ var ProfilePage = React.createClass({
             usersListRef.once('value', snapshot => {
                 snapshot.val() && _.each(snapshot.val(), (user) => {
                     if (user.match_requests && user.match_requests[ventureId]) {
+                        if(user.match_requests[ventureId].chatRoomId) {
+                            chatRoomsRef.child(usersListRef.child(`${user.ventureId}/match_requests/${ventureId}/chatRoomId`)).set(null)
+                        }
                         usersListRef.child(`${user.ventureId}/match_requests/${ventureId}`).set(null);
                     }
 
                     if (user.event_invite_match_requests && user.event_invite_match_requests[ventureId]) {
+                        if(user.match_requests[ventureId].chatRoomId) {
+                            chatRoomsRef.child(usersListRef.child(`${user.ventureId}/match_requests/${ventureId}/chatRoomId`)).set(null)
+                        }
                         usersListRef.child(`${user.ventureId}/event_invite_match_requests/${ventureId}`).set(null);
                     }
                 });
@@ -109,7 +116,6 @@ var ProfilePage = React.createClass({
             // @hmm: slight defer to allow time for snapshot.val()
             this.setTimeout(() => {
                 AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
-                    .then(() => this._navigateToNextPage())
                     .catch(error => console.log(error.message))
                     .done();
             }, 0);

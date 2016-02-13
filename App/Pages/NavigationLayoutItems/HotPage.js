@@ -63,6 +63,7 @@ var HotPage = React.createClass({
             fadeAnim: new Animated.Value(0),
             firebaseRef: this.props.firebaseRef,
             showLoadingModal: false,
+            trendingUsers: 'YALIES',
             trendingItems: {},
             yalies: []
         };
@@ -131,9 +132,16 @@ var HotPage = React.createClass({
         if (type === 'user') {
 
             return (
-                    <TouchableOpacity key={i} style={styles.trendingItem}>
+                    <TouchableOpacity 
+                        key={i}
+                        onPress={() => {
+                            this._handleTrendingUsersChange(' : ' + uri.substring(uri.lastIndexOf("/")+1,uri.lastIndexOf("%")))
+                        }}
+                        style={styles.trendingItem}>
                         <Image
                             onLoadEnd={() => {
+                             // reset trending content title to yalies when image loads
+                             this.setState({trendingUsers: 'YALIES'});
 
                             if (i === this.state.yalies.length - 1) {
                                  this.setState({showLoadingModal: false})
@@ -161,13 +169,17 @@ var HotPage = React.createClass({
 
     },
 
+    _handleTrendingUsersChange(trendingUsers) {
+        this.setState({trendingUsers})
+    },
+
     render() {
         return (
             <View style={styles.container}>
                 {this._renderHeader()}
                 <View style={[styles.tabContent, {flex: 1}]}>
                     <View style={[styles.trendingItemsCarousel, {height: height / 5}]}>
-                        <Title>TRENDING <Text style={{color: '#ee964b'}}>YALIES</Text></Title>
+                        <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingUsers}</Text></Title>
                         <ScrollView
                             ref="trendingYaliesScrollView"
                             automaticallyAdjustContentInsets={false}

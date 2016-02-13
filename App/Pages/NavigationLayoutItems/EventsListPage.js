@@ -18,7 +18,6 @@ var {
     Animated,
     AsyncStorage,
     Image,
-    InteractionManager,
     LayoutAnimation,
     ListView,
     Navigator,
@@ -74,44 +73,51 @@ var hash = (msg:string) => sha256(msg);
 var User = React.createClass({
 
     propTypes: {
+        currentTime: React.PropTypes.number,
         currentUserLocationCoords: React.PropTypes.array,
         currentUserData: React.PropTypes.object,
         data: React.PropTypes.object,
+        isCurrentUser: React.PropTypes.func,
         navigator: React.PropTypes.object
     },
 
     getInitialState() {
         return {
             dir: 'row',
-            status: '',
-            timerVal: ''
+            expireTime: ''
         }
     },
 
     componentWillMount() {
-        let distance = this.calculateDistance(this.props.currentUserLocationCoords, [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
+        let distance = this.props.currentUserLocationCoords && this.props.data && this.props.data.location && this.props.data.location.coordinates && this.calculateDistance(this.props.currentUserLocationCoords, [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
             _this = this;
 
         this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
         && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId).on('value', snapshot => {
             _this.setState({
+                chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                 distance,
                 status: snapshot.val() && snapshot.val().status,
-                timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                expireTime: snapshot.val() && snapshot.val().expireTime
             });
         });
     },
 
+    componentDidMount() {
+        this.refs.attendee.fadeInUp(600);
+    },
+
     componentWillReceiveProps(nextProps) {
-        let distance = this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
+        let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
             _this = this;
 
         nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`).child(nextProps.data.ventureId)
         && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`).child(nextProps.data.ventureId).on('value', snapshot => {
             _this.setState({
+                chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                 distance,
                 status: snapshot.val() && snapshot.val().status,
-                timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                expireTime: snapshot.val() && snapshot.val().expireTime
             });
         });
     },
@@ -154,9 +160,27 @@ var User = React.createClass({
         }
     },
 
-    _getTimerValue(numOfMilliseconds:number) {
-        var date = new Date(numOfMilliseconds);
-        return date.getMinutes() + 'm ' + date.getSeconds() + 's';
+    _getTimerValue(currentTimeInMs:number) {
+        if(!(this.state.expireTime && currentTimeInMs)) return -1;
+
+        let timerValInSeconds = Math.floor((this.state.expireTime-currentTimeInMs)/1000);
+
+        if(timerValInSeconds >= 0) return timerValInSeconds;
+
+        let targetUserIDHashed = this.props.data.ventureId,
+            currentUserIDHashed = this.props.currentUserIDHashed,
+            firebaseRef = this.props.firebaseRef,
+            targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
+            currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests');
+
+        // end match interactions
+        targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
+        currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+
+        this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
+
+        return -1;
+
     },
 
     handleMatchInteraction() {
@@ -197,7 +221,7 @@ var User = React.createClass({
 
         else if (this.state.status === 'matched') {
             let chatRoomActivityPreferenceTitle,
-                distance = 0.7 + ' mi',
+                distance = this.state.distance + 'mi',
                 _id;
 
             currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
@@ -210,13 +234,24 @@ var User = React.createClass({
                     chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
                 }
 
+                // @hmm put chat ids in match request object so overlays know which chat to destroy
+                currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
+                targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
+
                 firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
                     let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
 
                     if (snapshot.val() === null) {
+                        // TODO: in the future should be able to account for timezone differences?
+                        // probably not because if youre going to match with someone youll be in same timezone
+
+                        let currentTime = new Date().getTime(),
+                            expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES*60*1000)).getTime();
+
                         chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
-                        chatRoomRef.child('timer').set({value: 10000}); // @hmm: set timer
+                        chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
+                        chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
                         chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed).set(this.props.currentUserData.activityPreference.title);
                         chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed).set(this.props.data.activityPreference.title);
                     }
@@ -258,28 +293,33 @@ var User = React.createClass({
             case 'sent':
                 return <SentRequestIcon
                     color='rgba(0,0,0,0.2)'
-                    onPress={this.handleMatchInteraction}/>
+                    onPress={this.handleMatchInteraction}
+                    style={{left: 10, bottom: 6}}
+                    />
             case 'received':
                 return <ReceivedRequestIcon
                     color='rgba(0,0,0,0.2)'
-                    onPress={this.handleMatchInteraction}/>
+                    onPress={this.handleMatchInteraction}
+                    style={{left: 10, bottom: 6}}
+                    />
             case 'matched':
                 return <MatchSuccessIcon
                     color='rgba(0,0,0,0.2)'
-                    onPress={this.handleMatchInteraction}/>
+                    onPress={this.handleMatchInteraction}
+                    style={{left: 10, bottom: 6}}
+                    />
             default:
                 return <DefaultMatchStatusIcon
                     color='rgba(0,0,0,0.2)'
-                    direction='right'
                     onPress={this.handleMatchInteraction}
-                    size={18}
-                    style={{left: 8}}/>
+                    style={{left: 10, bottom: 6}}
+                    />
         }
     },
 
     render() {
         let profileModal = (
-            <View style={styles.profileModalContainer}>
+            <View style={[styles.profileModalContainer, {alignSelf: 'center'}]}>
                 <View
                     style={[styles.profileModal, {backgroundColor: this._getSecondaryStatusColor()}]}>
                     <Image
@@ -295,14 +335,15 @@ var User = React.createClass({
                         </Text>
                     </Text>
                     <Text
-                        style={[styles.profileModalSectionTitle, {textAlign: 'center'}]}>{this.props.eventLogistics}</Text>
+                        style={[styles.profileModalSectionTitle, {alignSelf: 'center'}]}>{this.props.eventLogistics}</Text>
                     <Text
-                        style={styles.profileModalBio}>{this.props.data && this.props.data.bio}</Text>
+                        style={[styles.profileModalBio, {alignSelf: 'center'}]}>{this.props.data && this.props.data.bio}</Text>
                 </View>
             </View>
         );
 
         return (
+            <Animatable.View ref="attendee">
             <TouchableHighlight
                 underlayColor={WHITE_HEX_CODE}
                 activeOpacity={0.3}
@@ -316,26 +357,30 @@ var User = React.createClass({
                         end={[1,1]}
                         locations={[0.3,0.99,1.0]}
                         style={styles.container}>
+                        <View style={styles.rightContainer}>
                         <Image
                             onPress={this._onPressItem}
                             source={{uri: this.props.data && this.props.data.picture}}
                             style={[styles.thumbnail]}>
-                            <View style={(this.state.timerVal ? styles.timerValOverlay : {})}>
-                                <Text style={[styles.timerValText, (this.state.timerVal && this.state.timerVal[0] === '0' ? {color: '#F12A00'} :{})]}>{this.state.timerVal}</Text>
+                            <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
+                                <Text
+                                    style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
+                                    {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
+                                </Text>
                             </View>
                         </Image>
-                        <View style={styles.rightContainer}>
                             <Text
                                 style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
                             <Text style={styles.eventTitle}>
                                 {this.props.eventTitle} ?
                             </Text>
-                            <View style={{top: 10, right: 10}}>{this._renderStatusIcon()}</View>
+                            <View style={{top: 10, right: width/25}}>{this._renderStatusIcon()}</View>
                         </View>
                     </LinearGradient>
                     {this.state.dir === 'column' ? profileModal : <View />}
                 </View>
             </TouchableHighlight>
+            </Animatable.View>
         );
     }
 });
@@ -354,22 +399,23 @@ var AttendeeList = React.createClass({
     },
 
     componentWillMount() {
-        InteractionManager.runAfterInteractions(() => {
             let attendeesListRef = this.props.eventsListRef && this.props.eventData && this.props.eventData.id
                     && this.props.eventsListRef.child(`${this.props.eventData.id}/attendees`),
                 usersListRef = this.props.firebaseRef && this.props.firebaseRef.child('users'),
                 _this = this;
 
             attendeesListRef && attendeesListRef.on('value', snapshot => {
-                InteractionManager.runAfterInteractions(() => {
                     _this.updateRows(_.cloneDeep(_.values(snapshot.val())));
                     _this.setState({rows: _.cloneDeep(_.values(snapshot.val())), attendeesListRef, usersListRef});
-                });
-
             });
 
             this.bindAsArray(usersListRef, 'rows');
-        });
+    },
+
+    componentDidMount() {
+        this._handle = this.setInterval(() => {
+            this.setState({currentTimeInMs: (new Date()).getTime()})
+        }, 1000);
     },
 
     componentWillUnmount() {
@@ -384,7 +430,7 @@ var AttendeeList = React.createClass({
     _renderHeader() {
         // make sure to have three children in Header with text in center
         return (
-            <Header containerStyle={{height: height/30}}>
+            <Header>
                 <View />
                 <Text>WHO'S GOING TO : <Text style={{color: '#F06449'}}>{this.props.eventData && this.props.eventData.title}</Text></Text>
                 <CloseIcon style={{bottom: height / 15, left: width / 18}} onPress={this.props.closeAttendeeListModal} />
@@ -396,7 +442,8 @@ var AttendeeList = React.createClass({
     _renderUser(user:Object, sectionID:number, rowID:number) {
         // if (user.ventureId === this.props.ventureId) return <View />;
 
-        return <User currentUserData={this.props.currentUserData}
+        return <User currentTimeInMs={this.state.currentTimeInMs}
+                     currentUserData={this.props.currentUserData}
                      currentUserIDHashed={this.props.ventureId}
                      currentUserLocationCoords={this.props.currentUserLocationCoords}
                      data={user}
@@ -517,8 +564,8 @@ var Event = React.createClass({
 
         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
         this.setState({dir: this.state.dir === 'row' ? 'column' : 'row'});
-        // @hmm: set to selected event for guest list
-        // have to press item to access guest list so makes sense to change selected event here
+        // @hmm: set to selected event for attendee list
+        // have to press item to access attendee list so makes sense to change selected event here
     },
 
     _renderEventAttendanceStatusIcon() {
@@ -619,7 +666,6 @@ var EventsListPage = React.createClass({
     },
 
     componentWillMount() {
-        InteractionManager.runAfterInteractions(() => {
             let eventsListRef = this.state.eventsListRef,
                 usersListRef = this.state.usersListRef,
                 _this = this;
@@ -638,7 +684,6 @@ var EventsListPage = React.createClass({
                 _this.setState({currentUserData: snapshot.val()});
             });
 
-        });
     },
 
     componentDidMount() {
@@ -669,9 +714,7 @@ var EventsListPage = React.createClass({
     },
 
     _handleShowLoadingModal(showLoadingModal: boolean) {
-        InteractionManager.runAfterInteractions(() => {
             this.setState({showLoadingModal});
-        });
     },
 
     _navigateToHome() {
@@ -693,6 +736,7 @@ var EventsListPage = React.createClass({
 
 
     _renderEvent(event:Object, sectionID:number, rowID:number) {
+        // dont render if not visible :), little optimization
         if(this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return <View />;
 
         return <Event currentUserData={this.state.currentUserData}
@@ -852,7 +896,7 @@ var styles = StyleSheet.create({
         justifyContent: 'center'
     },
     profileModalContainer: {
-        backgroundColor: WHITE_HEX_CODE
+        backgroundColor: WHITE_HEX_CODE,
     },
     profileModalActivityInfo: {
         fontFamily: 'AvenirNextCondensed-Medium'
@@ -888,7 +932,7 @@ var styles = StyleSheet.create({
     rightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start'
+        justifyContent: 'center'
     },
     thumbnail: {
         width: THUMBNAIL_SIZE,

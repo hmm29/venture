@@ -302,7 +302,6 @@ var EditProfilePage = React.createClass({
                             <Text style={styles.saveButtonText}>S A V E</Text>
                         </TouchableOpacity>
 
-
                     </Image>
                 </View>
             </View>

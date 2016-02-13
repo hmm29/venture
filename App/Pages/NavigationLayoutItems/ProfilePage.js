@@ -26,6 +26,8 @@ var {
     } = React;
 
 var _ = require('lodash');
+var Animatable = require('react-native-animatable');
+var BrandLogo = require('../../Partials/BrandLogo');
 var Dimensions = require('Dimensions');
 var EditProfilePageIcon = require('../../Partials/Icons/NavigationButtons/EditProfilePageIcon');
 var EditProfilePage = require('../EditProfilePage');
@@ -34,12 +36,14 @@ var Firebase = require('firebase');
 var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 var LoginPage = require('../LoginPage');
-var ModalBase = require('../../Partials/ModalBase');
+var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
 
 var {height, width} = Dimensions.get('window');
+var LOGO_WIDTH = 200;
+var LOGO_HEIGHT = 120;
 
 String.prototype.capitalize = function () {
     return this.charAt(0).toUpperCase() + this.slice(1);
@@ -118,12 +122,12 @@ var ProfilePage = React.createClass({
             <Header containerStyle={{backgroundColor: '#040A19'}}>
                 <HomePageIcon onPress={() => {
                         this.props.navigator.popToTop();
-                    }} style={{right: 14}}/>
+                    }}/>
                 <Text>MY PROFILE</Text>
                 <EditProfilePageIcon
                     onPress={() => {
                           this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,  passProps: {firebaseRef: this.state.firebaseRef, ventureId: this.state.ventureId}});
-                    }} style={{left: 14}}/>
+                    }}/>
             </Header>
         )
     },
@@ -143,17 +147,16 @@ var ProfilePage = React.createClass({
                     <View style={styles.loginContainer}>
                         <View>
                             { user && <Photo user={user}/> }
-                            { user && ventureId && <Info firebaseRef={this.state.firebaseRef} ventureId={ventureId} user={user}/>}
+                            { user && ventureId &&
+                            <Info firebaseRef={this.state.firebaseRef} ventureId={ventureId} user={user}/>}
                         </View>
 
                         <FBLogin style={styles.FBLoginButton}
                                  permissions={['email', 'user_friends']}
                                  onLogout={function(){
-
-                                    _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
-
                                     if(user && ventureId) _this._updateUserLoginStatus(false);
                                     _this.setState({user : null, ventureId: null});
+                                    _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
 
                                      AsyncStorage.multiRemove(['@AsyncStorage:Venture:account', '@AsyncStorage:Venture:currentUser:friendsAPICallURL', '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'])
                                         .catch(error => console.log(error.message))
@@ -202,9 +205,10 @@ var Photo = React.createClass({
     render() {
         if (this.props.user.userId) {
             return (
-                <View style={styles.photoContent}>
-                    <Image
-                        style={
+                <Animatable.View ref="currentUserPhoto" style={styles.photoContent}>
+                    <TouchableOpacity onPress={() => this.refs.currentUserPhoto.pulse(800)}>
+                        <Image
+                            style={
                     {
                       height: width/1.8,
                       width: width/1.8,
@@ -212,9 +216,10 @@ var Photo = React.createClass({
                       bottom: 20
                     }
                   }
-                        source={{uri: `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user.userId}.jpg`}}
-                        />
-                </View>
+                            source={{uri: `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user.userId}.jpg`}}
+                            />
+                    </TouchableOpacity>
+                </Animatable.View>
             );
         }
     }
@@ -232,9 +237,12 @@ var Info = React.createClass({
             info: null,
             firebaseRef: this.props.firebaseRef,
             firebaseCurrentUserDataRef: null,
-            renderLoadingView: false
+            showLoadingModal: false
         };
     },
+
+    mixins: [TimerMixin],
+
     componentWillMount() {
         let _this = this,
             firebaseCurrentUserDataRef = this.state.firebaseRef.child(`users/${this.props.ventureId}`);
@@ -242,7 +250,7 @@ var Info = React.createClass({
         firebaseCurrentUserDataRef.on('value', snapshot =>
                 _this.setState({
                     firebaseCurrentUserDataRef,
-                    renderLoadingView: false,
+                    showLoadingModal: false,
                     info: {
                         firstName: snapshot.val() && snapshot.val().firstName,
                         gender: snapshot.val() && snapshot.val().gender,
@@ -253,43 +261,51 @@ var Info = React.createClass({
         );
     },
 
+    componentDidMount() {
+        this.setTimeout(() => {
+            if(_.isEmpty(this.state.info)) this.setState({showLoadingModal: true});
+        }, 1000);
+    },
+
     componentWillUnmount() {
         this.state.firebaseCurrentUserDataRef && this.state.firebaseCurrentUserDataRef.off();
     },
 
     render() {
-        if (this.state.renderLoadingView) {
-            return this._renderLoadingView();
-        }
-
         let info = this.state.info;
 
         return (
-            <View style={styles.infoContent}>
-                <Text
-                    style={[styles.infoText, styles.infoTextNameAge]}>{ info && (info.firstName + ', ') } { info && info.age && info.age.value }</Text>
-                <Text
-                    style={[styles.infoText, styles.infoTextGender]}>{ info && info.gender && info.gender.capitalize() }</Text>
-                <Text style={[styles.infoText, styles.infoTextBio]}>{ info && info.bio }</Text>
-            </View>
-        );
-    },
-
-    _renderLoadingView() {
-        return (
-            <ModalBase
-                animated={true}
-                modalVisible={true}
-                transparent={false}>
-                <View style={{alignSelf: 'center', backgroundColor: 'green'}}>
-                    <Text style={{color: '#fff'}}>Loading...</Text>
-                    <ActivityIndicatorIOS
-                        color='#eee'
-                        animating={true}
-                        style={styles.loadingViewActivityIndicatorIOS}
-                        size="small"/>
+            <View>
+                <View style={styles.infoContent}>
+                    <Text
+                        style={[styles.infoText, styles.infoTextNameAge]}>{ info && (info.firstName + ', ') } { info && info.age && info.age.value }</Text>
+                    <Text
+                        style={[styles.infoText, styles.infoTextGender]}>{ info && info.gender && info.gender.capitalize() }</Text>
+                    <Text style={[styles.infoText, styles.infoTextBio]}>{ info && info.bio }</Text>
                 </View>
-            </ModalBase>
+                <ModalBase
+                    modalStyle={styles.modalStyle}
+                    animated={true}
+                    modalVisible={this.state.showLoadingModal}
+                    transparent={false}>
+                    <View style={styles.modalView}>
+                        <BrandLogo
+                            logoContainerStyle={styles.logoContainerStyle}
+                            logoStyle={styles.logoStyle}/>
+                        <ActivityIndicatorIOS
+                            color='#fff'
+                            animating={this.state.animating}
+                            style={styles.loadingModalActivityIndicatorIOS}
+                            size='small'/>
+                        <TouchableOpacity activeOpacity={0.8}>
+                            <Text
+                                style={styles.loadingModalFunFactText}>
+                                <Text style={styles.loadingModalFunFactTextTitle}>Did You Know ?</Text>
+                                {'\n\n'} GHeav makes almost three hundred Bacon, Egg, &amp; Cheeses every day.</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ModalBase>
+            </View>
         );
     }
 });
@@ -322,15 +338,41 @@ const styles = StyleSheet.create({
     infoTextNameAge: {
         fontSize: 24
     },
-    loadingViewActivityIndicatorIOS: {
+    loadingModalActivityIndicatorIOS: {
         height: 80,
-        alignSelf: 'center'
+        bottom: height / 40
     },
-    loadingViewContainer: {
+    loadingModalFunFactText: {
+        color: '#fff',
+        fontFamily: 'AvenirNextCondensed-Medium',
+        textAlign: 'center',
+        fontSize: 18,
+        alignSelf: 'center',
+        width: width / 1.4,
+        backgroundColor: 'transparent',
+        padding: width / 15,
+        borderRadius: width / 10
+    },
+    loadingModalFunFactTextTitle: {
+        fontSize: height / 30
+    },
+    loadingModalStyle: {
+        backgroundColor: '#02030F'
+    },
+    logoContainerStyle: {
+        marginHorizontal: (width - LOGO_WIDTH) / 2
+    },
+    logoStyle: {
+        width: LOGO_WIDTH,
+        height: LOGO_HEIGHT
+    },
+    modalStyle: {
+        backgroundColor: '#02030F'
+    },
+    modalView: {
         flex: 1,
-        alignItems: 'center',
-        width,
-        height
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     loginContainer: {
         alignItems: 'center',

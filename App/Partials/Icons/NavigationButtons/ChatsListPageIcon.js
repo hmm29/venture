@@ -20,11 +20,13 @@ import React, {
     View
 } from 'react-native';
 
+import Animatable from 'react-native-animatable';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-const SIZE = 30;
+const SIZE = 34;
 
-type Props = {
+type
+Props = {
     color: React.PropTypes.string,
     onPress: React.PropTypes.func.isRequired,
     size: React.PropTypes.number,
@@ -35,28 +37,34 @@ class ChatsListPageIcon extends Component {
     constructor(props:Props) {
         super(props);
         this.state = {};
+    }
+
+    componentDidMount() {
+        this.refs.chatsListPageIcon.fadeInDown(900);
     };
 
     render() {
         return (
-            <TouchableOpacity
-                activeOpacity={0.3}
-                onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
-                <Icon
-                    name="ios-chatboxes"
-                    size={this.props.size || SIZE}
-                    color={this.props.color || '#ccc'}
-                    style={{width: (this.props.size || SIZE) * 1.16, height: (this.props.size || SIZE) * 1.16}}
-                    />
-            </TouchableOpacity>
+            <Animatable.View ref="chatsListPageIcon">
+                <TouchableOpacity
+                    activeOpacity={0.3}
+                    onPress={this.props.onPress}
+                    style={[this.props.style, {width: (this.props.size || SIZE) * 2.48, height: (this.props.size || SIZE) * 2.48, justifyContent: 'center', alignItems: 'flex-end'}]}>
+                    <Icon
+                        name="ios-chatboxes"
+                        size={this.props.size || SIZE}
+                        color={this.props.color || 'rgba(255,255,255,0.4'}
+                        iconStyle={[styles.icon]}
+                        />
+                </TouchableOpacity>
+            </Animatable.View>
         );
     }
 }
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 1.0,
+        opacity: 0.6
     }
 });
 

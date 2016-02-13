@@ -22,10 +22,16 @@ import React, {
 
 import Icon from 'react-native-vector-icons/Ionicons';
 
-type Props = {
+const SIZE = 32; // same as DynamicTimeSelectionIcon
+
+type
+Props = {
     selected: React.PropTypes.bool.isRequired,
+    caption: React.PropTypes.string,
     color: React.PropTypes.string,
-    onPress: React.PropTypes.func,
+    onPress: React.PropTypes.func.isRequired,
+    captionStyle: View.propTypes.style,
+    showChevronWhenDisabled: React.PropTypes.array,
     size: React.PropTypes.number,
     style: View.propTypes.style
 };
@@ -33,31 +39,43 @@ type Props = {
 class DynamicCheckBoxIcon extends Component {
     constructor(props:Props) {
         super(props);
-        this.state = {selected: props.selected};
-    };
+        this.state = {};
+    }
+
+;
 
     render() {
         return (
-            <TouchableOpacity
-                activeOpacity={0.3}
-                onPress={() => {
+            <View style={styles.container}>
+                <TouchableOpacity
+                    activeOpacity={0.3}
+                    onPress={() => {
                     this.props.onPress();
-                    this.setState({selected: !this.state.selected});
                 }}
-                style={[this.props.style, styles.icon]}>
-                <Icon
-                    name={this.state.selected ? "checkmark-circled" : "record"}
-                    size={this.props.size || 25}
-                    color={this.props.color || '#ccc'}
-                    />
-            </TouchableOpacity>
+                    style={[this.props.style, styles.iconTouchableOpacity]}>
+                    <Icon
+                        name={this.props.selected ? "checkmark-circled" : (this.props.showChevronWhenDisabled && !!this.props.showChevronWhenDisabled[0] ? "ios-arrow-"+(this.props.showChevronWhenDisabled && this.props.showChevronWhenDisabled[1])  : "record")}
+                        size={this.props.size || SIZE}
+                        color={this.props.color || '#ccc'}
+                        iconStyle={[{width: (this.props.size || SIZE) * 1.14, height: (this.props.size || SIZE) * 1.14, alignSelf: 'center'}]}
+                        />
+                </TouchableOpacity>
+                <Text style={[styles.caption, this.props.captionStyle]}>{this.props.caption}</Text>
+            </View>
         );
     }
 }
 
 const styles = StyleSheet.create({
-    icon: {
-        opacity: 1.0
+    container: {
+        flex: 1,
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    caption: {
+        fontSize: 14,
+        fontWeight: '500'
     }
 });
 

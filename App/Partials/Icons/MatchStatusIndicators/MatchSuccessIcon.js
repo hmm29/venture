@@ -20,6 +20,8 @@ import React, {
     View
 } from 'react-native';
 
+const SIZE = 25;
+
 import Icon from 'react-native-vector-icons/Entypo';
 
 type Props = {
@@ -40,12 +42,12 @@ class MatchSuccessIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
+                style={[this.props.style]}>
                 <Icon
                     name="chat"
-                    size={this.props.size || 25}
+                    size={this.props.size || SIZE}
                     color={this.props.color || 'rgba(0,0,0,0.2)'}
-                    style={{width: (this.props.size || 25) * 1.16, height: (this.props.size || 25) * 1.16}}
+                    iconStyle={[{width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18}, styles.icon]}
                     />
             </TouchableOpacity>
         );

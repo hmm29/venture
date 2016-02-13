@@ -31,6 +31,7 @@ var {
     } = React;
 
 var _ = require('lodash');
+var Animatable = require('react-native-animatable');
 var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
 var ChatPage = require('../ChatPage');
 var DynamicCheckBoxIcon = require('../../Partials/Icons/DynamicCheckBoxIcon');
@@ -45,7 +46,7 @@ var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon'
 var LinearGradient = require('react-native-linear-gradient');
 var BrandLogo = require('../../Partials/BrandLogo');
 var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
-var ModalBase = require('../../Partials/ModalBase');
+var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
 var sha256 = require('sha256');
@@ -381,18 +382,19 @@ var AttendeeList = React.createClass({
     },
 
     _renderHeader() {
+        // make sure to have three children in Header with text in center
         return (
-            <Header>
+            <Header containerStyle={{height: height/30}}>
                 <View />
                 <Text>WHO'S GOING TO : <Text style={{color: '#F06449'}}>{this.props.eventData && this.props.eventData.title}</Text></Text>
-                <CloseIcon style={{bottom: height / 15, left: width / 18}} size={28} onPress={this.props.closeAttendeeListModal} />
+                <CloseIcon style={{bottom: height / 15, left: width / 18}} onPress={this.props.closeAttendeeListModal} />
             </Header>
         )
     },
 
 
     _renderUser(user:Object, sectionID:number, rowID:number) {
-        if (user.ventureId === this.props.ventureId) return <View />;
+        // if (user.ventureId === this.props.ventureId) return <View />;
 
         return <User currentUserData={this.props.currentUserData}
                      currentUserIDHashed={this.props.ventureId}
@@ -407,7 +409,7 @@ var AttendeeList = React.createClass({
 
     render() {
         return (
-            <View style={styles.guestListBaseContainer}>
+            <View style={styles.attendeeListBaseContainer}>
                 {this._renderHeader()}
                 <ListView
                     dataSource={this.state.dataSource}
@@ -439,6 +441,10 @@ var Event = React.createClass({
             else _this.setState({status: 'notAttending'});
         });
 
+    },
+
+    componentDidMount() {
+        this.refs.event.fadeInUp(600);
     },
 
     componentWillReceiveProps(nextProps) {
@@ -516,23 +522,15 @@ var Event = React.createClass({
     },
 
     _renderEventAttendanceStatusIcon() {
-        switch (this.state.status) {
-            case 'attending':
-                return <DynamicCheckBoxIcon
-                    active={true}
+                return (
+                    <DynamicCheckBoxIcon
+                    size={25}
+                    selected={this.state.status === 'attending'}
+                    showChevronWhenDisabled={[true, 'right']}
                     onPress={this.handleEventInteraction}
-                    size={26}
-                    style={{borderRadius: 28, top: 1, right: height / 90}}
-                    />;
-            default:
-                return <DefaultMatchStatusIcon
-                    color='rgba(0,0,0,0.8)'
-                    direction='right'
-                    onPress={this.handleEventInteraction}
-                    size={14}
-                    style={{backgroundColor: 'rgba(255,255,255,0.9)', width: 22, height: 22, marginHorizontal: 20, borderRadius: 11, justifyContent: 'center', alignItems: 'center', top: 8, left: height / 90}}
+                    style={styles.eventAttendanceStatusIcon}
                     />
-        }
+            );
     },
 
     render() {
@@ -550,12 +548,13 @@ var Event = React.createClass({
 
                      <TouchableOpacity onPress={() => {
                      this.props.openAttendeeListModal();
-                     }} style={{backgroundColor: 'rgba(0,0,0,0.001)'}}><Text style={{color: '#3F7CFF', fontFamily: 'AvenirNextCondensed-Medium', fontSize: 20, paddingHorizontal: 40, paddingBottoml: 10}}>WHO'S GOING?</Text></TouchableOpacity>
+                     }} style={{backgroundColor: 'rgba(0,0,0,0.001)'}}><Text style={{color: '#3F7CFF', fontFamily: 'AvenirNextCondensed-Medium', fontSize: 20, paddingHorizontal: 40, paddingBottom: 10}}>WHO'S GOING?</Text></TouchableOpacity>
                 </View>
             </View>
         );
 
         return (
+            <Animatable.View ref="event">
             <TouchableHighlight
                 underlayColor={WHITE_HEX_CODE}
                 activeOpacity={0.9}
@@ -570,6 +569,8 @@ var Event = React.createClass({
                         locations={[0.3,0.99,1.0]}
                         style={styles.container}>
                         <Image
+                            onLoad={() => {this.props.handleShowLoadingModal(false);
+                            }}
                             source={{uri: this.props.data && this.props.data.event_img}}
                             style={{resizeMode: 'cover', height: THUMBNAIL_SIZE * 2, flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'space-between', alignItems: 'center'}}>
                             <View
@@ -579,13 +580,14 @@ var Event = React.createClass({
                             </View>
                             <View style={[styles.rightContainer, {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}]}>
                                 <Text style={styles.eventTitleBanner}>{this.props.data && this.props.data.title && this.props.data.title.toUpperCase()}</Text>
-                                <View style={{position: 'absolute', right: width/10}}>{/* this._renderEventAttendanceStatusIcon() */}</View>
+                                <View style={{position: 'absolute', right: width/10}}>{this._renderEventAttendanceStatusIcon()}</View>
                             </View>
                         </Image>
                     </LinearGradient>
                     {this.state.dir === 'column' ? profileModal: <View />}
                 </View>
             </TouchableHighlight>
+                </Animatable.View>
         );
     }
 });
@@ -610,7 +612,7 @@ var EventsListPage = React.createClass({
             eventsRows: [],
             selectedEvent: null,
             showAttendeeListModal: false,
-            showLoadingModal: false,
+            showLoadingModal: false, // must be false first
             userRows: [],
             usersListRef
         };
@@ -639,6 +641,13 @@ var EventsListPage = React.createClass({
         });
     },
 
+    componentDidMount() {
+        this.setTimeout(() => {
+            // if no rows in users list being recognized, show laoding modal till they are
+            if (_.isEmpty(this.state.eventsRows)) this.setState({showLoadingModal: true});
+        }, 1000);
+    },
+
     componentWillUnmount() {
         let eventsListRef = this.state.eventsListRef,
             usersListRef = this.state.usersListRef;
@@ -659,24 +668,23 @@ var EventsListPage = React.createClass({
         this.setState({selectedEvent});
     },
 
+    _handleShowLoadingModal(showLoadingModal: boolean) {
+        InteractionManager.runAfterInteractions(() => {
+            this.setState({showLoadingModal});
+        });
+    },
+
     _navigateToHome() {
         this.props.navigator.popToTop();
     },
 
     updateRows(eventsRows:Array) {
         this.setState({dataSource: this.state.dataSource.cloneWithRows(eventsRows)});
-        InteractionManager.runAfterInteractions(() => {
-            this.setState({showLoadingModal: false});
-        })
     },
     _renderHeader() {
-        this.setTimeout(() => {
-            if(_.isEmpty(this.state.eventsRows)) this.setState({showLoadingModal: true});
-        }, 400);
-
         return (
             <Header containerStyle={{position: 'relative'}}>
-                <HomePageIcon onPress={() => this._navigateToHome()} style={{right: 14}}/>
+                <HomePageIcon onPress={() => this._navigateToHome()}/>
                 <Text>EVENTS</Text>
                 <View />
             </Header>
@@ -693,6 +701,7 @@ var EventsListPage = React.createClass({
                       eventsListRef={this.state.eventsListRef}
                       firebaseRef={this.state.firebaseRef}
                       handleSelectedEventStateChange={this._handleSelectedEventStateChange}
+                      handleShowLoadingModal={this._handleShowLoadingModal}
                       openAttendeeListModal={this._openAttendeeListModal}
                       navigator={this.props.navigator}
                       usersListRef={this.state.usersListRef}
@@ -738,7 +747,7 @@ var EventsListPage = React.createClass({
                 </ModalBase>
                 <ModalBase
                     animated={true}
-                    modalStyle={styles.modalStyle}
+                    modalStyle={styles.attendeeModalStyle}
                     modalVisible={this.state.showAttendeeListModal}>
                     <View>
                         {this.state.selectedEvent ?
@@ -759,6 +768,25 @@ var EventsListPage = React.createClass({
 });
 
 var styles = StyleSheet.create({
+    attendeeListBaseContainer: {
+        flex: 1,
+        backgroundColor: '#040A19',
+        paddingTop: height / 18
+    },
+    attendeeModalStyle: {
+        backgroundColor: '#02030F',
+        justifyContent: 'flex-start'
+    },
+    eventAttendanceStatusIcon: {
+        width: 22,
+        height: 22,
+        marginHorizontal: 20,
+        borderRadius: 11,
+        justifyContent: 'center',
+        alignItems: 'center',
+        top: 10,
+        left: height / 90
+    },
     eventThumbnail: {
         width: height / 10,
         height: height / 10,
@@ -783,7 +811,8 @@ var styles = StyleSheet.create({
         right: width / 30
     },
     loadingModalActivityIndicatorIOS: {
-        height: 80
+        height: 80,
+        bottom: height/40
     },
     loadingModalFunFactText: {
         color: '#fff',
@@ -810,7 +839,7 @@ var styles = StyleSheet.create({
         height: LOGO_HEIGHT
     },
     modalStyle: {
-        backgroundColor: '#02030F'
+        backgroundColor: '#02030F',
     },
     modalView: {
         flex: 1,
@@ -886,11 +915,6 @@ var styles = StyleSheet.create({
     userRow: {
         flex: 1,
         backgroundColor: '#fefefb'
-    },
-    guestListBaseContainer: {
-        flex: 1,
-        backgroundColor: '#040A19',
-        paddingTop: height / 18
     },
     eventTitle: {
         width: 154,

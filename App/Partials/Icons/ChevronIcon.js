@@ -22,7 +22,7 @@ import React, {
 
 import Icon from 'react-native-vector-icons/Entypo';
 
-const DIRECTIONS = ['up','down','right','left'];
+const DIRECTIONS = ['up','down','right','left'], SIZE = 25;
 
 type Props = {
     color: React.PropTypes.string,
@@ -43,11 +43,12 @@ class ChevronIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
+                style={[this.props.style, {width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18, alignItems: 'center'}]}>
                 <Icon
                     name={"chevron-thin-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ? this.props.direction : 'up')}
-                    size={this.props.size || 25}
+                    size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
+                    iconStyle={[styles.icon]}
                     />
             </TouchableOpacity>
         );

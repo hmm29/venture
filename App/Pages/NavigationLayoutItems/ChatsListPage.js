@@ -31,18 +31,21 @@ var {
     } = React;
 
 var _ = require('lodash');
+var Animatable = require('react-native-animatable');
 var ChatPage = require('../ChatPage');
 var Dimensions = require('Dimensions');
-var ModalBase = require('../../Partials/ModalBase');
+var FiltersModal = require('../../Partials/Modals/FiltersModal');
+var GeoFire = require('geofire');
+var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
 var TimerMixin = require('react-timer-mixin');
 
+var CHAT_DURATION_IN_MINUTES = 0.25;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
-var SCREEN_WIDTH = Dimensions.get('window').width;
-var SCREEN_HEIGHT = Dimensions.get('window').height;
+var {height, width} = Dimensions.get('window');
 var THUMBNAIL_SIZE = 50;
 
 var YELLOW_HEX_CODE = '#ffe770';
@@ -56,6 +59,7 @@ String.prototype.capitalize = function () {
 
 var User = React.createClass({
     propTypes: {
+        currentTimeInMs: React.PropTypes.number,
         currentUserLocationCoords: React.PropTypes.array,
         currentUserData: React.PropTypes.object,
         data: React.PropTypes.object,
@@ -65,8 +69,7 @@ var User = React.createClass({
     getInitialState() {
         return {
             dir: 'row',
-            status: '',
-            timerVal: '',
+            expireTime: ''
         }
     },
 
@@ -79,9 +82,10 @@ var User = React.createClass({
             this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
             && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId).on('value', snapshot => {
                 _this.setState({
+                    chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                     distance,
                     status: snapshot.val() && snapshot.val().status,
-                    timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                    expireTime: snapshot.val() && snapshot.val().expireTime
                 });
             });
         } else {
@@ -89,9 +93,10 @@ var User = React.createClass({
             this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
             && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).on('value', snapshot => {
                 _this.setState({
+                    chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                     distance,
                     status: snapshot.val() && snapshot.val().status,
-                    timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                    expireTime: snapshot.val() && snapshot.val().expireTime
                 });
             });
         }
@@ -105,11 +110,12 @@ var User = React.createClass({
 
             nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`).child(nextProps.data.ventureId)
             && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`).child(nextProps.data.ventureId).on('value', snapshot => {
-                _this.setState({status: ''})
+                _this.setState({status: ''}) // clear status before setting again
                 _this.setState({
+                    chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                     distance,
                     status: snapshot.val() && snapshot.val().status,
-                    timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                    expireTime: snapshot.val() && snapshot.val().expireTime
                 });
             });
         } else {
@@ -118,9 +124,10 @@ var User = React.createClass({
             && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).on('value', snapshot => {
                 _this.setState({status: ''})
                 _this.setState({
+                    chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                     distance,
                     status: snapshot.val() && snapshot.val().status,
-                    timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                    expireTime: snapshot.val() && snapshot.val().expireTime
                 });
             });
         }
@@ -138,8 +145,6 @@ var User = React.createClass({
     },
 
     calculateDistance(location1:Array, location2:Array) {
-        var GeoFire = require('geofire');
-
         return location1 && location2 && (GeoFire.distance(location1, location2) * 0.621371).toFixed(1);
     },
 
@@ -169,9 +174,26 @@ var User = React.createClass({
         }
     },
 
-    _getTimerValue(numOfMilliseconds:number) {
-        var date = new Date(numOfMilliseconds);
-        return date.getMinutes() + 'm ' + date.getSeconds() + 's';
+    _getTimerValue(currentTimeInMs:number) {
+        if(!(this.state.expireTime && currentTimeInMs)) return -1;
+
+        let timerValInSeconds = Math.floor((this.state.expireTime-currentTimeInMs)/1000);
+
+        if(timerValInSeconds >= 0) return timerValInSeconds;
+
+        let targetUserIDHashed = this.props.data.ventureId,
+            currentUserIDHashed = this.props.currentUserIDHashed,
+            firebaseRef = this.props.firebaseRef,
+            targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
+            currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests');
+
+        // end match interactions
+        targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
+        currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+
+        this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
+
+        return -1;
     },
 
     handleMatchInteraction() {
@@ -225,51 +247,39 @@ var User = React.createClass({
                         _id = 'EVENT_INVITE_' + currentUserIDHashed + '_TO_' + targetUserIDHashed;
                     }
 
+                    // @hmm put chat ids in match request object so overlays know which chat to destroy
+                    currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
+                    targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
+
                     firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
-                        let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`),
-                            currentRouteStack = this.props.navigator.getCurrentRoutes(),
-                            chatRoomRoute = _.findWhere(currentRouteStack, {title: 'Chat', passProps: {_id}});
+                        let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
 
                         if (snapshot.val() === null) {
+                            // TODO: in the future should be able to account for timezone differences?
+                            // probably not because if youre going to match with someone youll be in same timezone
+
+                            let currentTime = new Date().getTime(),
+                                expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES*60*1000)).getTime();
 
                             chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
-                            chatRoomRef.child('timer').set({value: 300000}); // @hmm: set timer
+                            chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
+                            chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
                             chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed).set(chatRoomEventTitle);
                             chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed).set(chatRoomEventTitle);
 
                         }
 
-                        firebaseRef.child(`users/${currentUserIDHashed}/chatCount`).once('value', snapshot => {
-                            if (snapshot.val() === 0) {
-                                _this.props.navigator.push({
-                                    title: 'Chat',
-                                    component: ChatPage,
-                                    passProps: {
-                                        _id,
-                                        recipient: _this.props.data,
-                                        distance,
-                                        chatRoomEventTitle,
-                                        chatRoomRef,
-                                        currentUserData: _this.props.currentUserData
-                                    }
-                                });
-                            }
-                            else if (chatRoomRoute) _this.props.navigator.jumpTo(chatRoomRoute);
-                            else {
-                                currentRouteStack.push({
-                                    title: 'Chat',
-                                    component: ChatPage,
-                                    passProps: {
-                                        _id,
-                                        recipient: _this.props.data,
-                                        distance,
-                                        chatRoomEventTitle,
-                                        chatRoomRef,
-                                        currentUserData: _this.props.currentUserData
-                                    }
-                                });
-                                _this.props.navigator.immediatelyResetRouteStack(currentRouteStack);
+                        _this.props.navigator.push({
+                            title: 'Chat',
+                            component: ChatPage,
+                            passProps: {
+                                _id,
+                                recipient: _this.props.data,
+                                distance,
+                                chatRoomEventTitle,
+                                chatRoomRef,
+                                currentUserData: _this.props.currentUserData
                             }
                         });
                     })
@@ -298,22 +308,22 @@ var User = React.createClass({
                 // @hmm: accept the request
                 // chatroom reference uses id of the user who accepts the received matchInteraction
 
-                targetUserMatchRequestsRef.child(currentUserIDHashed).set({
+                targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
                     _id: currentUserIDHashed,
                     status: 'matched',
                     role: 'recipient'
-                });
+                }, 100);
 
-                currentUserMatchRequestsRef.child(targetUserIDHashed).set({
+                currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
                     _id: targetUserIDHashed,
                     status: 'matched',
                     role: 'sender'
-                });
+                }, 100);
             }
 
             else if (this.state.status === 'matched') {
                 let chatRoomActivityPreferenceTitle,
-                    distance = 0.7 + ' mi',
+                    distance = this.state.distance + ' mi',
                     _id;
 
                 currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
@@ -327,51 +337,39 @@ var User = React.createClass({
                         chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
                     }
 
+                    // @hmm put chat ids in match request object so overlays know which chat to destroy
+                    currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
+                    targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
+
                     firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
-                        let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`),
-                            currentRouteStack = this.props.navigator.getCurrentRoutes(),
-                            chatRoomRoute = _.findWhere(currentRouteStack, {title: 'Chat', passProps: {_id}});
+                        let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
 
                         if (snapshot.val() === null) {
+                            // TODO: in the future should be able to account for timezone differences?
+                            // probably not because if youre going to match with someone youll be in same timezone
+
+                            let currentTime = new Date().getTime(),
+                                expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES*60*1000)).getTime();
 
                             chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
-                            chatRoomRef.child('timer').set({value: 300000}); // @hmm: set timer
+                            chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
+                            chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
                             chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed).set(this.props.currentUserData.activityPreference.title);
                             chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed).set(this.props.data.activityPreference.title);
 
                         }
 
-                        firebaseRef.child(`users/${currentUserIDHashed}/chatCount`).once('value', snapshot => {
-                            if (snapshot.val() === 0) {
-                                _this.props.navigator.push({
-                                    title: 'Chat',
-                                    component: ChatPage,
-                                    passProps: {
-                                        _id,
-                                        recipient: _this.props.data,
-                                        distance,
-                                        chatRoomActivityPreferenceTitle,
-                                        chatRoomRef,
-                                        currentUserData: _this.props.currentUserData
-                                    }
-                                });
-                            }
-                            else if (chatRoomRoute) _this.props.navigator.jumpTo(chatRoomRoute);
-                            else {
-                                currentRouteStack.push({
-                                    title: 'Chat',
-                                    component: ChatPage,
-                                    passProps: {
-                                        _id,
-                                        recipient: _this.props.data,
-                                        distance,
-                                        chatRoomActivityPreferenceTitle,
-                                        chatRoomRef,
-                                        currentUserData: _this.props.currentUserData
-                                    }
-                                });
-                                _this.props.navigator.immediatelyResetRouteStack(currentRouteStack);
+                        _this.props.navigator.push({
+                            title: 'Chat',
+                            component: ChatPage,
+                            passProps: {
+                                _id,
+                                recipient: _this.props.data,
+                                distance,
+                                chatRoomActivityPreferenceTitle,
+                                chatRoomRef,
+                                currentUserData: _this.props.currentUserData
                             }
                         });
                     })
@@ -465,8 +463,11 @@ var User = React.createClass({
                         onPress={this._onPressItem}
                         source={{uri: this.props.data && this.props.data.picture}}
                         style={[styles.thumbnail]}>
-                        <View style={(this.state.timerVal ? styles.timerValOverlay : {})}>
-                            <Text style={[styles.timerValText, (this.state.timerVal && this.state.timerVal[0] === '0' ? {color: '#F12A00'} :{})]}>{this.state.timerVal}</Text>
+                        <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
+                            <Text
+                                style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
+                                {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
+                            </Text>
                         </View>
                     </Image>
                     <Text
@@ -474,7 +475,7 @@ var User = React.createClass({
                     <Text style={styles.eventTitle}>
                         {this.props.data && this.props.data.eventTitle} ?
                     </Text>
-                    <View style={{top: 10, right: 10}}>{this._renderStatusIcon()}</View>
+                    <View style={{top: 10,  right: width/25}}>{this._renderStatusIcon()}</View>
                 </View>
             )
         } else {
@@ -514,15 +515,18 @@ var User = React.createClass({
                         onPress={this._onPressItem}
                         source={{uri: this.props.data && this.props.data.picture}}
                         style={[styles.thumbnail]}>
-                        <View style={(this.state.timerVal ? styles.timerValOverlay : {})}>
-                            <Text style={[styles.timerValText, (this.state.timerVal && this.state.timerVal[0] === '0' ? {color: '#F12A00'} :{})]}>{this.state.timerVal}</Text>
+                        <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
+                            <Text
+                                style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
+                                {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
+                            </Text>
                         </View>
                     </Image>
                     <Text style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
                     <Text style={styles.activityPreference}>
                         {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title}
                     </Text>
-                    <View style={{top: 10}}>{this._renderStatusIcon()}</View>
+                    <View style={{top: 10, right: width/25}}>{this._renderStatusIcon()}</View>
                 </View>
             );
         }
@@ -556,17 +560,16 @@ var ChatsListPage = React.createClass({
     watchID: null,
 
     getInitialState() {
-        var Firebase = require('firebase');
-
-        let firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/'),
+        let firebaseRef = this.props.firebaseRef,
             usersListRef = firebaseRef.child('users');
 
         return {
             dataSource: new ListView.DataSource({
                 rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
             }),
-            firebaseRef,
+            firebaseRef: this.props.firebaseRef,
             userRows: [],
+            showFiltersModal: false,
             showFunFact: true,
             showLoadingModal: false,
             usersListRef
@@ -575,7 +578,7 @@ var ChatsListPage = React.createClass({
 
     componentDidMount() {
         InteractionManager.runAfterInteractions(() => {
-            let eventInvites = [], usersListRef = this.state.firebaseRef.child('users'), _this = this;
+            let eventInvites = [], usersListRef = this.state.firebaseRef.child('users'), currentUserRef = usersListRef.child(this.props.ventureId), _this = this;
 
             this.bindAsArray(usersListRef, 'userRows');
 
@@ -593,15 +596,50 @@ var ChatsListPage = React.createClass({
 
                     // @hmm: sort below
 
-                    _this.updateRows((_.cloneDeep(_.values(usersListSnapshotVal))).concat(eventInvites));
+                    let compositeUsersList = (_.cloneDeep(_.values(usersListSnapshotVal))).concat(eventInvites),
+                        filteredUsersArray = [];
 
-                    _this.setState({currentUserVentureId: this.props.ventureId, userRows: _.cloneDeep(_.values((_.cloneDeep(_.values(usersListSnapshotVal))).concat(eventInvites))), usersListRef});
+                    // filter before putting into usersRow Array :)
+
+                    currentUserRef && currentUserRef.child('matchingPreferences').on('value', snapshot => {
+
+                        let matchingPreferences = snapshot.val(),
+                            maxSearchDistance = matchingPreferences && matchingPreferences.maxSearchDistance;
+
+                        compositeUsersList && _.each(compositeUsersList, (user) => {
+
+                            // @hmm: because of cumulative privacy selection, only have to check for friends+ for both 'friends+' and 'all'
+                            if (matchingPreferences && matchingPreferences.privacy && matchingPreferences.privacy.indexOf('friends+') > -1) {
+                                if (this.props.currentUserLocationCoords && user.location && user.location.coordinates && user.location.coordinates.latitude && user.location.coordinates.longitude && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude, user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                                    if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
+                                    if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
+                                }
+                            } else if (matchingPreferences && matchingPreferences.privacy && matchingPreferences.privacy.indexOf('friends') > -1 && matchingPreferences.privacy.length === 1) {
+                                if (this.props.currentUserFriends && _.findIndex(this.props.currentUserFriends, {name: user.name}) > -1) {
+                                    if (this.props.currentUserLocationCoords && user.location && user.location.coordinates && user.location.coordinates.latitude && user.location.coordinates.longitude && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude, user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                                        if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
+                                        if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
+                                    }
+                                }
+                            } else {
+                                if (this.props.currentUserLocationCoords && user.location && user.location.coordinates && user.location.coordinates.latitude && user.location.coordinates.longitude && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude, user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                                    if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
+                                    if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
+                                }
+                            }
+
+                        });
+
+                    });
+
+                    _this.updateRows(filteredUsersArray);
+                    _this.setState({currentUserVentureId: this.props.ventureId, userRows: _.cloneDeep(_.values(filteredUsersArray)), usersListRef});
 
                     // @hmm: rest to prevent multiple event invites in chats list
 
                     eventInvites = [];
 
-                    if(!_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].match_requests) || !_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].event_invite_match_requests)) this.setState({showFunFact: false, showLoadingModal: false});
+                    if(!_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].match_requests) || !_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].event_invite_match_requests)) this.setState({showFunFact: false});
                     else this.setState({showFunFact: true});
 
                     // @hmm: only show easing effect when fun fact reappears
@@ -614,12 +652,25 @@ var ChatsListPage = React.createClass({
             this.state.firebaseRef.child(`users/${this.props.ventureId}`).once('value', snapshot => {
                 _this.setState({currentUserData: snapshot.val()});
             });
+
+            _this._handle = _this.setInterval(() => {
+                _this.setState({currentTimeInMs: (new Date()).getTime()})
+            }, 1000);
         });
+
+        this.setTimeout(() => {
+            // if no rows in users list being recognized, show laoding modal till they are
+            if (_.isEmpty(this.state.userRows)) this.setState({showLoadingModal: true});
+        }, 1000);
     },
 
     componentWillUnmount() {
         this.state.usersListRef && this.state.usersListRef.off();
         this.state.firebaseRef.off();
+    },
+
+    _handleShowFiltersModal(showFiltersModal: boolean){
+        this.setState({showFiltersModal});
     },
 
     _navigateToHomePage() {
@@ -628,23 +679,21 @@ var ChatsListPage = React.createClass({
 
     updateRows(userRows:Array) {
         this.setState({dataSource: this.state.dataSource.cloneWithRows(userRows)});
+        if(userRows.length) this.setState({showLoadingModal: false})
     },
     _renderHeader() {
         var FiltersModalIcon = require('../../Partials/Icons/NavigationButtons/FiltersModalIcon');
-        //var Filters = require('../Filters');
         var Header = require('../../Partials/Header');
         var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 
-        this.setTimeout(() => {
-            if(_.isEmpty(this.state.userRows)) this.setState({showLoadingModal: true});
-        }, 400);
-
         return (
             <Header containerStyle={{position: 'relative'}}>
-                <HomePageIcon onPress={() => this._navigateToHomePage()} style={{right: 14}} />
+                <HomePageIcon onPress={() => this._navigateToHomePage()} />
                 <Text>MY CHATS</Text>
                 <FiltersModalIcon
-                    // onPress={() => this._safelyNavigateForward({title: 'Filters', component: Filters, sceneConfig: Navigator.SceneConfigs.FloatFromBottom, passProps: {firebaseRef: this.state.firebaseRef, ventureId: this.state.currentUserVentureId}})}
+                    onPress={() => {
+                        this.setState({showFiltersModal: true});
+                    }}
                     style={{left: 14}} />
             </Header>
         )
@@ -655,7 +704,8 @@ var ChatsListPage = React.createClass({
 
         if(this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return <View />;
 
-        return <User currentUserData={this.state.currentUserData}
+        return <User currentTimeInMs={this.state.currentTimeInMs}
+                     currentUserData={this.state.currentUserData}
                      currentUserIDHashed={this.state.currentUserVentureId}
                      currentUserLocationCoords={this.props.currentUserLocationCoords}
                      data={user}
@@ -667,12 +717,14 @@ var ChatsListPage = React.createClass({
         var BrandLogo = require('../../Partials/BrandLogo');
 
         let funFact = (
-            <View style={{alignSelf: 'center', bottom: SCREEN_HEIGHT/2.5}}>
-                <TouchableOpacity>
+            <View style={{alignSelf: 'center', bottom: height/2.5}}>
+                <TouchableOpacity onPress={() => {this.refs.funFact.jello(500)}} >
+                    <Animatable.View ref="funFact">
                     <Text
                         style={{color: '#fff', fontFamily: 'AvenirNextCondensed-Medium', textAlign: 'center', fontSize: 18}}>
                         <Text style={{fontSize: Dimensions.get('window').height/30, top: 15}}>Did You Know ?</Text> {'\n\n'} 1 in every 16 Yale students {'\n'}
                         is a section asshole.</Text>
+                        </Animatable.View>
                 </TouchableOpacity>
             </View>
         );
@@ -693,6 +745,7 @@ var ChatsListPage = React.createClass({
                 {this.state.showFunFact ? funFact : <View />}
                 <View style={{height: 48}}></View>
                 <ModalBase
+                    animated={true}
                     modalStyle={styles.loadingModalStyle}
                     modalVisible={this.state.showLoadingModal}>
                     <View style={styles.modalView}>
@@ -712,6 +765,12 @@ var ChatsListPage = React.createClass({
                         </TouchableOpacity>
                     </View>
                 </ModalBase>
+                <FiltersModal
+                    firebaseRef={this.state.firebaseRef}
+                    handleShowFiltersModal={this._handleShowFiltersModal}
+                    modalVisible={this.state.showFiltersModal}
+                    ventureId={this.props.ventureId} // @hmm: important to pass this.props.ventureId bc its available immediately
+                    />
             </View>
         )
     }
@@ -719,7 +778,7 @@ var ChatsListPage = React.createClass({
 
 var styles = StyleSheet.create({
     activityPreference: {
-        width: SCREEN_WIDTH/3.2,
+        width: width/3.2,
         fontSize: 18,
         fontFamily: 'AvenirNextCondensed-UltraLight',
         fontWeight: '400',
@@ -761,7 +820,7 @@ var styles = StyleSheet.create({
         fontFamily: 'AvenirNextCondensed-Regular'
     },
     distance: {
-        width: SCREEN_WIDTH/4,
+        width: width/4,
         textAlign: 'center',
         fontSize: 16,
         marginHorizontal: 25,
@@ -781,7 +840,8 @@ var styles = StyleSheet.create({
         height: 30
     },
     loadingModalActivityIndicatorIOS: {
-        height: 80
+        height: 80,
+        bottom: height/40
     },
     loadingModalFunFactText: {
         color: '#fff',
@@ -789,19 +849,19 @@ var styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 18,
         alignSelf: 'center',
-        width: SCREEN_WIDTH / 1.4,
+        width: width / 1.4,
         backgroundColor: 'transparent',
-        padding: SCREEN_WIDTH / 15,
-        borderRadius: SCREEN_WIDTH / 10
+        padding: width / 15,
+        borderRadius: width / 10
     },
     loadingModalFunFactTextTitle: {
-        fontSize: SCREEN_HEIGHT / 30
+        fontSize: height / 30
     },
     loadingModalStyle: {
         backgroundColor: '#02030F'
     },
     logoContainerStyle: {
-        marginHorizontal: (SCREEN_WIDTH - LOGO_WIDTH) / 2
+        marginHorizontal: (width - LOGO_WIDTH) / 2
     },
     logoStyle: {
         width: LOGO_WIDTH,
@@ -813,7 +873,7 @@ var styles = StyleSheet.create({
         alignItems: 'center'
     },
     profileModal: {
-        paddingVertical: SCREEN_HEIGHT / 30,
+        paddingVertical: height / 30,
         flexDirection: 'column',
         justifyContent: 'center'
     },
@@ -845,17 +905,17 @@ var styles = StyleSheet.create({
         fontFamily: 'AvenirNextCondensed-Regular'
     },
     profileModalUserPicture: {
-        width: SCREEN_WIDTH / 2.6,
-        height: SCREEN_WIDTH / 2.6,
-        borderRadius: SCREEN_WIDTH / 5.2,
+        width: width / 2.6,
+        height: width / 2.6,
+        borderRadius: width / 5.2,
         alignSelf: 'center',
-        marginBottom: SCREEN_WIDTH / 22
+        marginBottom: width / 22
     },
     rightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-around',
-        width: SCREEN_WIDTH/1.4
+        paddingHorizontal: width/10
     },
     tag: {
         backgroundColor: 'rgba(4,22,43,0.5)',
@@ -880,7 +940,6 @@ var styles = StyleSheet.create({
         height: THUMBNAIL_SIZE,
         borderRadius: THUMBNAIL_SIZE/2,
         marginVertical: 7,
-        marginLeft: 10
     },
     timerValText: {
         opacity: 1.0,

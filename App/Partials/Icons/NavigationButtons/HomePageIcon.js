@@ -42,12 +42,12 @@ class HomePageIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
+                style={[this.props.style, {width: (this.props.size || SIZE) * 3.48, height: (this.props.size || SIZE) * 3.48, alignItems: 'flex-start'}]}>
                 <Icon
                     name="ios-home-outline"
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    style={{width: (this.props.size || SIZE) * 1.16, height: (this.props.size || SIZE) * 1.16}}
+                    iconStyle={[styles.icon]}
                     />
             </TouchableOpacity>
         );

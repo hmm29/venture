@@ -23,7 +23,7 @@ import React, {
 
 import Icon from 'react-native-vector-icons/Ionicons';
 
-const SIZE = 30;
+const SIZE = 32;
 
 type Props = {
     color: React.PropTypes.string,
@@ -43,12 +43,12 @@ class BackIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
+                style={[this.props.style,{width: (this.props.size || SIZE) * 3.88, height: (this.props.size || SIZE) * 3.88, alignItems: 'flex-start'}]}>
                 <Icon
                     name={Platform.OS === "ios" ? "ios-arrow-back" : "android-arrow-back"}
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    style={{width: (this.props.size || SIZE) * 1.16, height: (this.props.size || SIZE) * 1.16}}
+                    iconStyle={[styles.icon]}
                     />
             </TouchableOpacity>
         );

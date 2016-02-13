@@ -15,7 +15,6 @@
 var React = require('react-native');
 
 var {
-    Animated,
     AppStateIOS,
     AsyncStorage,
     Component,
@@ -34,8 +33,10 @@ var {
     } = React;
 
 var _ = require('lodash');
+var Animatable = require('react-native-animatable');
 var Dimensions = require('Dimensions');
 var Firebase = require('firebase');
+var Icon = require('react-native-vector-icons/Ionicons');
 var SubmitActivityIcon = require('../Partials/Icons/SubmitActivityIcon');
 var TabBarLayout = require('../NavigationLayouts/TabBarLayout.ios');
 
@@ -68,6 +69,7 @@ var HomePage = React.createClass({
         return {
             activeTimeOption: 'now',
             activityTitleInput: '',
+            brandLogoVisible: false,
             contentOffsetXVal: 0,
             currentAppState: AppStateIOS.currentState,
             currentUserLocationCoords: null,
@@ -103,106 +105,100 @@ var HomePage = React.createClass({
 
     componentWillMount() {
         //@hmm: wait for async storage account to update on login
-        InteractionManager.runAfterInteractions(() => {
-            let _this = this;
-
-
-            _this.setTimeout(() => {
-                AsyncStorage.getItem('@AsyncStorage:Venture:account')
-                    .then((account:string) => {
-                        account = JSON.parse(account);
-
-                        if(account === null) {
-                            this.navigateToLogin();
-                            return;
-                        }
-
-
-                        this.setState({isLoggedIn: true, showTextInput: true});
-
-                        let currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${account.ventureId}`),
-                            trendingItemsRef = this.state.firebaseRef && this.state.firebaseRef.child('trending'),
-                            usersListRef = this.state.firebaseRef && this.state.firebaseRef.child('users'),
-                            chatRoomsRef = this.state.firebaseRef && this.state.firebaseRef.child('chat_rooms'),
-                            _this = this;
-
-                        trendingItemsRef.once('value', snapshot => {
-                                _this.setState({
-                                    currentUserRef,
-                                    events: snapshot.val() && snapshot.val().events && _.slice(snapshot.val().events, 0, 1),
-                                    yalies: snapshot.val() && snapshot.val().yalies  && _.slice(snapshot.val().yalies, 0, 3),
-                                    showTrendingItems: true
-                                })
-                                LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                            }
-                        );
-
-                        //@hmm: get current user location & save to firebase object
-                        // make sure this fires before navigating away!
-
-                        navigator.geolocation.getCurrentPosition(
-                            (currentPosition) => {
-                                currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
-                                this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
-                            },
-                            (error) => {
-                                console.error(error);
-                            },
-                            {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
-                        );
-
-                        chatRoomsRef.once('value', snapshot => {
-                            snapshot.val() && _.each(snapshot.val(), (chatRoom) => {
-                                if (chatRoom._id && chatRoom._id.indexOf(account.ventureId) > -1) {
-                                    chatRoomsRef.child(chatRoom._id).set(null);
-                                }
-                            });
-                        });
-
-                        // @hmm: at restart reset all timer vals & chats
-
-                        currentUserRef.child('match_requests').once('value', snapshot => {
-                            snapshot.val() && _.each(snapshot.val(), (match) => {
-                                if (match && match.timerVal) {
-                                    currentUserRef.child(`match_requests/${match._id}/timerVal`).set(null);
-                                    usersListRef.child(`${match._id}/match_requests/${account.ventureId}/timerVal`).set(null);
-                                    usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
-                                        usersListRef.child(`${match._id}/chatCount`).set(snapshot.val() - 1);
-                                    });
-
-                                }
-                            });
-                            currentUserRef.child('chatCount').set(0);
-                        });
-
-                        // @hmm: at restart reset all event invite matches & chats
-
-                        currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
-                            snapshot.val() && _.each(snapshot.val(), (match) => {
-                                if (match && match.timerVal) {
-                                    currentUserRef.child(`event_invite_match_requests/${match._id}/timerVal`).set(null);
-                                    usersListRef.child(`${match._id}/event_invite_match_requests/${account.ventureId}/timerVal`).set(null);
-                                    usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
-                                        usersListRef.child(`${match._id}/chatCount`).set(snapshot.val() - 1);
-                                    });
-
-                                }
-                            });
-                        });
-
-                        this.setState({ventureId: account.ventureId});
-
-                        AppStateIOS.addEventListener('change', this._handleAppStateChange);
-
-                    })
-                    .catch((error) => console.log(error.message))
-                    .done();
-            }, 0); //@hmm: this time has to be less than time spent on home page
-        });
     },
 
     componentDidMount(){
-        if(this.state.currentUserLocationCoords === null) {
+        AsyncStorage.getItem('@AsyncStorage:Venture:account')
+            .then((account:string) => {
+                account = JSON.parse(account);
+
+                if (account === null) {
+                    this.setTimeout(() => {
+                        this.navigateToLogin();
+                    }, 0);
+                    return;
+                }
+
+                this.setState({isLoggedIn: true, showTextInput: true});
+
+                let currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${account.ventureId}`),
+                    trendingItemsRef = this.state.firebaseRef && this.state.firebaseRef.child('trending'),
+                    usersListRef = this.state.firebaseRef && this.state.firebaseRef.child('users'),
+                    chatRoomsRef = this.state.firebaseRef && this.state.firebaseRef.child('chat_rooms'),
+                    _this = this;
+
+                trendingItemsRef.once('value', snapshot => {
+                        _this.setState({
+                            currentUserRef,
+                            events: snapshot.val() && snapshot.val().events && _.slice(snapshot.val().events, 0, 1),
+                            yalies: snapshot.val() && snapshot.val().yalies && _.slice(snapshot.val().yalies, 0, 3),
+                            showTrendingItems: true
+                        })
+                        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                    }
+                );
+
+                //@hmm: get current user location & save to firebase object
+                // make sure this fires before navigating away!
+
+                navigator.geolocation.getCurrentPosition(
+                    (currentPosition) => {
+                        currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
+                        this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
+                    },
+                    (error) => {
+                        console.error(error);
+                    },
+                    {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+                );
+
+                chatRoomsRef.once('value', snapshot => {
+                    snapshot.val() && _.each(snapshot.val(), (chatRoom) => {
+                        if (chatRoom._id && chatRoom._id.indexOf(account.ventureId) > -1) {
+                            chatRoomsRef.child(chatRoom._id).set(null);
+                        }
+                    });
+                });
+
+                // @hmm: at restart reset all chat expire times & chats
+
+                currentUserRef.child('match_requests').once('value', snapshot => {
+                    snapshot.val() && _.each(snapshot.val(), (match) => {
+                        if (match && match.expireTime) {
+                            currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
+                            usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
+                            // for each chat ended set their chat count to one less
+                            usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
+                                usersListRef.child(`${match._id}/chatCount`).set(snapshot.val()-1);
+                            });
+
+                        }
+                    });
+                    currentUserRef.child('chatCount').set(0);
+                });
+
+                // @hmm: at restart reset all event invite matches & chats
+
+                currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
+                    snapshot.val() && _.each(snapshot.val(), (match) => {
+                        if (match && match.timerVal) {
+                            currentUserRef.child(`event_invite_match_requests/${match._id}/timerVal`).set(null);
+                            usersListRef.child(`${match._id}/event_invite_match_requests/${account.ventureId}/timerVal`).set(null);
+                            usersListRef.child(`${match._id}/chatCount`).once('value', snapshot => {
+                                usersListRef.child(`${match._id}/chatCount`).set(snapshot.val() - 1);
+                            });
+
+                        }
+                    });
+                });
+
+                this.setState({ventureId: account.ventureId});
+                AppStateIOS.addEventListener('change', this._handleAppStateChange);
+            })
+            .catch((error) => console.log(error.message))
+            .done();
+
+        if (this.state.currentUserLocationCoords === null) {
             navigator.geolocation.getCurrentPosition(
                 (currentPosition) => {
                     this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
@@ -222,12 +218,12 @@ var HomePage = React.createClass({
 
                         currentUserFriends = JSON.parse(currentUserFriends);
 
-                        if(currentUserFriends) this.setState({currentUserFriends});
+                        if (currentUserFriends) this.setState({currentUserFriends});
 
                         else {
                             AsyncStorage.getItem('@AsyncStorage:Venture:isOnline')
                                 .then((isOnline) => {
-                                    if(isOnline === 'true') {
+                                    if (isOnline === 'true') {
                                         fetch(friendsAPICallURL)
                                             .then(response => response.json())
                                             .then(responseData => {
@@ -264,7 +260,7 @@ var HomePage = React.createClass({
     },
 
     _createTrendingItem(type, uri, i) {
-        if(type === 'user') return (
+        if (type === 'user') return (
             <TouchableOpacity key={i} style={styles.trendingItem}>
                 <Image
                     style={styles.trendingUserImg}
@@ -313,7 +309,7 @@ var HomePage = React.createClass({
 
         this.setState({currentAppState, previousAppState});
 
-        if(previousAppState === 'background' && currentAppState === 'active') {
+        if (previousAppState === 'background' && currentAppState === 'active') {
             navigator.geolocation.getCurrentPosition(
                 (currentPosition) => {
                     this.state.currentUserRef && this.state.currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
@@ -322,19 +318,23 @@ var HomePage = React.createClass({
                 (error) => {
                     console.error(error);
                 },
-                {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+                {enableHighAccuracy: true, timeout: 40000, maximumAge: 1000}
             );
         }
     },
 
     navigateToLogin() {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         this.props.navigator.push({title: 'Login', component: LoginPage});
     },
 
     _onBlur() {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-        this.setState({hasKeyboardSpace: false, showAddInfoButton: true, showNextButton: !!this.state.activityTitleInput, showTextInput: true});
+        this.setState({
+            hasKeyboardSpace: false,
+            showAddInfoButton: true,
+            showNextButton: !!this.state.activityTitleInput,
+            showTextInput: true
+        });
     },
 
     onDateChange(date): void {
@@ -366,7 +366,17 @@ var HomePage = React.createClass({
         // since were not using navigator.push()
 
         firebaseRef.child(`users/${this.state.ventureId}/activityPreference`).set(activityPreferenceChange);
-        this.props.navigator.push({title: 'Users', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'users', ventureId: this.state.ventureId}});
+        this.props.navigator.push({
+            title: 'Users',
+            component: TabBarLayout,
+            passProps: {
+                currentUserFriends: this.state.currentUserFriends,
+                currentUserLocationCoords: this.state.currentUserLocationCoords,
+                firebaseRef: this.state.firebaseRef,
+                selectedTab: 'users',
+                ventureId: this.state.ventureId
+            }
+        });
 
         this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
     },
@@ -383,34 +393,43 @@ var HomePage = React.createClass({
             tagSelection;
 
         let activityTitleInput = (
-            <TextInput
-                ref={ACTIVITY_TITLE_INPUT_REF}
-                autoCapitalize='none'
-                autoCorrect={false}
-                maxLength={15}
-                onChangeText={(text) => {
+            <View onLayout={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)}>
+                <TextInput
+                    ref={ACTIVITY_TITLE_INPUT_REF}
+                    autoCapitalize='none'
+                    autoCorrect={false}
+                    maxLength={15}
+                    onChangeText={(text) => {
                         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                         this.animateViewLayout(text);
                         if(!text) this.setState({showTimeSpecificationOptions: false});
                         this.setState({activityTitleInput: text.toUpperCase(), showNextButton: !!text});
                     }}
-                placeholder={'What do you want to do?'}
-                placeholderTextColor={'rgba(255,255,255,1.0)'}
-                returnKeyType='done'
-                style={[styles.activityTitleInput, this.state.viewStyle, {marginTop: height/8}]}
-                value={this.state.activityTitleInput}/>
+                    placeholder={'What do you want to do?'}
+                    placeholderTextColor={'rgba(255,255,255,1.0)'}
+                    returnKeyType='done'
+                    style={[styles.activityTitleInput, this.state.viewStyle, {marginTop: height/48}]}
+                    value={this.state.activityTitleInput}/>
+            </View>
         );
 
         let addInfoButton = (
-            <View style={[styles.addInfoButtonContainer]}>
-                    <ChevronIcon
-                        direction='up'
-                        onPress={() => {
+            <View
+                style={[styles.addInfoButtonContainer, {bottom: (this.state.showNextButton && this.state.showAddInfoBox ? height/20 : height/32 )}]}>
+                <TouchableOpacity
+                    activeOpacity={0.4}
+                    onPress={() => {
                             this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
                             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                             this.setState({activeTimeOption: 'now', date: new Date(), showAddInfoBox: !this.state.showAddInfoBox, tagInput: '', tags: []})
-                        }}
+                        }}>
+                    <Icon
+                        name={this.state.showAddInfoBox ? 'chevron-up' : 'ios-plus'}
+                        size={ADD_INFO_BUTTON_SIZE}
+                        color='#fff'
+                        style={{width: ADD_INFO_BUTTON_SIZE, height: ADD_INFO_BUTTON_SIZE}}
                         />
+                </TouchableOpacity>
             </View>
         );
 
@@ -418,9 +437,9 @@ var HomePage = React.createClass({
 
         if (Platform.OS === 'ios') {
             submitActivityIcon = (
-            <View style={styles.submitActivityIconContainer}>
-                <SubmitActivityIcon
-                    onPress={this.onSubmitActivity}/>
+                <View style={styles.submitActivityIconContainer}>
+                    <SubmitActivityIcon
+                        onPress={this.onSubmitActivity}/>
                 </View>
             );
         } else {
@@ -428,7 +447,7 @@ var HomePage = React.createClass({
         }
 
         let trendingItemsCarousel = (
-            <View style={styles.trendingItemsCarousel}>
+            <Animatable.View ref="trendingItemsCarousel" style={styles.trendingItemsCarousel}>
                 <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContent}</Text></Title>
                 <ScrollView
                     automaticallyAdjustContentInsets={false}
@@ -441,17 +460,18 @@ var HomePage = React.createClass({
                     {this.state.yalies && this.state.yalies.map(this._createTrendingItem.bind(null, 'user'))}
                     {this.state.events && this.state.events.map(this._createTrendingItem.bind(null, 'event'))}
                 </ScrollView>
-                <View style={[styles.scrollbarArrow, {bottom: height / 15}, (isAtTrendingScrollViewStart ? {right: 5} : {left: 5})]}>
+                <View
+                    style={[styles.scrollbarArrow, {bottom: height / 13.5}, (isAtTrendingScrollViewStart ? {right: 5} : {left: 5})]}>
                     <ChevronIcon
                         color='rgba(255,255,255,0.8)'
-                        size={20}
+                        size={25}
                         direction={isAtTrendingScrollViewStart ? 'right' : 'left'}
                         onPress={() => {
                             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                             this.setState({trendingContentOffsetXVal: (isAtTrendingScrollViewStart ? width / 1.31 : 0), trendingContent: (isAtTrendingScrollViewStart ? 'EVENTS' : 'YALIES')})
                             }}/>
                 </View>
-            </View>
+            </Animatable.View>
         );
 
         if (this.state.showTimeSpecificationOptions)
@@ -466,14 +486,14 @@ var HomePage = React.createClass({
                         style={styles.timeSpecificationDatePicker}/>
                     <View style={styles.timeSpecificationButtons}>
                         <DynamicTimeSelectionIcon
-                            active={false}
-                            caption='Done'
-                            captionStyle={{color: '#fff'}}
+                            selected={false}
+                            caption='done'
+                            captionStyle={styles.captionStyle}
                             onPress={() => this.setState({showTimeSpecificationOptions: false})}/>
                         <DynamicCheckBoxIcon
-                            active={this.state.hasIshSelected}
+                            selected={this.state.hasIshSelected}
                             caption='-ish'
-                            captionStyle={{color: '#fff'}}
+                            captionStyle={styles.captionStyle}
                             onPress={() => this.setState({hasIshSelected: !this.state.hasIshSelected})}/>
                     </View>
 
@@ -493,30 +513,30 @@ var HomePage = React.createClass({
                         directionalLockEnabled={true}
                         style={[styles.scrollView, styles.horizontalScrollView, {paddingTop: 10}]}>
                         <DynamicCheckBoxIcon
-                            active={this.state.activeTimeOption === 'now'}
+                            selected={this.state.activeTimeOption === 'now'}
                             caption='now'
                             captionStyle={styles.captionStyle}
                             color='#7cff9d'
                             onPress={() => this.setState({activeTimeOption: 'now', hasSpecifiedTime: false})}/>
                         <DynamicCheckBoxIcon
-                            active={this.state.activeTimeOption === 'later'}
+                            selected={this.state.activeTimeOption === 'later'}
                             caption='later'
                             captionStyle={styles.captionStyle}
                             color='#ffd65c'
                             onPress={() => this.setState({activeTimeOption: 'later', hasSpecifiedTime: false})}/>
                         <DynamicTimeSelectionIcon
-                            active={this.state.activeTimeOption === 'specify'}
+                            selected={this.state.activeTimeOption === 'specify'}
                             caption={this.state.hasSpecifiedTime ? this._getTimeString(this._roundDateDownToNearestXMinutes(this.state.date, 5)) : 'specify'}
                             captionStyle={styles.captionStyle}
                             onPress={() => {
                             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                            if(this.state.activeTimeOption === 'specify') this.setState({hasSpecifiedTime: true, showTimeSpecificationOptions: true});
-                            else this.setState({activeTimeOption: 'specify'})
+                            this.setState({hasSpecifiedTime: true, showTimeSpecificationOptions: true});
+                            this.setState({activeTimeOption: 'specify'})
                         }}/>
                     </ScrollView>
                     <View style={[styles.scrollbarArrow, (isAtScrollViewStart ? {right: 10} : {left: 10})]}>
                         <ChevronIcon
-                            size={20}
+                            size={25}
                             direction={isAtScrollViewStart ? 'right' : 'left'}
                             onPress={() => {
                             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -544,8 +564,8 @@ var HomePage = React.createClass({
                         let tagsArr = this.state.tagsArr,
                             text = this.state.tagInput;
 
-                        //@hmm: check that tag isn't already present and that max num of tags is 5
-                        if(tagsArr.indexOf(text) < 0 && tagsArr.length <= 5) {
+                        //@hmm: check that tag isn't already present, that text is not all whitespace, and that max num of tags is 5
+                        if(tagsArr.indexOf(text) < 0 && !(text.replace(/^\s+|\s+$/g, '').length == 0) && tagsArr.length <= 5) {
                         tagsArr.push(text);
                         }
                         this.setState({tagsArr, tagInput: ''});
@@ -583,34 +603,42 @@ var HomePage = React.createClass({
                     defaultSource={require('../../img/home_background.png')}
                     source={require('../../img/home_background.png')}
                     onLoad={() => {
-                        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                        this.setState({ready: true})
+                        this.setState({ready: true});
                     }}
                     style={styles.backdrop}>
                     {this.state.isLoggedIn && this.state.ready ?
                         <View>
                             <Header>
-                                <ProfilePageIcon style={{opacity: 0.4, bottom: height/34, right: 20}}
-                                                 onPress={() => {
-                                            if(!this.state.hasKeyboardSpace) this.props.navigator.push({title: 'Profile', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'profile', ventureId: this.state.ventureId}});
-                                         }} />
-                                <ChatsListPageIcon style={{opacity: 0.4, bottom: height/34, left: 20}}
-                                                   onPress={() => {
-                                            if(!this.state.hasKeyboardSpace) this.props.navigator.push({title: 'Chats', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'chats', ventureId: this.state.ventureId}});
-                                           }} />
+                                <ProfilePageIcon
+                                    style={{bottom: height/20}}
+                                    onPress={() => {
+                                    this.props.navigator.push({title: 'Profile', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'profile', ventureId: this.state.ventureId}});
+                                 }}/>
+                                <ChatsListPageIcon
+                                    style={{bottom: height/20}}
+                                    onPress={() => {
+                                            this.props.navigator.push({title: 'Chats', component: TabBarLayout, passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords: this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'chats', ventureId: this.state.ventureId}});
+                                           }}/>
                             </Header>
-                            <View style={{alignSelf: 'center'}}>
                             <BrandLogo
+                                onLayout={() => {
+                                    this.setState({brandLogoVisible: true});
+                                    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                                    }
+                                    }
+                                //onHomePage={true}
                                 logoContainerStyle={styles.logoContainerStyle}
                                 />
-                                </View>
-                            {this.state.showTextInput ? activityTitleInput : <View />}
+                            {this.state.showTextInput && this.state.brandLogoVisible ? activityTitleInput : <View />}
                             {this.state.showNextButton ? submitActivityIcon : <View />}
-                            {this.state.showAddInfoButton && !this.state.showTimeSpecificationOptions && this.state.activityTitleInput ? addInfoButton : <View />}
+                            {this.state.showAddInfoButton && !this.state.showTimeSpecificationOptions && this.state.activityTitleInput ? addInfoButton :
+                                <View />}
                         </View>
                         : <View />}
-                    {this.state.showAddInfoBox && this.state.activityTitleInput && this.state.isLoggedIn && this.state.ready ? addInfoBox : <View/>}
-                    {this.state.showTrendingItems && !this.state.showAddInfoBox && this.state.isLoggedIn && this.state.ready ? trendingItemsCarousel : <View/>}
+                    {this.state.showAddInfoBox && this.state.activityTitleInput && this.state.isLoggedIn && this.state.ready ? addInfoBox :
+                        <View/>}
+                    {this.state.showTrendingItems && !this.state.showAddInfoBox && this.state.isLoggedIn && this.state.ready && this.state.brandLogoVisible ? trendingItemsCarousel :
+                        <View/>}
                 </Image>
             </VentureAppPage>
         );
@@ -627,9 +655,6 @@ class Title extends Component {
 }
 
 const styles = StyleSheet.create({
-    activitySelection: {
-        height: height / 15
-    },
     activityTitleInput: {
         height: 52,
         width,
@@ -647,14 +672,13 @@ const styles = StyleSheet.create({
         marginHorizontal: (width - (width / 1.2)) / 2,
         padding: 2
     },
-    addInfoButton: {
-    },
+    addInfoButton: {},
     addInfoButtonContainer: {
         backgroundColor: 'transparent',
         flexDirection: 'row',
         justifyContent: 'center',
         width: width,
-        marginTop: height / 40
+        marginTop: height / 30
     },
     addTimeInfoContainer: {},
     backdrop: {
@@ -677,6 +701,7 @@ const styles = StyleSheet.create({
         height: 85
     },
     logoContainerStyle: {
+        bottom: height / 28,
     },
     submitActivityIconContainer: {
         bottom: 40,
@@ -685,7 +710,7 @@ const styles = StyleSheet.create({
     },
     scrollbarArrow: {
         position: 'absolute',
-        bottom: height / 58
+        bottom: height / 28
     },
     scrollView: {
         backgroundColor: 'rgba(0,0,0,0.008)'

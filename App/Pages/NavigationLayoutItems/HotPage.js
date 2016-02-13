@@ -18,7 +18,7 @@ var {
     Animated,
     Component,
     Image,
-    PixelRatio,
+    LayoutAnimation,
     ScrollView,
     StyleSheet,
     Text,
@@ -32,7 +32,7 @@ var Dimensions = require('Dimensions');
 var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 var Icon = require('react-native-vector-icons/Ionicons');
-var ModalBase = require('../../Partials/ModalBase');
+var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
@@ -76,12 +76,17 @@ var HotPage = React.createClass({
                 _this.setState({
                     events: snapshot.val() && snapshot.val().events,
                     yalies: snapshot.val() && snapshot.val().yalies,
-                    trendingItemsRef,
-                    showLoadingModal: false
+                    trendingItemsRef
                 });
                 _this.startAnimation();
             }
         );
+    },
+
+    componentDidMount() {
+        this.setTimeout(() => {
+            if (_.isEmpty(this.state.events.concat(this.state.yalies))) this.setState({showLoadingModal: true});
+        }, 0);
     },
 
     componentWillUnmount() {
@@ -112,21 +117,6 @@ var HotPage = React.createClass({
                         duration: 500,
                     }).start();
 
-                    this.setTimeout(() => {
-                        Animated.timing(this.state.fadeAnim, {
-                            toValue: 1,
-                            duration: 1000,
-                        }).start();
-
-                        this.setTimeout(() => {
-                            Animated.timing(this.state.fadeAnim, {
-                                toValue: 0.15,
-                                duration: 500,
-                            }).start();
-
-                        }, 1000);
-
-                    }, 1000);
 
                 }, 1000);
 
@@ -138,14 +128,33 @@ var HotPage = React.createClass({
     },
 
     _createTrendingItem(type, uri, i) {
-        if(type === 'user') return (
-            <TouchableOpacity key={i} style={styles.trendingItem}>
-                <Image style={styles.trendingUserImg} source={{uri}}/>
-            </TouchableOpacity>
-        )
+        if (type === 'user') {
+
+            return (
+                    <TouchableOpacity key={i} style={styles.trendingItem}>
+                        <Image
+                            onLoadEnd={() => {
+
+                            if (i === this.state.yalies.length - 1) {
+                                 this.setState({showLoadingModal: false})
+                            this.setTimeout(() => {
+                                this.refs.trendingYaliesScrollView.scrollTo(0, width);
+                            }, 800);
+
+                            this.setTimeout(() => {
+                                this.refs.trendingYaliesScrollView.scrollTo(0, 0);
+                            }, 1500);
+                            }
+                            }}
+
+                            style={styles.trendingUserImg} source={{uri}}/>
+                    </TouchableOpacity>
+            )
+        }
 
         return (
-            <TouchableOpacity key={i} onPress={() => this.props.handleSelectedTabChange('events')} style={styles.trendingItem}>
+            <TouchableOpacity key={i} onPress={() => this.props.handleSelectedTabChange('events')}
+                              style={styles.trendingItem}>
                 <Image style={styles.trendingEventImg} source={{uri}}/>
             </TouchableOpacity>
         )
@@ -153,10 +162,6 @@ var HotPage = React.createClass({
     },
 
     render() {
-        this.setTimeout(() => {
-            if(_.isEmpty(this.state.events && this.state.yalies)) this.setState({showLoadingModal: true});
-        }, 200);
-
         return (
             <View style={styles.container}>
                 {this._renderHeader()}
@@ -164,10 +169,12 @@ var HotPage = React.createClass({
                     <View style={[styles.trendingItemsCarousel, {height: height / 5}]}>
                         <Title>TRENDING <Text style={{color: '#ee964b'}}>YALIES</Text></Title>
                         <ScrollView
+                            ref="trendingYaliesScrollView"
                             automaticallyAdjustContentInsets={false}
                             horizontal={true}
                             pagingEnabled={true}
                             directionalLockEnabled={true}
+                            onLayout={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)}
                             onScroll={this.handleScroll}
                             snapToAlignment='center'
                             snapToInterval={64}
@@ -175,15 +182,16 @@ var HotPage = React.createClass({
                             style={[styles.scrollView, styles.horizontalScrollView, {marginTop: 10}]}>
                             {this.state.yalies && this.state.yalies.map(this._createTrendingItem.bind(null, 'user'))}
                         </ScrollView>
-                        <View style={[styles.scrollbarArrow, {top: height / 10.6, left: width / 1.20, backgroundColor: 'transparent'}]}>
-                            {/*
-                             <Animated.View style={{opacity: this.state.fadeAnim}}>
-                             <ChevronIcon
-                             color='rgba(255,255,255,0.8)'
-                             size={20}
-                             direction={'right'}/>
-                             </Animated.View>
-                             */}
+                        <View
+                            style={[styles.scrollbarArrow, {top: height / 10.6, left: width / 1.20, backgroundColor: 'transparent'}]}>
+
+                            <Animated.View style={{opacity: this.state.fadeAnim}}>
+                                <ChevronIcon
+                                    color='rgba(255,255,255,0.8)'
+                                    size={20}
+                                    direction={'right'}/>
+                            </Animated.View>
+
                         </View>
                     </View>
 
@@ -203,7 +211,7 @@ var HotPage = React.createClass({
                         </ScrollView>
                     </View>
                 </View>
-                <View style={{height: 48}} />
+                <View style={{height: 48}}/>
                 <ModalBase
                     modalStyle={styles.modalStyle}
                     animated={true}
@@ -264,7 +272,8 @@ const styles = StyleSheet.create({
         height: 125
     },
     loadingModalActivityIndicatorIOS: {
-        height: 80
+        height: 80,
+        bottom: height/40
     },
     loadingModalFunFactText: {
         color: '#fff',
@@ -340,7 +349,7 @@ const styles = StyleSheet.create({
     trendingUserImg: {
         width: width / 5.2,
         height: 64,
-        marginHorizontal: width/30,
+        marginHorizontal: width / 30,
         resizeMode: 'contain'
     },
     trendingEventImg: {

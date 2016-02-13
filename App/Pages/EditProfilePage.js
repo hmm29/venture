@@ -15,6 +15,7 @@
 var React = require('react-native');
 var {
     Image,
+    LayoutAnimation,
     StyleSheet,
     Text,
     TextInput,
@@ -28,7 +29,7 @@ var Header = require('../Partials/Header');
 var _ = require('lodash');
 var AutoComplete = require('react-native-autocomplete');
 var Dimensions = require('Dimensions');
-var Icon = require('react-native-vector-icons');
+var Icon = require('react-native-vector-icons/Ionicons');
 
 var CAMERA_ICON_SIZE = 48;
 var CAMERA_REF = 'camera';
@@ -46,7 +47,9 @@ var BUTTONS = [
 var CANCEL_INDEX = 3;
 var {height, width} = Dimensions.get('window');
 
-String.prototype.capitalize = () => this.replace(/(?:^|\s)\S/g, a => a.toUpperCase());
+String.prototype.capitalize = function () {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+};
 
 var EditProfilePage = React.createClass({
     statics: {
@@ -126,7 +129,7 @@ var EditProfilePage = React.createClass({
         var GenderList = require('../../data/genders.json').genders;
 
         let genderMatches =
-            _.filter(GenderList, n => _.startsWith(n, text.toLowerCase()));
+            _.filter(GenderList, n => _.startsWith(n.toLowerCase(), text.toLowerCase()));
 
         this.setState({genderMatches});
     },
@@ -234,9 +237,9 @@ var EditProfilePage = React.createClass({
                 }}>
                     <Icon
                         color="rgba(255,255,255,0.7)"
-                        name="ion|edit"
+                        name="edit"
                         size={EDIT_GENDER_ICON_SIZE}
-                        style={{width: EDIT_GENDER_ICON_SIZE * 1.4, height: EDIT_GENDER_ICON_SIZE * 1.4, left: 10}}
+                        iconStyle={{width: EDIT_GENDER_ICON_SIZE * 1.4, height: EDIT_GENDER_ICON_SIZE * 1.4, left: 10}}
                         />
                 </TouchableOpacity>
             </View>
@@ -284,7 +287,15 @@ var EditProfilePage = React.createClass({
                     <Image defaultSource={require('../../img/about.png')} style={styles.backdrop}>
 
                         {editPhoto}
+                        <Text
+                            style={[styles.label, {fontSize: 27, marginBottom: width/40}]}>{this.state.currentFirstName} {this.state.currentFirstName ? ',' : ''} {this.state.currentAge}</Text>
 
+                        <View style={styles.editableTextFields}>
+                            {this.state.isEditingGenderField && this.state.showAutocomplete ? genderAutocomplete : genderField}
+
+                            {this.state.showBioField ? editBio : <View />}
+
+                        </View>
 
                         <TouchableOpacity onPress={this.saveData}
                                           style={[styles.saveButton, {top: (this.state.showBioField ? 10 : 115)}]}>
@@ -302,7 +313,7 @@ var EditProfilePage = React.createClass({
             <Header>
                 <BackIcon onPress={() => {
                         this.props.navigator.pop();
-                    }} style={{right: 14}}/>
+                    }}/>
                 <Text>EDIT PROFILE</Text>
                 <View />
             </Header>

@@ -11,6 +11,7 @@
  */
 
 import React, {
+    AsyncStorage,
     Component,
     StyleSheet,
     TabBarIOS,
@@ -54,8 +55,20 @@ class TabBarLayout extends Component {
         }
     };
 
-    _handleSelectedTabChange(selectedTab:string) {
-        alert('pop')
+    componentDidMount() {
+        let chatCountRef = this.props.firebaseRef.child(`users/${this.props.ventureId}/chatCount`);
+
+        chatCountRef.on('value', snapshot => {
+            this.setState({chatCount: snapshot.val(), chatCountRef});
+        });
+    };
+
+    componentWillUnmount() {
+        this.state.chatCountRef && this.state.chatCountRef.off();
+
+        AsyncStorage.setItem('@AsyncStorage:Venture:currentUserFriends', 'null')
+            .catch(error => console.log(error.message))
+            .done();
     };
 
     _renderContent(title:string) {
@@ -63,7 +76,7 @@ class TabBarLayout extends Component {
             return <HotPage currentUserFriends={this.props.currentUserFriends}
                             currentUserLocationCoords={this.props.currentUserLocationCoords}
                             firebaseRef={this.props.firebaseRef}
-                            handleSelectedTabChange={this._handleSelectedTabChange}
+                            handleSelectedTabChange={(selectedTab) => {this.setState({selectedTab})}} // change tab to events when event on hot page is pressed
                             navigator={this.props.navigator}
                             ventureId={this.props.ventureId}/>;
         }

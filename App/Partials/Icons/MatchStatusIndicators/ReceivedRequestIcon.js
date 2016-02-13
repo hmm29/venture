@@ -22,6 +22,8 @@ import React, {
 
 import Icon from 'react-native-vector-icons/Ionicons';
 
+const SIZE = 25;
+
 type Props = {
     color: React.PropTypes.string,
     onPress: React.PropTypes.func.isRequired,
@@ -40,12 +42,12 @@ class ReceivedRequestIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
+                style={[this.props.style]}>
                 <Icon
                     name="happy-outline"
-                    size={this.props.size || 25}
+                    size={this.props.size || SIZE}
                     color={this.props.color || 'rgba(0,0,0,0.2)'}
-                    style={{width: (this.props.size || 25) * 1.16, height: (this.props.size || 25) * 1.16}}
+                    iconStyle={[{width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18}, styles.icon]}
                     />
             </TouchableOpacity>
         );

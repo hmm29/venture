@@ -13,15 +13,20 @@
 'use strict';
 
 import React, {
+    Animated,
     Component,
+    Easing,
     Image,
     StyleSheet,
     TouchableOpacity,
     View
 } from 'react-native';
 
-type
-Props = {
+import Animatable from 'react-native-animatable';
+
+type Props = {
+    onHomePage: React.PropTypes.bool,
+    onLayout: React.PropTypes.func,
     onPress: React.PropTypes.func,
     logoContainerStyle: View.propTypes.style,
 };
@@ -29,28 +34,48 @@ Props = {
 class BrandLogo extends Component {
     constructor(props:Props) {
         super(props);
-        this.state = {};
-    }
+        this.state = {
+            theta: new Animated.Value(45)
+        };
+    };
 
-;
+    componentDidMount() {
+        this._animate();
+    };
+
+    _animate() {
+       this.refs.brandLogo.tada(800);
+    };
 
     render() {
         return (
-            <View style={[styles.container, this.props.logoContainerStyle]}>
+            <View onLayout={this.props.onLayout} style={[styles.container, this.props.logoContainerStyle]}>
+                <Animatable.View ref="brandLogo">
                 <TouchableOpacity
                     activeOpacity={0.8}
-                    onPress={this.props.onPress}>
+                    onPress={() => {
+                        this.props.onPress && this.props.onPress();
+                        this._animate();
+                    }}>
                     <Image source={require('../../img/venture_brand_logo_white.png')}
-                           style={styles.logo}/>
+                           style={styles.brandLogo}/>
                 </TouchableOpacity>
+                </Animatable.View>
             </View>
         );
     }
 }
 
 const styles = StyleSheet.create({
-    logo: {
-        backgroundColor: 'transparent'
+    container: {
+        marginVertical: 10,
+        flex: 1,
+        alignSelf: 'center'
+    },
+    brandLogo: {
+        backgroundColor: 'transparent',
+        width: 220,
+        height: 180
     }
 });
 

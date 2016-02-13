@@ -43,12 +43,13 @@ class FiltersModalIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
+                style={[this.props.style,{width: (this.props.size || SIZE) * 1.48, height: (this.props.size || SIZE) * 1.48, alignItems: 'center'}]} // scale size, 1.48, 1 less than homepageicon scale size due to ios icon difference
+                >
                 <Icon
                     name={Platform.OS === 'ios' ? "ios-gear-outline" : "android-settings"}
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    style={{width: (this.props.size || SIZE) * 1.16, height: (this.props.size || SIZE) * 1.16}}
+                    iconStyle={[styles.icon]}
                     />
             </TouchableOpacity>
         );

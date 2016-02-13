@@ -28,7 +28,7 @@ var _ = require('lodash');
 var Dimensions = require('Dimensions');
 var FBLogin = require('react-native-facebook-login');
 var Firebase = require('firebase');
-var ModalBase = require('../Partials/ModalBase');
+var ModalBase = require('../Partials/Modals/Base/ModalBase');
 var sha256 = require('sha256');
 var Swiper = require('react-native-swiper');
 var TimerMixin = require('react-timer-mixin');
@@ -190,7 +190,7 @@ var LoginPage = React.createClass({
     },
 
     _navigateToHomePage() {
-        // @hmm: must include HomePage require here
+        // @hmm: MUST MUST MUST include HomePage require here
         var HomePage = require('../Pages/HomePage');
 
         this.props.navigator.replace({title: 'Home', component: HomePage})
@@ -212,7 +212,6 @@ var LoginPage = React.createClass({
 
                     // @hmm: slight defer to allow for snapshot.val()
                     this.setTimeout(() => {
-
                         AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
                             .then(() => {
                                 this._navigateToHomePage()
@@ -291,28 +290,28 @@ var LoginPage = React.createClass({
                         <View style={styles.slide}>
                             <Image
                                 resizeMode={Image.resizeMode.stretch}
-                                defaultSource={require('../../img/onboarding_what_do_you_want_to_do.png')}
+                                source={require('../../img/onboarding_what_do_you_want_to_do.png')}
                                 style={styles.backdrop}>
                             </Image>
                         </View>
                         <View style={styles.slide}>
                             <Image
                                 resizeMode={Image.resizeMode.stretch}
-                                defaultSource={require('../../img/onboarding_find_activity_partners.png')}
+                                source={require('../../img/onboarding_find_activity_partners.png')}
                                 style={styles.backdrop}>
                             </Image>
                         </View>
                         <View style={styles.slide}>
                             <Image
                                 resizeMode={Image.resizeMode.stretch}
-                                defaultSource={require('../../img/onboarding_share_activities.png')}
+                                source={require('../../img/onboarding_share_activities.png')}
                                 style={styles.backdrop}>
                             </Image>
                         </View>
                         <View style={styles.slide}>
                             <Image
                                 resizeMode={Image.resizeMode.stretch}
-                                defaultSource={require('../../img/onboarding_make_new_connections.png')}
+                                source={require('../../img/onboarding_make_new_connections.png')}
                                 style={styles.backdrop}>
                             </Image>
                         </View>

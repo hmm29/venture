@@ -31,19 +31,21 @@ var {
     } = React;
 
 var _ = require('lodash');
+var Animatable = require('react-native-animatable');
 var ChatPage = require('../ChatPage');
 var Dimensions = require('Dimensions');
+var FiltersModal = require('../../Partials/Modals/FiltersModal')
 var Firebase = require('firebase');
 var GeoFire = require('geofire');
-var ModalBase = require('../../Partials/ModalBase');
+var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var TimerMixin = require('react-timer-mixin');
 
+var CHAT_DURATION_IN_MINUTES = 0.25;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
-var SCREEN_WIDTH = Dimensions.get('window').width;
-var SCREEN_HEIGHT = Dimensions.get('window').height;
+var {height, width} = Dimensions.get('window');
 var SEARCH_TEXT_INPUT_REF = 'searchTextInput';
 var THUMBNAIL_SIZE = 50;
 
@@ -59,17 +61,18 @@ String.prototype.capitalize = function () {
 var User = React.createClass({
 
     propTypes: {
+        currentTime: React.PropTypes.number,
         currentUserLocationCoords: React.PropTypes.array,
         currentUserData: React.PropTypes.object,
         data: React.PropTypes.object,
-        isCurrentUser: React.PropTypes.boolean,
+        isCurrentUser: React.PropTypes.func,
         navigator: React.PropTypes.object
     },
 
     getInitialState() {
         return {
             dir: 'row',
-            timerVal: ''
+            expireTime: ''
         }
     },
 
@@ -83,11 +86,16 @@ var User = React.createClass({
         this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
         && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).on('value', snapshot => {
             _this.setState({
+                chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                 distance,
                 status: snapshot.val() && snapshot.val().status,
-                timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                expireTime: snapshot.val() && snapshot.val().expireTime
             });
         });
+    },
+
+    componentDidMount() {
+        this.refs.user.fadeInUp(600);
     },
 
     componentWillReceiveProps(nextProps) {
@@ -101,9 +109,10 @@ var User = React.createClass({
         && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).on('value', snapshot => {
             //@hmm: quickly reset status
             _this.setState({
+                chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                 distance,
                 status: snapshot.val() && snapshot.val().status,
-                timerVal: snapshot.val() && snapshot.val().timerVal && this._getTimerValue(snapshot.val().timerVal)
+                expireTime: snapshot.val() && snapshot.val().expireTime
             });
         });
     },
@@ -151,9 +160,27 @@ var User = React.createClass({
         }
     },
 
-    _getTimerValue(numOfMilliseconds:number) {
-        var date = new Date(numOfMilliseconds);
-        return date.getMinutes() + 'm ' + date.getSeconds() + 's';
+    _getTimerValue(currentTimeInMs:number) {
+        if(!(this.state.expireTime && currentTimeInMs)) return -1;
+
+        let timerValInSeconds = Math.floor((this.state.expireTime-currentTimeInMs)/1000);
+
+        if(timerValInSeconds >= 0) return timerValInSeconds;
+
+        let targetUserIDHashed = this.props.data.ventureId,
+            currentUserIDHashed = this.props.currentUserIDHashed,
+            firebaseRef = this.props.firebaseRef,
+            targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
+            currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests');
+
+        // end match interactions
+        targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
+        currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+
+        this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
+
+        return -1;
+
     },
 
     handleMatchInteraction() {
@@ -194,7 +221,7 @@ var User = React.createClass({
 
         else if (this.state.status === 'matched') {
             let chatRoomActivityPreferenceTitle,
-                distance = 0.7 + ' mi',
+                distance = this.state.distance + 'mi',
                 _id;
 
             currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
@@ -207,32 +234,43 @@ var User = React.createClass({
                     chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
                 }
 
+                // @hmm put chat ids in match request object so overlays know which chat to destroy
+                currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
+                targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
+
                 firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
                     let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
 
                     if (snapshot.val() === null) {
+                        // TODO: in the future should be able to account for timezone differences?
+                        // probably not because if youre going to match with someone youll be in same timezone
+
+                        let currentTime = new Date().getTime(),
+                            expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES*60*1000)).getTime();
+
                         chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
-                        chatRoomRef.child('timer').set({value: 10000}); // @hmm: set timer
+                        chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
+                        chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
                         chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed).set(this.props.currentUserData.activityPreference.title);
                         chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed).set(this.props.data.activityPreference.title);
                     }
 
-                            _this.props.navigator.push({
-                                title: 'Chat',
-                                component: ChatPage,
-                                passProps: {
-                                    _id,
-                                    recipient: _this.props.data,
-                                    distance,
-                                    chatRoomActivityPreferenceTitle,
-                                    chatRoomRef,
-                                    currentUserData: _this.props.currentUserData
-                                }
-                            });
-
+                    _this.props.navigator.push({
+                        title: 'Chat',
+                        component: ChatPage,
+                        passProps: {
+                            _id,
+                            recipient: _this.props.data,
+                            distance,
+                            chatRoomActivityPreferenceTitle,
+                            chatRoomRef,
+                            currentUserData: _this.props.currentUserData
+                        }
                     });
+
                 });
+            });
         }
 
         else {
@@ -286,9 +324,10 @@ var User = React.createClass({
     render() {
         var LinearGradient = require('react-native-linear-gradient');
 
+        // important to have dummy icon for alignment in current user bar
         let dummyIcon = (
             <TouchableOpacity
-                style={{width: 18 * 1.6, height: 18 * 1.6}} />
+                style={{width: 18 * 1.6, height: 18 * 1.6}}/>
         );
 
         let profileModal = (
@@ -323,43 +362,48 @@ var User = React.createClass({
         );
 
         return (
-            <TouchableHighlight
-                underlayColor={WHITE_HEX_CODE}
-                activeOpacity={0.3}
-                onPress={this._onPressItem}
-                style={styles.userRow}>
-                <View
-                    style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
-                    <LinearGradient
-                        colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor]) || [this.getStatusColor(), this._getSecondaryStatusColor(), WHITE_HEX_CODE, 'transparent']}
-                        start={[0,1]}
-                        end={[1,1]}
-                        locations={[0.3,0.99,1.0]}
-                        style={styles.container}>
-                        <View style={styles.rightContainer}>
-                            <Image
-                                onPress={this._onPressItem}
-                                source={{uri: this.props.data && this.props.data.picture}}
-                                style={[styles.thumbnail]}>
-                                <View style={(this.state.timerVal ? styles.timerValOverlay : {})}>
-                                    <Text
-                                        style={[styles.timerValText, (this.state.timerVal && this.state.timerVal[0] === '0' ? {color: '#F12A00'} :{})]}>{this.state.timerVal}</Text>
+            <Animatable.View ref="user">
+                <TouchableHighlight
+                    underlayColor={WHITE_HEX_CODE}
+                    activeOpacity={0.3}
+                    onPress={this._onPressItem}
+                    style={styles.userRow}>
+                    <View
+                        style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
+                        <LinearGradient
+                            colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor]) || [this.getStatusColor(), this._getSecondaryStatusColor(), WHITE_HEX_CODE, 'transparent']}
+                            start={[0,1]}
+                            end={[1,1]}
+                            locations={[0.3,0.99,1.0]}
+                            style={styles.container}>
+                            <View style={styles.rightContainer}>
+                                <Image
+                                    onPress={this._onPressItem}
+                                    source={{uri: this.props.data && this.props.data.picture}}
+                                    style={[styles.thumbnail]}>
+                                    <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
+                                        <Text
+                                            style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
+                                            {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
+                                        </Text>
+                                    </View>
+                                </Image>
+                                <Text
+                                    style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
+                                <Text style={styles.activityPreference}>
+                                    {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title}
+                                </Text>
+                                <View>
+                                    {!this.props.isCurrentUser ?
+                                        <View style={{top: 10, right: width/25}}>{this._renderStatusIcon()}</View> :
+                                        <View>{dummyIcon}</View>}
                                 </View>
-                            </Image>
-                            <Text
-                                style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
-                            <Text style={styles.activityPreference}>
-                                {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title}
-                            </Text>
-                            <View>
-                                {!this.props.isCurrentUser ?
-                                    <View style={{top: 10}}>{this._renderStatusIcon()}</View> : <View>{dummyIcon}</View>}
                             </View>
-                        </View>
-                    </LinearGradient>
-                    {this.state.dir === 'column' ? profileModal : <View />}
-                </View>
-            </TouchableHighlight>
+                        </LinearGradient>
+                        {this.state.dir === 'column' ? profileModal : <View />}
+                    </View>
+                </TouchableHighlight>
+            </Animatable.View>
         );
     }
 });
@@ -388,20 +432,24 @@ var UsersListPage = React.createClass({
             dataSource: new ListView.DataSource({
                 rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
             }),
-            firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
+            firebaseRef: this.props.firebaseRef,
             maxSearchDistance: null,
             rows: [],
             searchText: '',
             showCurrentUser: false,
+            showFiltersModal: false,
             showLoadingModal: false
         };
     },
+
+    _handle: null,
 
     componentDidMount() {
         InteractionManager.runAfterInteractions(() => {
 
             let currentUserRef = this.props.ventureId && this.state.firebaseRef && this.state.firebaseRef.child(`users/${this.props.ventureId}`),
-                usersListRef = this.state.firebaseRef.child('users'),
+                firebaseRef = this.state.firebaseRef,
+                usersListRef = firebaseRef.child('users'),
                 _this = this;
 
             this.setState({animating: true});
@@ -426,25 +474,25 @@ var UsersListPage = React.createClass({
                         // @hmm: show users based on filter settings
                         snapshot.val() && _.each(snapshot.val(), (user) => {
 
-                            if(user.status && !user.status.isOnline) return;
+                            if (user.status && !user.status.isOnline) return;
 
                             // @hmm: because of cumulative privacy selection, only have to check for friends+ for both 'friends+' and 'all'
                             if (matchingPreferences && matchingPreferences.privacy && matchingPreferences.privacy.indexOf('friends+') > -1) {
                                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates && user.location.coordinates.latitude && user.location.coordinates.longitude && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude, user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
-                                if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
-                                if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
-                                }
-                            } else if (matchingPreferences && matchingPreferences.privacy && matchingPreferences.privacy.indexOf('friends') > -1 && matchingPreferences.privacy.length === 1) {
-                                if (this.props.currentUserFriends && !!_.findWhere(this.props.currentUserFriends, {name: user.name})) {
-                                    if (this.props.currentUserLocationCoords && user.location && user.location.coordinates && user.location.coordinates.latitude && user.location.coordinates.longitude && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude, user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
                                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
+                                }
+                            } else if (matchingPreferences && matchingPreferences.privacy && matchingPreferences.privacy.indexOf('friends') > -1 && matchingPreferences.privacy.length === 1) {
+                                if (this.props.currentUserFriends && _.findIndex(this.props.currentUserFriends, {name: user.name}) > -1) {
+                                    if (this.props.currentUserLocationCoords && user.location && user.location.coordinates && user.location.coordinates.latitude && user.location.coordinates.longitude && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude, user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                                        if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
+                                        if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
                                     }
                                 }
                             } else {
                                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates && user.location.coordinates.latitude && user.location.coordinates.longitude && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude, user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
-                                if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
-                                if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
+                                    if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
+                                    if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender.indexOf(user.gender) === -1 && matchingPreferences.gender.indexOf('other') > -1 && user.gender !== 'male' && user.gender !== 'female') filteredUsersArray.push(user);
                                 }
                             }
 
@@ -467,16 +515,38 @@ var UsersListPage = React.createClass({
 
             this.setState({currentUserVentureId: this.props.ventureId});
 
-            this.state.firebaseRef.child(`/users/${this.props.ventureId}`).once('value', snapshot => {
+            firebaseRef.child(`/users/${this.props.ventureId}`).once('value', snapshot => {
                 _this.setState({currentUserData: snapshot.val(), showCurrentUser: true});
             });
+
+            _this._handle = _this.setInterval(() => {
+                _this.setState({currentTimeInMs: (new Date()).getTime()})
+            }, 1000);
+
+            // decrease chat count when chat destroyed, only need this here once on users list and not in chats page
+            firebaseRef.child('chat_rooms').on('child_removed', function(oldChildSnapshot) {
+                if(oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(_this.props.ventureId)) {
+                    firebaseRef.child(`users/${_this.props.ventureId}/chatCount`).once('value', snapshot => {
+                        firebaseRef.child(`users/${_this.props.ventureId}/chatCount`).set(snapshot.val()-1);
+                    });
+                }
+            });
+
         });
 
+        this.setTimeout(() => {
+            if (_.isEmpty(this.state.rows)) this.setState({showLoadingModal: true});
+        }, 1000);
     },
 
     componentWillUnmount() {
         this.state.usersListRef && this.state.usersListRef.off();
+        this.state.firebaseRef.child('chat_rooms') && this.state.firebaseRef.child('chat_rooms').off();
         this.state.firebaseRef.off();
+    },
+
+    _handleShowFiltersModal(showFiltersModal:boolean){
+        this.setState({showFiltersModal});
     },
 
     _navigateToHome() {
@@ -502,13 +572,10 @@ var UsersListPage = React.createClass({
 
     updateRows(rows) {
         this.setState({dataSource: this.state.dataSource.cloneWithRows(rows)});
+        if (rows.length) this.setState({showLoadingModal: false});
     },
 
     _renderCurrentUser() {
-        this.setTimeout(() => {
-            if(_.isEmpty(this.state.rows)) this.setState({showLoadingModal: true});
-        }, 200);
-
         return (
             <User backgroundColor={'rgba(255,245,226, 0.5)'}
                   data={this.state.currentUserData}
@@ -522,10 +589,9 @@ var UsersListPage = React.createClass({
         var Header = require('../../Partials/Header');
         var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 
-
         return (
             <Header>
-                <HomePageIcon onPress={() => this._navigateToHome()} style={{right: 14}}/>
+                <HomePageIcon onPress={() => this._navigateToHome()}/>
                 <TextInput
                     ref={SEARCH_TEXT_INPUT_REF}
                     autoCapitalize='none'
@@ -537,6 +603,9 @@ var UsersListPage = React.createClass({
                     returnKeyType='done'
                     style={styles.searchTextInput}/>
                 <FiltersModalIcon
+                    onPress={() => {
+                        this.setState({showFiltersModal: true});
+                    }}
                     style={{left: 14}}/>
                 <Text />
             </Header>
@@ -547,9 +616,11 @@ var UsersListPage = React.createClass({
     _renderUser(user:Object, sectionID:number, rowID:number) {
         if (user.ventureId === this.state.currentUserVentureId) return <View />;
 
-        if(this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return <View />;
+        if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return
+            <View />;
 
-        return <User currentUserData={this.state.currentUserData}
+        return <User currentTimeInMs={this.state.currentTimeInMs}
+                     currentUserData={this.state.currentUserData}
                      currentUserIDHashed={this.state.currentUserVentureId}
                      currentUserLocationCoords={this.props.currentUserLocationCoords}
                      data={user}
@@ -604,6 +675,12 @@ var UsersListPage = React.createClass({
                         </TouchableOpacity>
                     </View>
                 </ModalBase>
+                <FiltersModal
+                    firebaseRef={this.state.firebaseRef}
+                    handleShowFiltersModal={this._handleShowFiltersModal}
+                    modalVisible={this.state.showFiltersModal}
+                    ventureId={this.props.ventureId} // @hmm: important to pass this.props.ventureId bc its available immediately
+                    />
             </View>
         )
     }
@@ -611,7 +688,7 @@ var UsersListPage = React.createClass({
 
 var styles = StyleSheet.create({
     activityPreference: {
-        width: SCREEN_WIDTH/3.2,
+        width: width / 3.2,
         fontSize: 18,
         fontFamily: 'AvenirNextCondensed-UltraLight',
         fontWeight: '400',
@@ -632,7 +709,7 @@ var styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         borderColor: 'rgba(100,100,105,0.2)',
-        borderWidth: 1
+        borderWidth: 1,
     },
     customRefreshingActivityIndicatorIOS: {
         height: 20,
@@ -649,7 +726,7 @@ var styles = StyleSheet.create({
         fontFamily: 'AvenirNextCondensed-Regular'
     },
     distance: {
-        width: SCREEN_WIDTH/4,
+        width: width / 4,
         textAlign: 'center',
         fontSize: 16,
         marginHorizontal: 25,
@@ -661,7 +738,8 @@ var styles = StyleSheet.create({
         height: 30
     },
     loadingModalActivityIndicatorIOS: {
-        height: 80
+        height: 80,
+        bottom: height/40
     },
     loadingModalFunFactText: {
         color: '#fff',
@@ -669,19 +747,19 @@ var styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 18,
         alignSelf: 'center',
-        width: SCREEN_WIDTH / 1.4,
+        width: width / 1.4,
         backgroundColor: 'transparent',
-        padding: SCREEN_WIDTH / 15,
-        borderRadius: SCREEN_WIDTH / 10
+        padding: width / 15,
+        borderRadius: width / 10
     },
     loadingModalFunFactTextTitle: {
-        fontSize: SCREEN_HEIGHT / 30
+        fontSize: height / 30
     },
     loadingModalStyle: {
         backgroundColor: '#02030F'
     },
     logoContainerStyle: {
-        marginHorizontal: (SCREEN_WIDTH - LOGO_WIDTH) / 2
+        marginHorizontal: (width - LOGO_WIDTH) / 2
     },
     logoStyle: {
         width: LOGO_WIDTH,
@@ -693,7 +771,7 @@ var styles = StyleSheet.create({
         alignItems: 'center'
     },
     profileModal: {
-        paddingVertical: SCREEN_HEIGHT / 30,
+        paddingVertical: height / 30,
         flexDirection: 'column',
         justifyContent: 'center'
     },
@@ -725,17 +803,17 @@ var styles = StyleSheet.create({
         fontFamily: 'AvenirNextCondensed-Regular'
     },
     profileModalUserPicture: {
-        width: SCREEN_WIDTH / 2.6,
-        height: SCREEN_WIDTH / 2.6,
-        borderRadius: SCREEN_WIDTH / 5.2,
+        width: width / 2.6,
+        height: width / 2.6,
+        borderRadius: width / 5.2,
         alignSelf: 'center',
-        marginBottom: SCREEN_WIDTH / 22
+        marginBottom: width / 22
     },
     rightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-around',
-        width: SCREEN_WIDTH/1.4
+        paddingHorizontal: width/10
     },
     searchTextInput: {
         color: '#222',
@@ -772,7 +850,6 @@ var styles = StyleSheet.create({
         height: THUMBNAIL_SIZE,
         borderRadius: THUMBNAIL_SIZE / 2,
         marginVertical: 7,
-        marginLeft: 10
     },
     timerValText: {
         opacity: 1.0,

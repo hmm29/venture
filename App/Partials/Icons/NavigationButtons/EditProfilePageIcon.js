@@ -22,7 +22,7 @@ import React, {
 
 import Icon from 'react-native-vector-icons/Ionicons';
 
-const SIZE = 30;
+const SIZE = 28;
 
 type Props = {
     color: React.PropTypes.string,
@@ -42,12 +42,12 @@ class EditProfilePageIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, styles.icon]}>
+                style={[this.props.style, {width: (this.props.size || SIZE) * 2.48, height: (this.props.size || SIZE) * 2.48, alignItems: 'flex-end'}]}>
                 <Icon
                     name="edit"
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    style={{width: (this.props.size || SIZE) * 1.16, height: (this.props.size || SIZE) * 1.16}}
+                    iconStyle={[styles.icon]}
                     />
             </TouchableOpacity>
         );

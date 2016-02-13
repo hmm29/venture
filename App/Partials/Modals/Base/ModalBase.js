@@ -24,7 +24,7 @@ var ModalBase = React.createClass({
         animated: React.PropTypes.bool.isRequired,
         modalStyle: View.propTypes.style,
         modalVisible: React.PropTypes.bool.isRequired,
-        transparent: React.PropTypes.bool.isRequired
+        transparent: React.PropTypes.bool
     },
 
     render() {

@@ -110,15 +110,17 @@ var HomePage = React.createClass({
                 account = JSON.parse(account);
 
                 if (account === null) {
-                    this.navigateToLogin();
+                    this.navigateToLoginPage();
                     return;
                 }
 
                 this.setState({isLoggedIn: true, showTextInput: true});
 
-                let currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${account.ventureId}`),
-                    trendingItemsRef = this.state.firebaseRef && this.state.firebaseRef.child('trending'),
-                    chatRoomsRef = this.state.firebaseRef && this.state.firebaseRef.child('chat_rooms'),
+                let firebaseRef = this.state.firebaseRef,
+                    usersListRef = firebaseRef && firebaseRef.child('users'),
+                    currentUserRef = firebaseRef.child(account.ventureId),
+                    trendingItemsRef = firebaseRef && firebaseRef.child('trending'),
+                    chatRoomsRef = firebaseRef && firebaseRef.child('chat_rooms'),
                     _this = this;
 
                 trendingItemsRef.once('value', snapshot => {
@@ -131,6 +133,17 @@ var HomePage = React.createClass({
                         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     }
                 );
+
+
+                // listener: decrease chat count when chat destroyed, only need this here once on users list and not in chats page
+                firebaseRef.child('chat_rooms').on('child_removed', function (oldChildSnapshot) {
+                    // if old snapshot has current users id in it, then subtract one from current user chat count
+                    if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(account.ventureId)) {
+                        firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
+                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() - 1);
+                        });
+                    }
+                });
 
                 //@hmm: get current user location & save to firebase object
                 // make sure this fires before navigating away!
@@ -146,16 +159,38 @@ var HomePage = React.createClass({
                     {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
                 );
 
-                chatRoomsRef.once('value', snapshot => {
-                    snapshot.val() && _.each(snapshot.val(), (chatRoom) => {
-                        if (chatRoom._id && chatRoom._id.indexOf(account.ventureId) > -1) {
-                            chatRoomsRef.child(chatRoom._id).set(null);
+                this.setState({ventureId: account.ventureId});
+                AppStateIOS.addEventListener('change', this._handleAppStateChange);
+
+                // @hmm: MODIFIED CLEAN UP (in case of reload): remove old match requests based on expireTime
+
+                currentUserRef.child('match_requests').once('value', snapshot => {
+                    snapshot.val() && _.each(snapshot.val(), (match) => {
+                        if (match && match.expireTime) {
+                            currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
+                            usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
+                        }
+                        if (match && match.chatRoomId) {
+                            chatRoomsRef.child(match.chatRoomId).set(null)
                         }
                     });
                 });
 
-                this.setState({ventureId: account.ventureId});
-                AppStateIOS.addEventListener('change', this._handleAppStateChange);
+                // @hmm: remove old event invite matches
+
+                currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
+                    snapshot.val() && _.each(snapshot.val(), (match) => {
+                        if (match && match.expireTime) {
+                            currentUserRef.child(`event_invite_match_requests/${match._id}/expireTime`).set(null);
+                            usersListRef.child(`${match._id}/event_invite_match_requests/${account.ventureId}/expireTime`).set(null);
+                        }
+                        if (match && match.chatRoomId) {
+                            chatRoomsRef.child(match.chatRoomId).set(null)
+                        }
+                    });
+                });
+
+                currentUserRef.child('chatCount').set(0); //@hmm: set chat count to 0
             })
             .catch((error) => console.log(error.message))
             .done();
@@ -295,7 +330,7 @@ var HomePage = React.createClass({
         this.setState({trendingContent})
     },
 
-    navigateToLogin() {
+    navigateToLoginPage() {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
         this.props.navigator.replace({title: 'Login', component: LoginPage});
     },

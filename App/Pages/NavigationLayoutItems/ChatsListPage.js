@@ -40,7 +40,7 @@ var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
 var TimerMixin = require('react-timer-mixin');
 
-var CHAT_DURATION_IN_MINUTES = 0.25;
+var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
@@ -378,10 +378,12 @@ var User = React.createClass({
 
             else {
                 targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
-                    status: 'received'
+                    status: 'received',
+                    _id: currentUserIDHashed
                 }, 200);
                 currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-                    status: 'sent'
+                    status: 'sent',
+                    _id: targetUserIDHashed
                 }, 300);
             }
         }

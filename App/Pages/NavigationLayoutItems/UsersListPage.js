@@ -46,7 +46,7 @@ var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/Match
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
 var TimerMixin = require('react-timer-mixin');
 
-var CHAT_DURATION_IN_MINUTES = 0.25;
+var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
@@ -54,6 +54,7 @@ var PAGE_SIZE = 10;
 var {height, width} = Dimensions.get('window');
 var SEARCH_TEXT_INPUT_REF = 'searchTextInput';
 var THUMBNAIL_SIZE = 50;
+var USERS_LIST_VIEW_REF = "usersListView";
 
 var YELLOW_HEX_CODE = '#ffe770';
 var BLUE_HEX_CODE = '#40cbfb';
@@ -86,8 +87,9 @@ var User = React.createClass({
         let distance = this.props.currentUserLocationCoords && this.props.data && this.props.data.location && this.props.data.location.coordinates && this.calculateDistance(this.props.currentUserLocationCoords, [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
             _this = this;
 
-        //this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
-        //&& (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).off();
+        // must have this to clean up old match subs
+        this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
+        && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).off();
 
         this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
         && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).on('value', snapshot => {
@@ -108,8 +110,9 @@ var User = React.createClass({
         let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
             _this = this;
 
-        //nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
-        //&& (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).off();
+        // must have this to clean up old match subs
+        nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
+        && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).off();
 
         nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
         && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).on('value', snapshot => {
@@ -281,10 +284,12 @@ var User = React.createClass({
 
         else {
             targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
-                status: 'received'
+                status: 'received',
+                _id: currentUserIDHashed
             }, 200);
             currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-                status: 'received'
+                status: 'sent',
+                _id: targetUserIDHashed
             }, 300);
         }
     },
@@ -423,6 +428,7 @@ var UsersListPage = React.createClass({
     getInitialState() {
         return {
             animating: false,
+            contentOffsetYValue: 0,
             dataSource: new ListView.DataSource({
                 rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
             }),
@@ -516,19 +522,6 @@ var UsersListPage = React.createClass({
             _this._handle = _this.setInterval(() => {
                 _this.setState({currentTimeInMs: (new Date()).getTime()})
             }, 1000);
-
-            // decrease chat count when chat destroyed, only need this here once on users list and not in chats page
-            firebaseRef.child('chat_rooms').on('child_removed', function (oldChildSnapshot) {
-                if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(_this.props.ventureId)) {
-                    firebaseRef.child(`users/${_this.props.ventureId}/chatCount`).once('value', snapshot => {
-                        firebaseRef.child(`users/${_this.props.ventureId}/chatCount`).set(snapshot.val() - 1);
-                    });
-
-                    // remove
-
-                }
-            });
-
         });
 
         this.setTimeout(() => {
@@ -622,7 +615,9 @@ var UsersListPage = React.createClass({
                      currentUserLocationCoords={this.props.currentUserLocationCoords}
                      data={user}
                      firebaseRef={this.state.firebaseRef}
-                     navigator={this.props.navigator}/>;
+                     navigator={this.props.navigator}
+                     rowID={rowID}
+            />;
     },
 
     render() {
@@ -636,6 +631,8 @@ var UsersListPage = React.createClass({
                     {this.state.showCurrentUser ? this._renderCurrentUser() : <View/>}
                 </View>
                 <RefreshableListView
+                    ref={USERS_LIST_VIEW_REF}
+                    contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
                     initialListSize={INITIAL_LIST_SIZE}
@@ -643,7 +640,13 @@ var UsersListPage = React.createClass({
                     minPulldownDistance={5}
                     automaticallyAdjustContentInsets={false}
                     loadData={this.shuffleUsers}
-                    onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
+                    onChangeVisibleRows={(visibleRows, changedRows) => {
+                        this.setState({visibleRows, changedRows});
+                    }}
+                    onEndReachedThreshold={height/20}
+                    onEndReached={() => {
+                        if(this.state.rows.length > INITIAL_LIST_SIZE) this.setState({contentOffsetYValue: this.state.contentOffsetYValue + height/20}); // scroll to show remaining content
+                    }}
                     refreshDescription="Everyday I'm shufflin'..."
                     scrollRenderAheadDistance={600}
                     refreshingIndictatorComponent={CustomRefreshingIndicator}

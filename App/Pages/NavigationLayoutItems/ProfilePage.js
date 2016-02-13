@@ -85,25 +85,39 @@ var ProfilePage = React.createClass({
         if (!isOnline) {
 
             loginStatusRef.set(false);
-            currentUserRef.child('match_requests').set(null); // @hmm: clear users match interactions
 
-            usersListRef.once('value', snapshot => {
-                snapshot.val() && _.each(snapshot.val(), (user) => {
-                    if (user.match_requests && user.match_requests[ventureId]) {
-                        if(user.match_requests[ventureId].chatRoomId) {
-                            chatRoomsRef.child(usersListRef.child(`${user.ventureId}/match_requests/${ventureId}/chatRoomId`)).set(null)
-                        }
-                        usersListRef.child(`${user.ventureId}/match_requests/${ventureId}`).set(null);
+            // @hmm: CLEAN UP: remove old match requests
+
+            currentUserRef.child('match_requests').once('value', snapshot => {
+                snapshot.val() && _.each(snapshot.val(), (match) => {
+                    if (match && match._id) {
+                        currentUserRef.child(`match_requests/${match._id}`).set(null);
+                        usersListRef.child(`${match._id}/match_requests/${ventureId}`).set(null);
+                    }
+                    if (match && match.chatRoomId) {
+                        chatRoomsRef.child(match.chatRoomId).set(null)
                     }
 
-                    if (user.event_invite_match_requests && user.event_invite_match_requests[ventureId]) {
-                        if(user.match_requests[ventureId].chatRoomId) {
-                            chatRoomsRef.child(usersListRef.child(`${user.ventureId}/match_requests/${ventureId}/chatRoomId`)).set(null)
-                        }
-                        usersListRef.child(`${user.ventureId}/event_invite_match_requests/${ventureId}`).set(null);
+                });
+            });
+
+            // @hmm: remove old event invite match requests
+
+            currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
+                snapshot.val() && _.each(snapshot.val(), (match) => {
+                    if (match && match._id) {
+                        currentUserRef.child(`event_invite_match_requests/${match._id}`).set(null);
+                        usersListRef.child(`${match._id}/event_invite_match_requests/${ventureId}`).set(null);
+                    }
+                    if (match && match.chatRoomId) {
+                        chatRoomsRef.child(match.chatRoomId).set(null)
                     }
                 });
             });
+
+            currentUserRef.child('match_requests').set(null); // @hmm: clear users match interactions
+            currentUserRef.child('event_invite_match_requests').set(null); // @hmm: clear users match interactions
+            currentUserRef.child('chatCount').set(0); //@hmm: set chat count to 0
 
             return;
         }

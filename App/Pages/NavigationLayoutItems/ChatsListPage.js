@@ -678,6 +678,9 @@ var ChatsListPage = React.createClass({
     },
 
     updateRows(userRows:Array) {
+        // sorting logic goes here, sort by match status which happens to be alphabetical => "matched" > "received" > "sent"
+        userRows = _.orderBy(userRows, [`match_requests.${this.props.ventureId}.status`], ['asc']);
+
         this.setState({dataSource: this.state.dataSource.cloneWithRows(userRows)});
         if(userRows.length) this.setState({showLoadingModal: false})
     },

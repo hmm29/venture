@@ -578,6 +578,12 @@ var ChatsListPage = React.createClass({
         };
     },
 
+    componentWillMount() {
+        this._handle = this.setInterval(() => {
+            this.setState({currentTimeInMs: (new Date()).getTime()})
+        }, 1000);
+    },
+
     componentDidMount() {
         InteractionManager.runAfterInteractions(() => {
             let eventInvites = [], usersListRef = this.state.firebaseRef.child('users'), currentUserRef = usersListRef.child(this.props.ventureId), _this = this;
@@ -655,15 +661,12 @@ var ChatsListPage = React.createClass({
                 _this.setState({currentUserData: snapshot.val()});
             });
 
-            _this._handle = _this.setInterval(() => {
-                _this.setState({currentTimeInMs: (new Date()).getTime()})
-            }, 1000);
         });
 
         this.setTimeout(() => {
             // if no rows in users list being recognized, show laoding modal till they are
             if (_.isEmpty(this.state.userRows)) this.setState({showLoadingModal: true});
-        }, 1000);
+        }, 2000);
     },
 
     componentWillUnmount() {

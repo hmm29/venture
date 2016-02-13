@@ -506,11 +506,6 @@ var TimerBar = React.createClass({
 
             }, 1000);
 
-            // update chat count for participating users
-
-            firebaseRef.child(`users/${currentUserData.ventureId}/chatCount`).once('value', snapshot => {
-                firebaseRef.child(`users/${currentUserData.ventureId}/chatCount`).set(snapshot.val() + 1);
-            });
         });
     },
 

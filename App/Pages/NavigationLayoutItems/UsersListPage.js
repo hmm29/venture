@@ -46,7 +46,7 @@ var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/Match
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
 var TimerMixin = require('react-timer-mixin');
 
-var CHAT_DURATION_IN_MINUTES = 5;
+var CHAT_DURATION_IN_MINUTES = 0.15;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
@@ -444,6 +444,13 @@ var UsersListPage = React.createClass({
 
     _handle: null,
 
+    componentWillMount() {
+        // handle must go in componentWillMount
+        this._handle = this.setInterval(() => {
+            this.setState({currentTimeInMs: (new Date()).getTime()})
+        }, 1000);
+    },
+
     componentDidMount() {
         InteractionManager.runAfterInteractions(() => {
 
@@ -519,9 +526,6 @@ var UsersListPage = React.createClass({
                 _this.setState({currentUserData: snapshot.val(), showCurrentUser: true});
             });
 
-            _this._handle = _this.setInterval(() => {
-                _this.setState({currentTimeInMs: (new Date()).getTime()})
-            }, 1000);
         });
 
         this.setTimeout(() => {

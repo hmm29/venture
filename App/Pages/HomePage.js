@@ -138,9 +138,17 @@ var HomePage = React.createClass({
                 // listener: decrease chat count when chat destroyed, only need this here once on users list and not in chats page
                 firebaseRef.child('chat_rooms').on('child_removed', function (oldChildSnapshot) {
                     // if old snapshot has current users id in it, then subtract one from current user chat count
-                    if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(account.ventureId)) {
+                    if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(account.ventureId) > -1) {
                         firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
                             firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() - 1);
+                        });
+                    }
+                });
+
+                firebaseRef.child('chat_rooms').on('child_added', function (childSnapshot) {
+                    if (childSnapshot && childSnapshot.val() && childSnapshot.val()._id && (childSnapshot.val()._id).indexOf(account.ventureId) > -1) {
+                        firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
+                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() + 1);
                         });
                     }
                 });
@@ -246,6 +254,7 @@ var HomePage = React.createClass({
 
     componentWillUnmount() {
         AppStateIOS.removeEventListener('change', this._handleAppStateChange);
+        this.state.firebaseRef && this.state.firebaseRef.off();
     },
 
     animateViewLayout(text:string) {
@@ -355,9 +364,9 @@ var HomePage = React.createClass({
     },
 
     onSubmitActivity() {
-        let activityTitleInputWithoutPunctuation = (this.state.activityTitleInput).replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' '),
+        let activityTitleInput = (this.state.activityTitleInput),
             activityPreferenceChange = {
-                title: activityTitleInputWithoutPunctuation + '?',
+                title: activityTitleInput + '?',
                 tags: this.state.tagsArr,
                 status: this.state.activeTimeOption.toUpperCase(),
                 start: {

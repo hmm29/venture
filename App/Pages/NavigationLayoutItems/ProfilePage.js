@@ -284,7 +284,7 @@ var Info = React.createClass({
     componentDidMount() {
         this.setTimeout(() => {
             if(_.isEmpty(this.state.info)) this.setState({showLoadingModal: true});
-        }, 1000);
+        }, 3000);
     },
 
     componentWillUnmount() {

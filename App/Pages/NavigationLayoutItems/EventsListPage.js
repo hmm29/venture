@@ -413,9 +413,7 @@ var AttendeeList = React.createClass({
             });
 
             this.bindAsArray(usersListRef, 'rows');
-    },
 
-    componentDidMount() {
         this._handle = this.setInterval(() => {
             this.setState({currentTimeInMs: (new Date()).getTime()})
         }, 1000);
@@ -443,7 +441,7 @@ var AttendeeList = React.createClass({
 
 
     _renderUser(user:Object, sectionID:number, rowID:number) {
-        // if (user.ventureId === this.props.ventureId) return <View />;
+        if (user.ventureId === this.props.ventureId) return <View />;
 
         return <User currentTimeInMs={this.state.currentTimeInMs}
                      currentUserData={this.props.currentUserData}
@@ -629,7 +627,7 @@ var Event = React.createClass({
                                 <Text style={{fontFamily: 'AvenirNextCondensed-Regular', color: '#fff'}}>{this.props.data && this.props.data.organization && this.props.data.organization.displayName && this.props.data.organization.displayName.split('').join(' ')}</Text>
                             </View>
                             <View style={[styles.rightContainer, {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}]}>
-                                <Text style={styles.eventTitleBanner}>{this.props.data && this.props.data.title && this.props.data.title.toUpperCase()}</Text>
+                                <Text style={{}/*styles.eventTitleBanner*/}>{this.props.data && this.props.data.title && this.props.data.title.toUpperCase()}</Text>
                                 <View style={{position: 'absolute', right: width/10}}>{this._renderEventAttendanceStatusIcon()}</View>
                             </View>
                         </Image>
@@ -693,7 +691,7 @@ var EventsListPage = React.createClass({
         this.setTimeout(() => {
             // if no rows in users list being recognized, show laoding modal till they are
             if (_.isEmpty(this.state.eventsRows)) this.setState({showLoadingModal: true});
-        }, 1000);
+        }, 2000);
     },
 
     componentWillUnmount() {
@@ -831,7 +829,7 @@ var styles = StyleSheet.create({
         borderRadius: 11,
         justifyContent: 'center',
         alignItems: 'center',
-        top: 10,
+        top: 3,
         left: height / 90
     },
     eventThumbnail: {
@@ -855,7 +853,7 @@ var styles = StyleSheet.create({
         paddingLeft: width / 15,
         paddingRight: width / 9.5,
         textAlign: 'center',
-        right: width / 30
+        right: width / 30,
     },
     loadingModalActivityIndicatorIOS: {
         height: 80,

@@ -200,7 +200,7 @@ var LoginPage = React.createClass({
     _navigateToHomePage() {
         // @hmm: MUST MUST MUST include HomePage require here
         var HomePage = require('../Pages/HomePage');
-        // from Home page means that blank home was shown and directed user to login
+        // use replace!!
         this.props.navigator.replace({title: 'Home', component: HomePage})
     },
 

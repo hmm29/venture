@@ -296,6 +296,7 @@ var HomePage = React.createClass({
     },
 
     navigateToLogin() {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
         this.props.navigator.replace({title: 'Login', component: LoginPage});
     },
 

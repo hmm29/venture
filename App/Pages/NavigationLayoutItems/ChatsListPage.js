@@ -16,6 +16,7 @@ var React = require('react-native');
 var {
     ActivityIndicatorIOS,
     Animated,
+    AppStateIOS,
     AsyncStorage,
     Image,
     InteractionManager,
@@ -60,17 +61,22 @@ String.prototype.capitalize = function () {
 
 var User = React.createClass({
     propTypes: {
-        currentTimeInMs: React.PropTypes.number,
+        chatsListHandle: React.PropTypes.number,
         currentUserLocationCoords: React.PropTypes.array,
         currentUserData: React.PropTypes.object,
         data: React.PropTypes.object,
         navigator: React.PropTypes.object
     },
 
+    mixins: [TimerMixin],
+
     getInitialState() {
         return {
+            currentTimeInMs: this.props.currentTimeInMs,
+            currentAppState: AppStateIOS.currentState,
             dir: 'row',
-            expireTime: ''
+            expireTime: '',
+            showTimerVal: true
         }
     },
 
@@ -103,7 +109,25 @@ var User = React.createClass({
         }
     },
 
+    componentDidMount() {
+        AppStateIOS.addEventListener('change', this._handleAppStateChange);
+    },
+
+    _handleAppStateChange(currentAppState) {
+        if(currentAppState === 'background') {
+            this.setState({showTimerVal: false})
+        }
+        if(currentAppState === 'active') {
+            this.setState({showTimerVal: true});
+            this.clearInterval(this.props.chatsListHandle);
+            this._handle = this.setInterval(() => {
+                this.setState({currentTimeInMs: (new Date()).getTime()})
+            }, 1000);
+        }
+    },
+
     componentWillReceiveProps(nextProps) {
+        this.setState({currentTimeInMs: nextProps.currentTimeInMs});
         let distance = nextProps.data && nextProps.data.location && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
             _this = this;
 
@@ -143,6 +167,7 @@ var User = React.createClass({
         if(this.props.data && this.props.data.isEventData) currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
 
         currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
+        AppStateIOS.removeEventListener('change', this._handleAppStateChange);
     },
 
     calculateDistance(location1:Array, location2:Array) {
@@ -176,11 +201,11 @@ var User = React.createClass({
     },
 
     _getTimerValue(currentTimeInMs:number) {
-        if(!(this.state.expireTime && currentTimeInMs)) return -1;
+        if (!(this.state.expireTime && currentTimeInMs)) return -1;
 
-        let timerValInSeconds = Math.floor((this.state.expireTime-currentTimeInMs)/1000);
+        let timerValInSeconds = Math.floor((this.state.expireTime - currentTimeInMs) / 1000);
 
-        if(timerValInSeconds >= 0) return timerValInSeconds;
+        if (timerValInSeconds >= 0) return timerValInSeconds;
 
         let targetUserIDHashed = this.props.data.ventureId,
             currentUserIDHashed = this.props.currentUserIDHashed,
@@ -466,12 +491,13 @@ var User = React.createClass({
                         onPress={this._onPressItem}
                         source={{uri: this.props.data && this.props.data.picture}}
                         style={[styles.thumbnail]}>
+                        {this.state.showTimerVal ?
                         <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                             <Text
-                                style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
-                                {((!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm') (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's')) || '...'}
+                                style={[styles.timerValText, (!_.isString(this._getTimerValue(this.state.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.state.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
+                                {!_.isString(this._getTimerValue(this.state.currentTimeInMs)) && (this._getTimerValue(this.state.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.state.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.state.currentTimeInMs)) && (this._getTimerValue(this.state.currentTimeInMs) >= 0) && this._getTimerValue(this.state.currentTimeInMs) % 60 + 's'}
                             </Text>
-                        </View>
+                        </View> : <View />}
                     </Image>
                     <Text
                         style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
@@ -502,7 +528,6 @@ var User = React.createClass({
                                 style={[styles.profileModalSectionTitle, {marginHorizontal: 20}]}>TAGS: </Text>
                             <ScrollView
                                 automaticallyAdjustContentInsets={false}
-                                centerContent={true}
                                 horizontal={true}
                                 directionalLockEnabled={true}
                                 showsHorizontalScrollIndicator={true}
@@ -526,12 +551,13 @@ var User = React.createClass({
                         onPress={this._onPressItem}
                         source={{uri: this.props.data && this.props.data.picture}}
                         style={[styles.thumbnail]}>
+                        {this.state.showTimerVal ? // so that timer will keep going after app state from bg -> active
                         <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                             <Text
-                                style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
-                                {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
+                                style={[styles.timerValText, (!_.isString(this._getTimerValue(this.state.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.state.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
+                                {!_.isString(this._getTimerValue(this.state.currentTimeInMs)) && (this._getTimerValue(this.state.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.state.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.state.currentTimeInMs)) && (this._getTimerValue(this.state.currentTimeInMs) >= 0) && this._getTimerValue(this.state.currentTimeInMs) % 60 + 's'}
                             </Text>
-                        </View>
+                        </View> : <View /> }
                     </Image>
                     <Text style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
                     <Text style={styles.activityPreference}>
@@ -723,7 +749,8 @@ var ChatsListPage = React.createClass({
 
         if(this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return <View />;
 
-        return <User currentTimeInMs={this.state.currentTimeInMs}
+        return <User chatsListHandle={this._handle}
+                     currentTimeInMs={this.state.currentTimeInMs}
                      currentUserData={this.state.currentUserData}
                      currentUserIDHashed={this.state.currentUserVentureId}
                      currentUserLocationCoords={this.props.currentUserLocationCoords}

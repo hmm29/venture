@@ -190,7 +190,6 @@ var User = React.createClass({
         this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
 
         return -1;
-
     },
 
     handleMatchInteraction() {
@@ -350,7 +349,6 @@ var User = React.createClass({
                             style={styles.profileModalSectionTitle}>TAGS: </Text>
                         <ScrollView
                             automaticallyAdjustContentInsets={false}
-                            centerContent={true}
                             horizontal={true}
                             directionalLockEnabled={true}
                             showsHorizontalScrollIndicator={true}

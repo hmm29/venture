@@ -162,11 +162,11 @@ var User = React.createClass({
     },
 
     _getTimerValue(currentTimeInMs:number) {
-        if(!(this.state.expireTime && currentTimeInMs)) return -1;
+        if (!(this.state.expireTime && currentTimeInMs)) return -1;
 
-        let timerValInSeconds = Math.floor((this.state.expireTime-currentTimeInMs)/1000);
+        let timerValInSeconds = Math.floor((this.state.expireTime - currentTimeInMs) / 1000);
 
-        if(timerValInSeconds >= 0) return timerValInSeconds;
+        if (timerValInSeconds >= 0) return timerValInSeconds;
 
         let targetUserIDHashed = this.props.data.ventureId,
             currentUserIDHashed = this.props.currentUserIDHashed,
@@ -181,7 +181,6 @@ var User = React.createClass({
         this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
 
         return -1;
-
     },
 
     handleMatchInteraction() {

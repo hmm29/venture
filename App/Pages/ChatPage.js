@@ -34,6 +34,7 @@ var {
     ListView,
     Navigator,
     PushNotificationIOS,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -316,11 +317,18 @@ var RecipientInfoBar = React.createClass({
         let tagsSection = (
             <View style={[styles.tagBar, {bottom: 10}]}>
                 <Text style={styles.tagsTitle}>TAGS: </Text>
-                {tags && tags.map((tag) => (
-                    <TouchableOpacity style={styles.tag}><Text
-                        style={styles.tagText}>{tag}</Text></TouchableOpacity>
-                ))
-                }
+                <ScrollView
+                    automaticallyAdjustContentInsets={false}
+                    horizontal={true}
+                    directionalLockEnabled={true}
+                    showsHorizontalScrollIndicator={true}
+                    style={[styles.scrollView, {height: 30}]}>
+                    {tags && tags.map((tag) => (
+                        <TouchableOpacity style={styles.tag}><Text
+                            style={styles.tagText}>{tag}</Text></TouchableOpacity>
+                    ))
+                    }
+                </ScrollView>
             </View>
         );
 
@@ -697,6 +705,9 @@ var styles = StyleSheet.create({
     receivedMessageText: {
         color: 'black',
         fontSize: 16
+    },
+    scrollView: {
+        width: width / 1.3
     },
     sentMessageText: {
         color: 'white',

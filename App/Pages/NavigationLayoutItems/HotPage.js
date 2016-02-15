@@ -147,12 +147,12 @@ var HotPage = React.createClass({
                             if (i === this.state.yalies.length - 1) {
                                  this.setState({showLoadingModal: false});
                                 this.setTimeout(() => {
-                                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                                    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
                                     this.setState({contentOffsetXValue: width});
                                     this.setTimeout(() => {
-                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring)
                                         this.setState({contentOffsetXValue: 0});
-                                    }, 2000);
+                                    }, 800);
                                 }, 800);
 
                             }

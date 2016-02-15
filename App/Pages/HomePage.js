@@ -36,7 +36,7 @@ var _ = require('lodash');
 var Animatable = require('react-native-animatable');
 var Dimensions = require('Dimensions');
 var Firebase = require('firebase');
-var Icon = require('react-native-vector-icons/Ionicons');
+import {Icon, } from 'react-native-icons';
 var SubmitActivityIcon = require('../Partials/Icons/SubmitActivityIcon');
 var TabBarLayout = require('../NavigationLayouts/TabBarLayout.ios');
 
@@ -118,10 +118,12 @@ var HomePage = React.createClass({
 
                 let firebaseRef = this.state.firebaseRef,
                     usersListRef = firebaseRef && firebaseRef.child('users'),
-                    currentUserRef = firebaseRef.child(account.ventureId),
+                    currentUserRef = usersListRef.child(account.ventureId),
                     trendingItemsRef = firebaseRef && firebaseRef.child('trending'),
                     chatRoomsRef = firebaseRef && firebaseRef.child('chat_rooms'),
                     _this = this;
+
+                currentUserRef.child(`chatCount`).set(0);
 
                 trendingItemsRef.once('value', snapshot => {
                         _this.setState({
@@ -133,25 +135,6 @@ var HomePage = React.createClass({
                         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     }
                 );
-
-
-                // listener: decrease chat count when chat destroyed, only need this here once on users list and not in chats page
-                firebaseRef.child('chat_rooms').on('child_removed', function (oldChildSnapshot) {
-                    // if old snapshot has current users id in it, then subtract one from current user chat count
-                    if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(account.ventureId) > -1) {
-                        firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
-                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() - 1);
-                        });
-                    }
-                });
-
-                firebaseRef.child('chat_rooms').on('child_added', function (childSnapshot) {
-                    if (childSnapshot && childSnapshot.val() && childSnapshot.val()._id && (childSnapshot.val()._id).indexOf(account.ventureId) > -1) {
-                        firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
-                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() + 1);
-                        });
-                    }
-                });
 
                 //@hmm: get current user location & save to firebase object
                 // make sure this fires before navigating away!
@@ -198,7 +181,24 @@ var HomePage = React.createClass({
                     });
                 });
 
-                currentUserRef.child('chatCount').set(0); //@hmm: set chat count to 0
+                // listener: decrease chat count when chat destroyed, only need this here once on users list and not in chats page
+                firebaseRef.child('chat_rooms').on('child_removed', function (oldChildSnapshot) {
+                    // if old snapshot has current users id in it, then subtract one from current user chat count
+                    if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(account.ventureId) > -1) {
+                        firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
+                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() - 1);
+                        });
+                    }
+                });
+
+                firebaseRef.child('chat_rooms').on('child_added', function (childSnapshot) {
+                    if (childSnapshot && childSnapshot.val() && childSnapshot.val()._id && (childSnapshot.val()._id).indexOf(account.ventureId) > -1) {
+                        firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
+                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() + 1);
+                        });
+                    }
+                });
+
             })
             .catch((error) => console.log(error.message))
             .done();
@@ -419,6 +419,9 @@ var HomePage = React.createClass({
                     onChangeText={(text) => {
                         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                         this.animateViewLayout(text);
+
+                          // @hmm: make sure emojis don't cause error - each emoji counts for 3 characters
+                        if(!text.match(/^[a-z0-9A-Z \/_?:;.,-]/) && text.length <= MAX_TEXT_INPUT_VAL_LENGTH + 3 && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 2) return;
                         if(!text) this.setState({showTimeSpecificationOptions: false});
                         this.setState({activityTitleInput: text.toUpperCase(), showNextButton: !!text});
                     }}
@@ -441,7 +444,7 @@ var HomePage = React.createClass({
                             this.setState({activeTimeOption: 'now', date: new Date(), showAddInfoBox: !this.state.showAddInfoBox, tagInput: '', tags: []})
                         }}>
                     <Icon
-                        name={this.state.showAddInfoBox ? 'chevron-up' : 'ios-plus'}
+                        name={"ion|" + (this.state.showAddInfoBox ? 'chevron-up' : 'ios-plus')}
                         size={ADD_INFO_BUTTON_SIZE}
                         color='#fff'
                         style={{width: ADD_INFO_BUTTON_SIZE, height: ADD_INFO_BUTTON_SIZE}}
@@ -573,8 +576,7 @@ var HomePage = React.createClass({
                     autoCorrect={false}
                     maxLength={MAX_TEXT_INPUT_VAL_LENGTH}
                     onChangeText={(text) => {
-                        // @hmm: make sure emojis don't cause error - each emoji counts for 3 characters
-                        if(!text.match(/^[a-zA-Z]+$/) && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 1) return;
+                        if(!text.match(/^[a-z0-9A-Z \/_?:;.,-]/) && text.length <= MAX_TEXT_INPUT_VAL_LENGTH + 3 && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 2) return;
                         this.setState({tagInput: text});
                     }}
                     onSubmitEditing={() => {
@@ -624,7 +626,7 @@ var HomePage = React.createClass({
                     }}
                     style={styles.backdrop}>
                     {this.state.isLoggedIn && this.state.ready ?
-                        <View>
+                        <View style={{backgroundColor: 'transparent'}}>
                             <Header>
                                 <ProfilePageIcon
                                     style={{bottom: height/20}}

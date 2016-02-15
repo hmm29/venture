@@ -21,6 +21,8 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		146834051AC3E58100842450 /* libReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 146834041AC3E56700842450 /* libReact.a */; };
+		42E5EE8F1C7124CC009C7A35 /* libReactNativeIcons.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E5EE8E1C7124A6009C7A35 /* libReactNativeIcons.a */; };
+		42E5EE931C712D71009C7A35 /* ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42E5EE921C712D71009C7A35 /* ionicons.ttf */; };
 		42E728D01C69BB7400FF970D /* libAppHub.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728CD1C69BB0A00FF970D /* libAppHub.a */; };
 		42E728D21C69BB8000FF970D /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728D11C69BB8000FF970D /* SystemConfiguration.framework */; };
 		42E728D41C69BB8F00FF970D /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728D31C69BB8F00FF970D /* libz.tbd */; };
@@ -29,10 +31,6 @@
 		42E728E61C69BEFC00FF970D /* FBSDKCoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728E31C69BEFC00FF970D /* FBSDKCoreKit.framework */; };
 		42E728E71C69BEFC00FF970D /* FBSDKLoginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728E41C69BEFC00FF970D /* FBSDKLoginKit.framework */; };
 		42E728E81C69BEFC00FF970D /* FBSDKShareKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728E51C69BEFC00FF970D /* FBSDKShareKit.framework */; };
-		42E728ED1C69C45C00FF970D /* Entypo.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42E728E91C69C45C00FF970D /* Entypo.ttf */; };
-		42E728EE1C69C45C00FF970D /* EvilIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42E728EA1C69C45C00FF970D /* EvilIcons.ttf */; };
-		42E728EF1C69C45C00FF970D /* Ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42E728EB1C69C45C00FF970D /* Ionicons.ttf */; };
-		42E728F01C69C45C00FF970D /* MaterialIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42E728EC1C69C45C00FF970D /* MaterialIcons.ttf */; };
 		42E728F71C69C52B00FF970D /* libRNVectorIcons.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728F61C69C51D00FF970D /* libRNVectorIcons.a */; };
 		42E728FE1C69C63900FF970D /* libBVLinearGradient.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728FD1C69C62900FF970D /* libBVLinearGradient.a */; };
 		42E729021C69C71800FF970D /* Orientation.m in Sources */ = {isa = PBXBuildFile; fileRef = 42E729011C69C71800FF970D /* Orientation.m */; };
@@ -102,6 +100,13 @@
 			proxyType = 2;
 			remoteGlobalIDString = 83CBBA2E1A601D0E00E9B192;
 			remoteInfo = React;
+		};
+		42E5EE8D1C7124A6009C7A35 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2F5A3EB81ACDBF8000439386;
+			remoteInfo = ReactNativeIcons;
 		};
 		42E728CC1C69BB0A00FF970D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -181,6 +186,8 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = VentureApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = VentureApp/main.m; sourceTree = "<group>"; };
 		146833FF1AC3E56700842450 /* React.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = React.xcodeproj; path = "../node_modules/react-native/React/React.xcodeproj"; sourceTree = "<group>"; };
+		42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ReactNativeIcons.xcodeproj; path = "../node_modules/react-native-icons/ios/ReactNativeIcons.xcodeproj"; sourceTree = "<group>"; };
+		42E5EE921C712D71009C7A35 /* ionicons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = ionicons.ttf; sourceTree = "<group>"; };
 		42E728C51C69BB0A00FF970D /* AppHub.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = AppHub.xcodeproj; path = ../node_modules/apphub/AppHub/AppHub.xcodeproj; sourceTree = "<group>"; };
 		42E728D11C69BB8000FF970D /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		42E728D31C69BB8F00FF970D /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
@@ -189,10 +196,6 @@
 		42E728E31C69BEFC00FF970D /* FBSDKCoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSDKCoreKit.framework; sourceTree = "<group>"; };
 		42E728E41C69BEFC00FF970D /* FBSDKLoginKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSDKLoginKit.framework; sourceTree = "<group>"; };
 		42E728E51C69BEFC00FF970D /* FBSDKShareKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FBSDKShareKit.framework; sourceTree = "<group>"; };
-		42E728E91C69C45C00FF970D /* Entypo.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Entypo.ttf; sourceTree = "<group>"; };
-		42E728EA1C69C45C00FF970D /* EvilIcons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = EvilIcons.ttf; sourceTree = "<group>"; };
-		42E728EB1C69C45C00FF970D /* Ionicons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Ionicons.ttf; sourceTree = "<group>"; };
-		42E728EC1C69C45C00FF970D /* MaterialIcons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = MaterialIcons.ttf; sourceTree = "<group>"; };
 		42E728F11C69C51D00FF970D /* RNVectorIcons.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RNVectorIcons.xcodeproj; path = "../node_modules/react-native-vector-icons/RNVectorIcons.xcodeproj"; sourceTree = "<group>"; };
 		42E728F81C69C62900FF970D /* BVLinearGradient.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = BVLinearGradient.xcodeproj; path = "../node_modules/react-native-linear-gradient/BVLinearGradient.xcodeproj"; sourceTree = "<group>"; };
 		42E729001C69C71800FF970D /* Orientation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orientation.h; sourceTree = "<group>"; };
@@ -213,6 +216,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				42E5EE8F1C7124CC009C7A35 /* libReactNativeIcons.a in Frameworks */,
 				42E728FE1C69C63900FF970D /* libBVLinearGradient.a in Frameworks */,
 				42E728F71C69C52B00FF970D /* libRNVectorIcons.a in Frameworks */,
 				42E728E71C69BEFC00FF970D /* FBSDKLoginKit.framework in Frameworks */,
@@ -334,6 +338,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		42E5EE8A1C7124A6009C7A35 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				42E5EE8E1C7124A6009C7A35 /* libReactNativeIcons.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		42E728C61C69BB0A00FF970D /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -395,6 +407,7 @@
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
+				42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */,
 				42E728F81C69C62900FF970D /* BVLinearGradient.xcodeproj */,
 				42E728F11C69C51D00FF970D /* RNVectorIcons.xcodeproj */,
 				42E728DC1C69BE3300FF970D /* RCTFBLogin.xcodeproj */,
@@ -425,11 +438,8 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				42E5EE921C712D71009C7A35 /* ionicons.ttf */,
 				42E728FF1C69C71800FF970D /* RCTOrientation */,
-				42E728E91C69C45C00FF970D /* Entypo.ttf */,
-				42E728EA1C69C45C00FF970D /* EvilIcons.ttf */,
-				42E728EB1C69C45C00FF970D /* Ionicons.ttf */,
-				42E728EC1C69C45C00FF970D /* MaterialIcons.ttf */,
 				42E728E31C69BEFC00FF970D /* FBSDKCoreKit.framework */,
 				42E728E41C69BEFC00FF970D /* FBSDKLoginKit.framework */,
 				42E728E51C69BEFC00FF970D /* FBSDKShareKit.framework */,
@@ -507,6 +517,11 @@
 					};
 					13B07F861A680F5B00A75B9A = {
 						DevelopmentTeam = TBLUZ69253;
+						SystemCapabilities = {
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -579,6 +594,10 @@
 					ProjectRef = 146833FF1AC3E56700842450 /* React.xcodeproj */;
 				},
 				{
+					ProductGroup = 42E5EE8A1C7124A6009C7A35 /* Products */;
+					ProjectRef = 42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */;
+				},
+				{
 					ProductGroup = 42E728F21C69C51D00FF970D /* Products */;
 					ProjectRef = 42E728F11C69C51D00FF970D /* RNVectorIcons.xcodeproj */;
 				},
@@ -646,6 +665,13 @@
 			fileType = archive.ar;
 			path = libReact.a;
 			remoteRef = 146834031AC3E56700842450 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		42E5EE8E1C7124A6009C7A35 /* libReactNativeIcons.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libReactNativeIcons.a;
+			remoteRef = 42E5EE8D1C7124A6009C7A35 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		42E728CD1C69BB0A00FF970D /* libAppHub.a */ = {
@@ -718,11 +744,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				42E728EF1C69C45C00FF970D /* Ionicons.ttf in Resources */,
+				42E5EE931C712D71009C7A35 /* ionicons.ttf in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
-				42E728F01C69C45C00FF970D /* MaterialIcons.ttf in Resources */,
-				42E728EE1C69C45C00FF970D /* EvilIcons.ttf in Resources */,
-				42E728ED1C69C45C00FF970D /* Entypo.ttf in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -19,6 +19,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
   [AppHub setApplicationID:@"EZ1vdoRGFMd7fbl7fPPt"];
+  [AppHub setLogLevel:AHLogLevelDebug];
 
   NSURL *jsCodeLocation;
 
@@ -36,7 +37,7 @@
    * on the same Wi-Fi network.
    */
 
-  jsCodeLocation = [NSURL URLWithString:@"http://192.168.1.36:8081/index.ios.bundle?platform=ios&dev=false"];
+  // jsCodeLocation = [NSURL URLWithString:@"http://localhost:8081/index.ios.bundle?platform=ios&dev=false"];
 
   /**
    * OPTION 2
@@ -46,7 +47,6 @@
 
   // jsCodeLocation = [[NSBundle mainBundle] URLForResource:@"main" withExtension:@"jsbundle"];
 
-
   /**
    * OPTION 3 - AppHub
    *
@@ -54,9 +54,9 @@
    *
    */
 
-  // AHBuild *build = [[AppHub buildManager] currentBuild];
-  // jsCodeLocation = [build.bundle URLForResource:@"main"
-  //                              withExtension:@"jsbundle"];
+  AHBuild *build = [[AppHub buildManager] currentBuild];
+  jsCodeLocation = [build.bundle URLForResource:@"main"
+                                withExtension:@"jsbundle"];
 
   RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
                                                       moduleName:@"VentureApp"

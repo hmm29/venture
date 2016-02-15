@@ -22,6 +22,7 @@ var {
     LayoutAnimation,
     ListView,
     Navigator,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -468,7 +469,7 @@ var User = React.createClass({
                         <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                             <Text
                                 style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
-                                {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'} {!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
+                                {((!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm') (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && (this._getTimerValue(this.props.currentTimeInMs) >= 0) && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's')) || '...'}
                             </Text>
                         </View>
                     </Image>
@@ -498,12 +499,20 @@ var User = React.createClass({
                         </Text>
                         <View style={[styles.tagBar, {bottom: 10}]}>
                             <Text
-                                style={styles.profileModalSectionTitle}>TAGS: </Text>
-                            {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.tags && this.props.data.activityPreference.tags.map((tag, i) => (
-                                <TouchableOpacity key={i} style={styles.tag}><Text
-                                    style={styles.tagText}>{tag}</Text></TouchableOpacity>
-                            ))
-                            }
+                                style={[styles.profileModalSectionTitle, {marginHorizontal: 20}]}>TAGS: </Text>
+                            <ScrollView
+                                automaticallyAdjustContentInsets={false}
+                                centerContent={true}
+                                horizontal={true}
+                                directionalLockEnabled={true}
+                                showsHorizontalScrollIndicator={true}
+                                style={[styles.scrollView, {height: 30}]}>
+                                {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.tags && this.props.data.activityPreference.tags.map((tag, i) => (
+                                    <TouchableOpacity key={i} style={styles.tag}><Text
+                                        style={styles.tagText}>{tag}</Text></TouchableOpacity>
+                                ))
+                                }
+                            </ScrollView>
                         </View>
                         <Text
                             style={styles.profileModalBio}>{this.props.data && this.props.data.bio}</Text>
@@ -577,6 +586,8 @@ var ChatsListPage = React.createClass({
             usersListRef
         };
     },
+
+    _handle: null,
 
     componentWillMount() {
         this._handle = this.setInterval(() => {
@@ -730,7 +741,7 @@ var ChatsListPage = React.createClass({
                     <Animatable.View ref="funFact">
                     <Text
                         style={{color: '#fff', fontFamily: 'AvenirNextCondensed-Medium', textAlign: 'center', fontSize: 18}}>
-                        <Text style={{fontSize: Dimensions.get('window').height/30, top: 15}}>Did You Know ?</Text> {'\n\n'} 1 in every 16 Yale students {'\n'}
+                        <Text style={{fontSize: height/30, top: 15}}>Did You Know ?</Text> {'\n\n'} 1 in every 16 Yale students {'\n'}
                         is a section asshole.</Text>
                         </Animatable.View>
                 </TouchableOpacity>
@@ -798,8 +809,8 @@ var styles = StyleSheet.create({
         flexDirection: 'column',
         justifyContent: 'space-around',
         alignItems: 'center',
-        width: Dimensions.get('window').width,
-        height: Dimensions.get('window').height
+        width,
+        height
     },
     chatsListBaseContainer: {
         flex: 1,
@@ -910,7 +921,7 @@ var styles = StyleSheet.create({
     profileModalSectionTitle: {
         color: '#222',
         fontSize: 16,
-        fontFamily: 'AvenirNextCondensed-Regular'
+        fontFamily: 'AvenirNextCondensed-Regular',
     },
     profileModalUserPicture: {
         width: width / 2.6,
@@ -925,12 +936,15 @@ var styles = StyleSheet.create({
         justifyContent: 'space-around',
         paddingHorizontal: width/10
     },
+    scrollView: {
+        width: width / 1.3
+    },
     tag: {
         backgroundColor: 'rgba(4,22,43,0.5)',
         borderRadius: 12,
-        paddingHorizontal: Dimensions.get('window').width / 80,
-        marginHorizontal: Dimensions.get('window').width / 70,
-        paddingVertical: Dimensions.get('window').width / 170,
+        paddingHorizontal: width / 80,
+        marginHorizontal: width / 70,
+        paddingVertical: width / 170,
         borderWidth: 0.5,
         borderColor: 'rgba(255,255,255,0.4)'
     },

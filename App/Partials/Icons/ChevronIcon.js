@@ -20,7 +20,7 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Entypo';
+import {Icon, } from 'react-native-icons';
 
 const DIRECTIONS = ['up','down','right','left'], SIZE = 25;
 
@@ -45,10 +45,10 @@ class ChevronIcon extends Component {
                 onPress={this.props.onPress}
                 style={[this.props.style, {width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18, alignItems: 'center'}]}>
                 <Icon
-                    name={"chevron-thin-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ? this.props.direction : 'up')}
+                    name={"ion|ios-arrow-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ? this.props.direction : 'up')}
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    iconStyle={[styles.icon]}
+                    style={[styles.icon]}
                     />
             </TouchableOpacity>
         );
@@ -57,7 +57,8 @@ class ChevronIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 1.0
+        width: SIZE,
+        height: SIZE
     }
 });
 

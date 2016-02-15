@@ -21,7 +21,7 @@ import React, {
 } from 'react-native';
 
 import Animatable from 'react-native-animatable';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 const SIZE = 34;
 
@@ -51,10 +51,10 @@ class ChatsListPageIcon extends Component {
                     onPress={this.props.onPress}
                     style={[this.props.style, {width: (this.props.size || SIZE) * 2.48, height: (this.props.size || SIZE) * 2.48, justifyContent: 'center', alignItems: 'flex-end'}]}>
                     <Icon
-                        name="ios-chatboxes"
+                        name="ion|ios-chatboxes"
                         size={this.props.size || SIZE}
                         color={this.props.color || 'rgba(255,255,255,0.4'}
-                        iconStyle={[styles.icon]}
+                        style={[styles.icon]}
                         />
                 </TouchableOpacity>
             </Animatable.View>
@@ -64,7 +64,9 @@ class ChatsListPageIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 0.6
+        opacity: 0.7,
+        width: SIZE,
+        height: SIZE
     }
 });
 

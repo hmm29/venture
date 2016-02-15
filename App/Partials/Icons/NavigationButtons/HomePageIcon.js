@@ -20,7 +20,7 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 const SIZE = 30;
 
@@ -42,12 +42,12 @@ class HomePageIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style, {width: (this.props.size || SIZE) * 3.48, height: (this.props.size || SIZE) * 3.48, alignItems: 'flex-start'}]}>
+                style={[this.props.style]}>
                 <Icon
-                    name="ios-home-outline"
+                    name="ion|ios-home-outline"
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    iconStyle={[styles.icon]}
+                    style={[styles.icon]}
                     />
             </TouchableOpacity>
         );
@@ -56,7 +56,9 @@ class HomePageIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 1.0
+        opacity: 1.0,
+        width: SIZE,
+        height: SIZE
     }
 });
 

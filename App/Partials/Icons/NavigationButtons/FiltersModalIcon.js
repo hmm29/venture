@@ -21,7 +21,7 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 const SIZE = 30;
 
@@ -46,10 +46,10 @@ class FiltersModalIcon extends Component {
                 style={[this.props.style,{width: (this.props.size || SIZE) * 1.48, height: (this.props.size || SIZE) * 1.48, alignItems: 'center'}]} // scale size, 1.48, 1 less than homepageicon scale size due to ios icon difference
                 >
                 <Icon
-                    name={Platform.OS === 'ios' ? "ios-gear-outline" : "android-settings"}
+                    name={"ion|" + (Platform.OS === 'ios' ? "ios-gear-outline" : "android-settings")}
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    iconStyle={[styles.icon]}
+                    style={[styles.icon]}
                     />
             </TouchableOpacity>
         );
@@ -58,7 +58,9 @@ class FiltersModalIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 1.0
+        opacity: 1.0,
+        width: SIZE,
+        height: SIZE
     }
 });
 

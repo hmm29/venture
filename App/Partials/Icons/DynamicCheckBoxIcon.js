@@ -20,7 +20,7 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 const SIZE = 32; // same as DynamicTimeSelectionIcon
 
@@ -54,10 +54,10 @@ class DynamicCheckBoxIcon extends Component {
                 }}
                     style={[this.props.style, styles.iconTouchableOpacity]}>
                     <Icon
-                        name={this.props.selected ? "checkmark-circled" : (this.props.showChevronWhenDisabled && !!this.props.showChevronWhenDisabled[0] ? "ios-arrow-"+(this.props.showChevronWhenDisabled && this.props.showChevronWhenDisabled[1])  : "record")}
+                        name={"ion|" + (this.props.selected ? "checkmark-circled" : (this.props.showChevronWhenDisabled && !!this.props.showChevronWhenDisabled[0] ? "ios-arrow-"+(this.props.showChevronWhenDisabled && this.props.showChevronWhenDisabled[1])  : "record"))}
                         size={this.props.size || SIZE}
                         color={this.props.color || '#ccc'}
-                        iconStyle={[{width: (this.props.size || SIZE) * 1.14, height: (this.props.size || SIZE) * 1.14, alignSelf: 'center'}]}
+                        style={[{width: (this.props.size || SIZE) * 1.14, height: (this.props.size || SIZE) * 1.14, alignSelf: 'center'}]}
                         />
                 </TouchableOpacity>
                 <Text style={[styles.caption, this.props.captionStyle]}>{this.props.caption}</Text>

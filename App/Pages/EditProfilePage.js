@@ -29,7 +29,7 @@ var Header = require('../Partials/Header');
 var _ = require('lodash');
 var AutoComplete = require('react-native-autocomplete');
 var Dimensions = require('Dimensions');
-var Icon = require('react-native-vector-icons/Ionicons');
+var {Icon, } = require('react-native-icons');
 
 var CAMERA_ICON_SIZE = 48;
 var CAMERA_REF = 'camera';
@@ -208,6 +208,7 @@ var EditProfilePage = React.createClass({
                     onFocus={this._onFocusBio}
                     autoCapitalize='none'
                     autoCorrect={false}
+                    clearButtonMode='unless-editing'
                     onChangeText={(text) => {
                         // @hmm: make sure emojis don't cause error - each emoji counts for 3 characters
                         if(!text.match(/^[a-z0-9A-Z \/_?:;.,-]/) && text.length <= MAX_TEXT_INPUT_VAL_LENGTH + 3 && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 2) return;
@@ -237,16 +238,16 @@ var EditProfilePage = React.createClass({
                 }}>
                     <Icon
                         color="rgba(255,255,255,0.7)"
-                        name="edit"
+                        name="ion|edit"
                         size={EDIT_GENDER_ICON_SIZE}
-                        iconStyle={{width: EDIT_GENDER_ICON_SIZE * 1.4, height: EDIT_GENDER_ICON_SIZE * 1.4, left: 10}}
+                        style={{width: EDIT_GENDER_ICON_SIZE * 1.4, height: EDIT_GENDER_ICON_SIZE * 1.4, left: 10}}
                         />
                 </TouchableOpacity>
             </View>
         );
 
         let genderAutocomplete = (
-            <View style={[styles.genderAutocomplete, (this.state.hasKeyboardSpace ? {left: width / 6.5} : {})]}>
+            <View style={[styles.genderAutocomplete, (this.state.hasKeyboardSpace && !this.state.showBioField ? {left: width / 6.5} : {})]}>
                 {this.state.showGenderAutocompleteLabel ? <Text
                     style={styles.label}>Gender</Text> : <Text/>}
                 <AutoComplete

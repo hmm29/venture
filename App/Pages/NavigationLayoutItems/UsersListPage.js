@@ -22,6 +22,7 @@ var {
     LayoutAnimation,
     ListView,
     Navigator,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -46,7 +47,7 @@ var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/Match
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
 var TimerMixin = require('react-timer-mixin');
 
-var CHAT_DURATION_IN_MINUTES = 0.15;
+var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
@@ -347,11 +348,19 @@ var User = React.createClass({
                     <View style={[styles.tagBar, {bottom: 10}]}>
                         <Text
                             style={styles.profileModalSectionTitle}>TAGS: </Text>
-                        {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.tags && this.props.data.activityPreference.tags.map((tag, i) => (
-                            <TouchableOpacity key={i} style={styles.tag}><Text
-                                style={styles.tagText}>{tag}</Text></TouchableOpacity>
-                        ))
-                        }
+                        <ScrollView
+                            automaticallyAdjustContentInsets={false}
+                            centerContent={true}
+                            horizontal={true}
+                            directionalLockEnabled={true}
+                            showsHorizontalScrollIndicator={true}
+                            style={[styles.scrollView, {height: 30}]}>
+                            {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.tags && this.props.data.activityPreference.tags.map((tag, i) => (
+                                <TouchableOpacity key={i} style={styles.tag}><Text
+                                    style={styles.tagText}>{tag}</Text></TouchableOpacity>
+                            ))
+                            }
+                        </ScrollView>
                     </View>
                     <Text
                         style={styles.profileModalBio}>{this.props.data && this.props.data.bio}</Text>
@@ -704,8 +713,8 @@ var styles = StyleSheet.create({
         flexDirection: 'column',
         justifyContent: 'space-around',
         alignItems: 'center',
-        width: Dimensions.get('window').width,
-        height: Dimensions.get('window').height
+        width,
+        height
     },
     container: {
         flex: 1,
@@ -804,7 +813,8 @@ var styles = StyleSheet.create({
     profileModalSectionTitle: {
         color: '#222',
         fontSize: 16,
-        fontFamily: 'AvenirNextCondensed-Regular'
+        fontFamily: 'AvenirNextCondensed-Regular',
+        marginHorizontal: 20
     },
     profileModalUserPicture: {
         width: width / 2.6,
@@ -818,6 +828,9 @@ var styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-around',
         paddingHorizontal: width / 10
+    },
+    scrollView: {
+        width: width / 1.3
     },
     searchTextInput: {
         color: '#222',
@@ -834,9 +847,9 @@ var styles = StyleSheet.create({
     tag: {
         backgroundColor: 'rgba(4,22,43,0.5)',
         borderRadius: 12,
-        paddingHorizontal: Dimensions.get('window').width / 80,
-        marginHorizontal: Dimensions.get('window').width / 70,
-        paddingVertical: Dimensions.get('window').width / 170,
+        paddingHorizontal: width / 80,
+        marginHorizontal: width / 70,
+        paddingVertical: width / 170,
         borderWidth: 0.5,
         borderColor: 'rgba(255,255,255,0.4)'
     },

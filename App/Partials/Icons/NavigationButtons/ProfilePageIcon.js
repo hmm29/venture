@@ -23,7 +23,7 @@ import React, {
 const SIZE = 34;
 
 import Animatable from 'react-native-animatable';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 type Props = {
     color: React.PropTypes.string,
@@ -50,10 +50,10 @@ class ProfilePageIcon extends Component {
                 onPress={this.props.onPress}
                 style={[this.props.style, {width: (this.props.size || SIZE) * 2.48, height: (this.props.size || SIZE) * 2.48, justifyContent: 'center', alignItems: 'flex-start'}]}>
                 <Icon
-                    name="person"
+                    name="ion|person"
                     size={this.props.size || SIZE}
                     color={this.props.color || 'rgba(255,255,255,0.4'}
-                    iconStyle={[styles.icon]}
+                    style={[styles.icon]}
                     />
             </TouchableOpacity>
                 </Animatable.View>
@@ -63,7 +63,9 @@ class ProfilePageIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 0.6,
+        opacity: 0.7,
+        width: SIZE,
+        height: SIZE
     }
 });
 

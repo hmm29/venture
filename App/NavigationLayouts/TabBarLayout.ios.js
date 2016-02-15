@@ -13,8 +13,8 @@
 import React, {
     AsyncStorage,
     Component,
+    Dimensions,
     StyleSheet,
-    TabBarIOS,
     Text,
     View,
 } from 'react-native';
@@ -25,7 +25,13 @@ import HotPage from '../Pages/NavigationLayoutItems/HotPage';
 import ProfilePage from '../Pages/NavigationLayoutItems/ProfilePage';
 import UsersListPage from '../Pages/NavigationLayoutItems/UsersListPage';
 
-import Icon from 'react-native-vector-icons/Ionicons';
+
+import { TabBarIOS, } from 'react-native-icons';
+let TabBarItemIOS = TabBarIOS.Item;
+
+var {height} = Dimensions.get('window');
+
+const TAB_BAR_ICON_SIZE = height/24;
 
 import type { NavigationContext } from 'NavigationContext';
 
@@ -111,10 +117,11 @@ class TabBarLayout extends Component {
             <TabBarIOS
                 tintColor="white"
                 barTintColor="#02030f">
-                <Icon.TabBarItem
+                <TabBarItemIOS
                     title="Hot"
-                    iconName="ios-flame-outline"
-                    selectedIconName="ios-flame"
+                    iconName="ion|ios-flame-outline"
+                    selectedIconName="ion|ios-flame"
+                    iconSize={TAB_BAR_ICON_SIZE}
                     selected={this.state.selectedTab === 'hot'}
                     onPress={() => {
                     this.setState({
@@ -122,11 +129,12 @@ class TabBarLayout extends Component {
                     });
                   }}>
                     {this._renderContent('hot')}
-                </Icon.TabBarItem>
-                <Icon.TabBarItem
+                </TabBarItemIOS>
+                <TabBarItemIOS
                     title="Events"
-                    iconName="ios-calendar-outline"
-                    selectedIconName="ios-calendar"
+                    iconName="ion|ios-calendar-outline"
+                    selectedIconName="ion|ios-calendar"
+                    iconSize={TAB_BAR_ICON_SIZE}
                     selected={this.state.selectedTab === 'events'}
                     onPress={() => {
                     this.setState({
@@ -134,11 +142,12 @@ class TabBarLayout extends Component {
                     });
                   }}>
                     {this._renderContent('events')}
-                </Icon.TabBarItem>
-                <Icon.TabBarItem
+                </TabBarItemIOS>
+                <TabBarItemIOS
                     title={CATEGORY_OF_USERS || "Users"}
-                    iconName="ios-people-outline"
-                    selectedIconName="ios-people"
+                    iconName="ion|ios-people-outline"
+                    selectedIconName="ion|ios-people"
+                    iconSize={TAB_BAR_ICON_SIZE * 1.2}
                     selected={this.state.selectedTab === 'users'}
                     onPress={() => {
                     this.setState({
@@ -146,12 +155,13 @@ class TabBarLayout extends Component {
                     });
                   }}>
                     {this._renderContent('users')}
-                </Icon.TabBarItem>
-                <Icon.TabBarItem
+                </TabBarItemIOS>
+                <TabBarItemIOS
                     title="Chats"
-                    badge={this.state.chatCount > 0 ? this.state.chatCount : undefined}
-                    iconName="ios-chatboxes-outline"
-                    selectedIconName="ios-chatboxes"
+                    badgeValue={this.state.chatCount > 0 ? JSON.stringify(this.state.chatCount) : undefined}
+                    iconName="ion|ios-chatboxes-outline"
+                    selectedIconName="ion|ios-chatboxes"
+                    iconSize={TAB_BAR_ICON_SIZE}
                     selected={this.state.selectedTab === 'chats'}
                     onPress={() => {
                     this.setState({
@@ -159,11 +169,12 @@ class TabBarLayout extends Component {
                     });
                 }}>
                     {this._renderContent('chats')}
-                </Icon.TabBarItem>
-                <Icon.TabBarItem
+                </TabBarItemIOS>
+                <TabBarItemIOS
                     title="Profile"
-                    iconName="ios-person-outline"
-                    selectedIconName="ios-person"
+                    iconName="ion|ios-person-outline"
+                    selectedIconName="ion|ios-person"
+                    iconSize={TAB_BAR_ICON_SIZE * 1.2}
                     selected={this.state.selectedTab === 'profile'}
                     onPress={() => {
                     this.setState({
@@ -171,7 +182,7 @@ class TabBarLayout extends Component {
                     });
                  }}>
                     {this._renderContent('profile')}
-                </Icon.TabBarItem>
+                </TabBarItemIOS>
             </TabBarIOS>
         )
     };

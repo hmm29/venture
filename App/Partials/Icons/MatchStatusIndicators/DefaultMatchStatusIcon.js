@@ -20,9 +20,9 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Entypo';
+import {Icon, } from 'react-native-icons';
 
-const SIZE = 25;
+const SIZE = 28;
 
 type Props = {
     color: React.PropTypes.string,
@@ -42,12 +42,12 @@ class DefaultMatchStatusIcon extends Component {
             <TouchableOpacity
                 activeOpacity={0.3}
                 onPress={this.props.onPress}
-                style={[this.props.style]}>
+                style={[this.props.style,{width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18}]}>
                 <Icon
-                    name="chevron-thin-right"
+                    name="ion|ios-arrow-right"
                     size={this.props.size || SIZE}
                     color={this.props.color || 'rgba(0,0,0,0.2)'}
-                    iconStyle={[{width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18}, styles.icon]}
+                    style={[styles.icon]}
                     />
             </TouchableOpacity>
         );
@@ -56,7 +56,9 @@ class DefaultMatchStatusIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent',
+        width: SIZE,
+        height: SIZE
     }
 });
 

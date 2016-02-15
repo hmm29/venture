@@ -20,9 +20,9 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/EvilIcons';
+import {Icon, } from 'react-native-icons';
 
-const SIZE = 36;
+const SIZE = 30;
 
 type Props = {
     color: React.PropTypes.string,
@@ -44,10 +44,10 @@ class CloseIcon extends Component {
                 onPress={this.props.onPress}
                 style={[this.props.style, {width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18, alignItems: 'flex-end'}]}>
                 <Icon
-                    name="close-o"
+                    name="ion|ios-close-outline"
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    iconStyle={[styles.icon]}
+                    style={[styles.icon]}
                     />
             </TouchableOpacity>
         );
@@ -56,7 +56,8 @@ class CloseIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 1.0
+        width: SIZE,
+        height: SIZE
     }
 });
 

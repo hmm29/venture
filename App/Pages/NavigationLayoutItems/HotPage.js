@@ -59,6 +59,7 @@ var HotPage = React.createClass({
 
     getInitialState() {
         return {
+            contentOffsetXValue: 0,
             events: [],
             fadeAnim: new Animated.Value(0),
             firebaseRef: this.props.firebaseRef,
@@ -87,7 +88,7 @@ var HotPage = React.createClass({
     componentDidMount() {
         this.setTimeout(() => {
             if (_.isEmpty(this.state.events.concat(this.state.yalies))) this.setState({showLoadingModal: true});
-        }, 0);
+        }, 10);
     },
 
     componentWillUnmount() {
@@ -144,14 +145,16 @@ var HotPage = React.createClass({
                              this.setState({trendingUsers: 'YALIES'});
 
                             if (i === this.state.yalies.length - 1) {
-                                 this.setState({showLoadingModal: false})
-                            this.setTimeout(() => {
-                                this.refs.trendingYaliesScrollView.scrollTo(0, width);
-                            }, 800);
+                                 this.setState({showLoadingModal: false});
+                                this.setTimeout(() => {
+                                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                                    this.setState({contentOffsetXValue: width});
+                                    this.setTimeout(() => {
+                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+                                        this.setState({contentOffsetXValue: 0});
+                                    }, 2000);
+                                }, 800);
 
-                            this.setTimeout(() => {
-                                this.refs.trendingYaliesScrollView.scrollTo(0, 0);
-                            }, 1500);
                             }
                             }}
 
@@ -183,6 +186,7 @@ var HotPage = React.createClass({
                         <ScrollView
                             ref="trendingYaliesScrollView"
                             automaticallyAdjustContentInsets={false}
+                            contentOffset={{x: this.state.contentOffsetXValue, y: 0}}
                             horizontal={true}
                             pagingEnabled={true}
                             directionalLockEnabled={true}

@@ -20,7 +20,7 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 const SIZE = 25;
 
@@ -41,10 +41,10 @@ class BlankIcon extends Component {
                 onPress={this.props.onPress}
                 style={[this.props.style]}>
                 <Icon
-                    name="happy-outline"
+                    name="ion|happy-outline"
                     size={this.props.size || SIZE}
                     color={this.props.color || 'transparent'}
-                    iconStyle={[{width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18}, styles.icon]}
+                    style={[{width: (this.props.size || SIZE) * 1.18, height: (this.props.size || SIZE) * 1.18}, styles.icon]}
                     />
             </TouchableOpacity>
         );
@@ -53,6 +53,8 @@ class BlankIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
+        width: SIZE,
+        height: SIZE
     }
 });
 

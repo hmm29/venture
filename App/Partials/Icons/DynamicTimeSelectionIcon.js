@@ -20,7 +20,7 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 const SIZE = 32; // same as DynamicCheckBoxIcon
 
@@ -50,10 +50,10 @@ class DynamicTimeSelectionIcon extends Component {
                 }}
                     style={this.props.style}>
                     <Icon
-                        name={this.props.selected ? "checkmark-circled" : "clock"}
+                        name={"ion|" + (this.props.selected ? "checkmark-circled" : "clock")}
                         size={this.props.size || SIZE}
                         color={this.props.color || '#ccc'}
-                        iconStyle={[{width: (this.props.size || SIZE) * 1.14, height: (this.props.size || SIZE) * 1.14}, styles.icon]}
+                        style={[{width: (this.props.size || SIZE) * 1.14, height: (this.props.size || SIZE) * 1.14}, styles.icon]}
                         />
                 </TouchableOpacity>
                 <Text style={[styles.caption, this.props.captionStyle]}>{this.props.caption}</Text>
@@ -63,6 +63,10 @@ class DynamicTimeSelectionIcon extends Component {
 }
 
 const styles = StyleSheet.create({
+    icons: {
+        width: SIZE,
+        height: SIZE
+    },
     container: {
         flex: 1,
         flexDirection: 'column',

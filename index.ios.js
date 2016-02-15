@@ -35,7 +35,6 @@ var VentureApp = React.createClass({
         <View style={{flex: 1}}>
           <NavigatorIOS
               ref="nav"
-              itemWrapperStyle={styles.itemWrapperStyle}
               navigationBarHidden={true}
               style={styles.container}
               initialRoute={{
@@ -52,9 +51,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1
   },
-  itemWrapperStyle: {
-    backgroundColor: '#02030F'
-  }
 });
 
 AppRegistry.registerComponent('VentureApp', () => VentureApp);

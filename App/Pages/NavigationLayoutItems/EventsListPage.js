@@ -401,6 +401,8 @@ var AttendeeList = React.createClass({
         };
     },
 
+    _handle: null,
+
     componentWillMount() {
             let attendeesListRef = this.props.eventsListRef && this.props.eventData && this.props.eventData.id
                     && this.props.eventsListRef.child(`${this.props.eventData.id}/attendees`),
@@ -572,7 +574,7 @@ var Event = React.createClass({
     _renderEventAttendanceStatusIcon() {
                 return (
                     <DynamicCheckBoxIcon
-                    size={25}
+                    size={27}
                     selected={this.state.status === 'attending'}
                     showChevronWhenDisabled={[true, 'right']}
                     onPress={this.handleEventInteraction}
@@ -829,8 +831,8 @@ var styles = StyleSheet.create({
         borderRadius: 11,
         justifyContent: 'center',
         alignItems: 'center',
-        top: 3,
-        left: height / 90
+        top: 1,
+        left: width / 15
     },
     eventThumbnail: {
         width: height / 10,

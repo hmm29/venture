@@ -20,7 +20,7 @@ import React, {
     View
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Icon, } from 'react-native-icons';
 
 const SIZE = 28;
 
@@ -44,10 +44,10 @@ class EditProfilePageIcon extends Component {
                 onPress={this.props.onPress}
                 style={[this.props.style, {width: (this.props.size || SIZE) * 2.48, height: (this.props.size || SIZE) * 2.48, alignItems: 'flex-end'}]}>
                 <Icon
-                    name="edit"
+                    name="ion|edit"
                     size={this.props.size || SIZE}
                     color={this.props.color || '#ccc'}
-                    iconStyle={[styles.icon]}
+                    style={[styles.icon]}
                     />
             </TouchableOpacity>
         );
@@ -56,7 +56,9 @@ class EditProfilePageIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 1.0
+        opacity: 1.0,
+        width: SIZE,
+        height: SIZE
     }
 });
 

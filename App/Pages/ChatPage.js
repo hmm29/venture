@@ -55,6 +55,7 @@ var SGListView = require('react-native-sglistview');
 var TimerMixin = require('react-timer-mixin');
 
 var {height, width} = Dimensions.get('window');
+var MAX_TEXT_INPUT_VAL_LENGTH = 15;
 var MESSAGE_TEXT_INPUT_REF = 'messageTextInput';
 var MESSAGES_LIST_REF = 'messagesList';
 
@@ -364,13 +365,14 @@ var RecipientInfoBar = React.createClass({
                     autoCapitalize='none'
                     autoCorrect={false}
                     onChangeText={(text) => {
+                            if(text.length > MAX_TEXT_INPUT_VAL_LENGTH) return;
+
                             let currentUserIDHashed = this.props.recipientData.currentUserData.ventureId,
                                 upperCaseText = text.toUpperCase();
 
                             this.setState({currentUserActivityPreferenceTitle: upperCaseText});
                             this.props.chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed).set(upperCaseText);
                         }}
-                    maxLength={15}
                     returnKeyType='default'
                     style={styles.textInput}
                     value={this.state.currentUserActivityPreferenceTitle}/> : <TextInput />}

@@ -415,13 +415,12 @@ var HomePage = React.createClass({
                     ref={ACTIVITY_TITLE_INPUT_REF}
                     autoCapitalize='none'
                     autoCorrect={false}
-                    maxLength={15}
                     onChangeText={(text) => {
                         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                         this.animateViewLayout(text);
 
-                          // @hmm: make sure emojis don't cause error - each emoji counts for 3 characters
-                        if(!text.match(/^[a-z0-9A-Z \/_?:;.,-]/) && text.length <= MAX_TEXT_INPUT_VAL_LENGTH + 3 && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 2) return;
+                        // applies for emojis too, dont use maxLength prop just check manually
+                        if(text.length > MAX_TEXT_INPUT_VAL_LENGTH) return;
                         if(!text) this.setState({showTimeSpecificationOptions: false});
                         this.setState({activityTitleInput: text.toUpperCase(), showNextButton: !!text});
                     }}
@@ -574,9 +573,9 @@ var HomePage = React.createClass({
                     onBlur={this._onBlur}
                     autoCapitalize='none'
                     autoCorrect={false}
-                    maxLength={MAX_TEXT_INPUT_VAL_LENGTH}
                     onChangeText={(text) => {
-                        if(!text.match(/^[a-z0-9A-Z \/_?:;.,-]/) && text.length <= MAX_TEXT_INPUT_VAL_LENGTH + 3 && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 2) return;
+                        // applies for emojis
+                        if(text.length > MAX_TEXT_INPUT_VAL_LENGTH) return;
                         this.setState({tagInput: text});
                     }}
                     onSubmitEditing={() => {

@@ -210,11 +210,10 @@ var EditProfilePage = React.createClass({
                     autoCorrect={false}
                     clearButtonMode='unless-editing'
                     onChangeText={(text) => {
-                        // @hmm: make sure emojis don't cause error - each emoji counts for 3 characters
-                        if(!text.match(/^[a-z0-9A-Z \/_?:;.,-]/) && text.length <= MAX_TEXT_INPUT_VAL_LENGTH + 3 && text.length >= MAX_TEXT_INPUT_VAL_LENGTH - 2) return;
+                        // @hmm: applies for emojis too
+                        if(text.length > MAX_TEXT_INPUT_VAL_LENGTH) return;
                         this.setState({currentBio: text})
                     }}
-                    maxLength={MAX_TEXT_INPUT_VAL_LENGTH}
                     returnKeyType='done'
                     style={styles.bio}
                     value={this.state.currentBio}/>

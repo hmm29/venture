@@ -10,9 +10,13 @@
 #import "AppHub.h"
 #import "AppDelegate.h"
 #import "RCTRootView.h"
+#import "RCTPushNotificationManager.h"
 
 #import <FBSDKCoreKit/FBSDKCoreKit.h>
 #import <FBSDKLoginKit/FBSDKLoginKit.h>
+#import <FBSDKShareKit/FBSDKShareKit.h>
+
+@import Batch;
 
 @implementation AppDelegate
 
@@ -20,6 +24,13 @@
 {
   [AppHub setApplicationID:@"EZ1vdoRGFMd7fbl7fPPt"];
   [AppHub setLogLevel:AHLogLevelDebug];
+
+  // Start Batch.
+  [BatchPush setupPush];
+  [Batch startWithAPIKey:@"56C22978992BC148E2B0D85184750F"];
+
+  // Register for push notifications
+  [BatchPush registerForRemoteNotifications];
 
   NSURL *jsCodeLocation;
 
@@ -37,7 +48,7 @@
    * on the same Wi-Fi network.
    */
 
-  // jsCodeLocation = [NSURL URLWithString:@"http://localhost:8081/index.ios.bundle?platform=ios&dev=false"];
+  jsCodeLocation = [NSURL URLWithString:@"http://172.27.151.241:8081/index.ios.bundle?platform=ios&dev=false"];
 
   /**
    * OPTION 2
@@ -54,9 +65,9 @@
    *
    */
 
-  AHBuild *build = [[AppHub buildManager] currentBuild];
-  jsCodeLocation = [build.bundle URLForResource:@"main"
-                                withExtension:@"jsbundle"];
+  // AHBuild *build = [[AppHub buildManager] currentBuild];
+  // jsCodeLocation = [build.bundle URLForResource:@"main"
+  //                              withExtension:@"jsbundle"];
 
   RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
                                                       moduleName:@"VentureApp"
@@ -83,6 +94,11 @@
                                                           openURL:url
                                                 sourceApplication:sourceApplication
                                                        annotation:annotation];
+}
+
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
+{
+    [BatchPush dismissNotifications];
 }
 
 @end

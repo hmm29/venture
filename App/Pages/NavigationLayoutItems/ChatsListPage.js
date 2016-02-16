@@ -40,6 +40,7 @@ var FiltersModal = require('../../Partials/Modals/FiltersModal');
 var GeoFire = require('geofire');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
+var SGListView = require('react-native-sglistview');
 var TimerMixin = require('react-timer-mixin');
 
 var CHAT_DURATION_IN_MINUTES = 5;
@@ -119,7 +120,7 @@ var User = React.createClass({
         }
         if(currentAppState === 'active') {
             this.setState({showTimerVal: true});
-            this.clearInterval(this.props.chatsListHandle);
+            this.clearInterval(this.props.chatsListHandle)
             this._handle = this.setInterval(() => {
                 this.setState({currentTimeInMs: (new Date()).getTime()})
             }, 1000);
@@ -783,6 +784,7 @@ var ChatsListPage = React.createClass({
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
+                    renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
                     pageSize={PAGE_SIZE}

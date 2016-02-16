@@ -14,6 +14,7 @@ import React, {
     AsyncStorage,
     Component,
     Dimensions,
+    PushNotificationIOS,
     StyleSheet,
     Text,
     View,
@@ -24,6 +25,7 @@ import EventsListPage from '../Pages/NavigationLayoutItems/EventsListPage';
 import HotPage from '../Pages/NavigationLayoutItems/HotPage';
 import ProfilePage from '../Pages/NavigationLayoutItems/ProfilePage';
 import UsersListPage from '../Pages/NavigationLayoutItems/UsersListPage';
+import Firebase from 'firebase'
 
 
 import { TabBarIOS, } from 'react-native-icons';
@@ -57,15 +59,20 @@ class TabBarLayout extends Component {
         super(props);
         this.state = {
             chatCount: 0,
+            firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
             selectedTab: props.selectedTab
         }
     };
 
     componentDidMount() {
-        let chatCountRef = this.props.firebaseRef.child(`users/${this.props.ventureId}/chatCount`);
+        let firebaseRef = this.props.firebaseRef;
+
+        if(!this.props.firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/')
+        let chatCountRef = firebaseRef.child(`users/${this.props.ventureId}/chatCount`);
 
         chatCountRef.on('value', snapshot => {
             this.setState({chatCount: snapshot.val(), chatCountRef});
+            PushNotificationIOS.setApplicationIconBadgeNumber(snapshot.val());
         });
     };
 
@@ -81,7 +88,7 @@ class TabBarLayout extends Component {
         if(title === 'hot') {
             return <HotPage currentUserFriends={this.props.currentUserFriends}
                             currentUserLocationCoords={this.props.currentUserLocationCoords}
-                            firebaseRef={this.props.firebaseRef}
+                            firebaseRef={this.props.firebaseRef || this.state.firebaseRef}
                             handleSelectedTabChange={(selectedTab) => {this.setState({selectedTab})}} // change tab to events when event on hot page is pressed
                             navigator={this.props.navigator}
                             ventureId={this.props.ventureId}/>;

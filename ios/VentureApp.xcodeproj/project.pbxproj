@@ -21,6 +21,11 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		146834051AC3E58100842450 /* libReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 146834041AC3E56700842450 /* libReact.a */; };
+		421BEB081C71B9E90058D624 /* libRCTPushNotification.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB001C71B9D20058D624 /* libRCTPushNotification.a */; };
+		421BEB111C7267730058D624 /* Batch.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 421BEB0F1C7267730058D624 /* Batch.bundle */; };
+		421BEB121C7267730058D624 /* Batch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB101C7267730058D624 /* Batch.framework */; };
+		421BEB171C7268AD0058D624 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB151C7268AD0058D624 /* libsqlite3.dylib */; };
+		421BEB181C7268AD0058D624 /* libz.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB161C7268AD0058D624 /* libz.1.dylib */; };
 		42E5EE8F1C7124CC009C7A35 /* libReactNativeIcons.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E5EE8E1C7124A6009C7A35 /* libReactNativeIcons.a */; };
 		42E5EE931C712D71009C7A35 /* ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42E5EE921C712D71009C7A35 /* ionicons.ttf */; };
 		42E728D01C69BB7400FF970D /* libAppHub.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728CD1C69BB0A00FF970D /* libAppHub.a */; };
@@ -100,6 +105,13 @@
 			proxyType = 2;
 			remoteGlobalIDString = 83CBBA2E1A601D0E00E9B192;
 			remoteInfo = React;
+		};
+		421BEAFF1C71B9D20058D624 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 421BEAF01C71B9D20058D624 /* RCTPushNotification.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 134814201AA4EA6300B7C361;
+			remoteInfo = RCTPushNotification;
 		};
 		42E5EE8D1C7124A6009C7A35 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -186,6 +198,11 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = VentureApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = VentureApp/main.m; sourceTree = "<group>"; };
 		146833FF1AC3E56700842450 /* React.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = React.xcodeproj; path = "../node_modules/react-native/React/React.xcodeproj"; sourceTree = "<group>"; };
+		421BEAF01C71B9D20058D624 /* RCTPushNotification.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTPushNotification.xcodeproj; path = "../node_modules/react-native/Libraries/PushNotificationIOS/RCTPushNotification.xcodeproj"; sourceTree = "<group>"; };
+		421BEB0F1C7267730058D624 /* Batch.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Batch.bundle; sourceTree = "<group>"; };
+		421BEB101C7267730058D624 /* Batch.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Batch.framework; sourceTree = "<group>"; };
+		421BEB151C7268AD0058D624 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = ../../../../../../usr/lib/libsqlite3.dylib; sourceTree = "<group>"; };
+		421BEB161C7268AD0058D624 /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = ../../../../../../usr/lib/libz.1.dylib; sourceTree = "<group>"; };
 		42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ReactNativeIcons.xcodeproj; path = "../node_modules/react-native-icons/ios/ReactNativeIcons.xcodeproj"; sourceTree = "<group>"; };
 		42E5EE921C712D71009C7A35 /* ionicons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = ionicons.ttf; sourceTree = "<group>"; };
 		42E728C51C69BB0A00FF970D /* AppHub.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = AppHub.xcodeproj; path = ../node_modules/apphub/AppHub/AppHub.xcodeproj; sourceTree = "<group>"; };
@@ -216,6 +233,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				421BEB171C7268AD0058D624 /* libsqlite3.dylib in Frameworks */,
+				421BEB181C7268AD0058D624 /* libz.1.dylib in Frameworks */,
+				421BEB081C71B9E90058D624 /* libRCTPushNotification.a in Frameworks */,
 				42E5EE8F1C7124CC009C7A35 /* libReactNativeIcons.a in Frameworks */,
 				42E728FE1C69C63900FF970D /* libBVLinearGradient.a in Frameworks */,
 				42E728F71C69C52B00FF970D /* libRNVectorIcons.a in Frameworks */,
@@ -229,6 +249,7 @@
 				00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */,
 				00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */,
 				00C302E81ABCBA2D00DB3ED1 /* libRCTImage.a in Frameworks */,
+				421BEB121C7267730058D624 /* Batch.framework in Frameworks */,
 				133E29F31AD74F7200F7D852 /* libRCTLinking.a in Frameworks */,
 				00C302E91ABCBA2D00DB3ED1 /* libRCTNetwork.a in Frameworks */,
 				139105C61AF99C1200B5F7CC /* libRCTSettings.a in Frameworks */,
@@ -338,6 +359,23 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		421BEAF11C71B9D20058D624 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				421BEB001C71B9D20058D624 /* libRCTPushNotification.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		421BEB0E1C7267730058D624 /* Batch.embeddedframework */ = {
+			isa = PBXGroup;
+			children = (
+				421BEB0F1C7267730058D624 /* Batch.bundle */,
+				421BEB101C7267730058D624 /* Batch.framework */,
+			);
+			path = Batch.embeddedframework;
+			sourceTree = "<group>";
+		};
 		42E5EE8A1C7124A6009C7A35 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -407,6 +445,7 @@
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
+				421BEAF01C71B9D20058D624 /* RCTPushNotification.xcodeproj */,
 				42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */,
 				42E728F81C69C62900FF970D /* BVLinearGradient.xcodeproj */,
 				42E728F11C69C51D00FF970D /* RNVectorIcons.xcodeproj */,
@@ -438,13 +477,16 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				421BEB0E1C7267730058D624 /* Batch.embeddedframework */,
+				42E728D11C69BB8000FF970D /* SystemConfiguration.framework */,
+				42E728E51C69BEFC00FF970D /* FBSDKShareKit.framework */,
+				42E728E41C69BEFC00FF970D /* FBSDKLoginKit.framework */,
+				42E728E31C69BEFC00FF970D /* FBSDKCoreKit.framework */,
+				421BEB151C7268AD0058D624 /* libsqlite3.dylib */,
+				421BEB161C7268AD0058D624 /* libz.1.dylib */,
 				42E5EE921C712D71009C7A35 /* ionicons.ttf */,
 				42E728FF1C69C71800FF970D /* RCTOrientation */,
-				42E728E31C69BEFC00FF970D /* FBSDKCoreKit.framework */,
-				42E728E41C69BEFC00FF970D /* FBSDKLoginKit.framework */,
-				42E728E51C69BEFC00FF970D /* FBSDKShareKit.framework */,
 				42E728D31C69BB8F00FF970D /* libz.tbd */,
-				42E728D11C69BB8000FF970D /* SystemConfiguration.framework */,
 				13B07FAE1A68108700A75B9A /* VentureApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* VentureAppTests */,
@@ -518,8 +560,11 @@
 					13B07F861A680F5B00A75B9A = {
 						DevelopmentTeam = TBLUZ69253;
 						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 0;
+							};
 							com.apple.Push = {
-								enabled = 1;
+								enabled = 0;
 							};
 						};
 					};
@@ -572,6 +617,10 @@
 				{
 					ProductGroup = 00C302D41ABCB9D200DB3ED1 /* Products */;
 					ProjectRef = 00C302D31ABCB9D200DB3ED1 /* RCTNetwork.xcodeproj */;
+				},
+				{
+					ProductGroup = 421BEAF11C71B9D20058D624 /* Products */;
+					ProjectRef = 421BEAF01C71B9D20058D624 /* RCTPushNotification.xcodeproj */;
 				},
 				{
 					ProductGroup = 139105B71AF99BAD00B5F7CC /* Products */;
@@ -667,6 +716,13 @@
 			remoteRef = 146834031AC3E56700842450 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		421BEB001C71B9D20058D624 /* libRCTPushNotification.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libRCTPushNotification.a;
+			remoteRef = 421BEAFF1C71B9D20058D624 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		42E5EE8E1C7124A6009C7A35 /* libReactNativeIcons.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -746,6 +802,7 @@
 			files = (
 				42E5EE931C712D71009C7A35 /* ionicons.ttf in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				421BEB111C7267730058D624 /* Batch.bundle in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -854,23 +911,27 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEAD_CODE_STRIPPING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 					"$(SRCROOT)/../node_modules/react-native-facebook-login/FacebookSDK/**",
+					"$(PROJECT_DIR)/Batch.embeddedframework",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					"$(SRCROOT)/../node_modules/react-native/React/**",
 					"$(SRCROOT)/../node_modules/apphub/AppHub/**",
+					"$(SRCROOT)/../node_modules/react-native/Libraries/PushNotificationIOS/**",
 				);
 				INFOPLIST_FILE = VentureApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.id13v9d7z1mmlohv1y89org;
 				PRODUCT_NAME = VentureApp;
+				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -881,22 +942,26 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 					"$(SRCROOT)/../node_modules/react-native-facebook-login/FacebookSDK/**",
+					"$(PROJECT_DIR)/Batch.embeddedframework",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					"$(SRCROOT)/../node_modules/react-native/React/**",
 					"$(SRCROOT)/../node_modules/apphub/AppHub/**",
+					"$(SRCROOT)/../node_modules/react-native/Libraries/PushNotificationIOS/**",
 				);
 				INFOPLIST_FILE = VentureApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.id13v9d7z1mmlohv1y89org;
 				PRODUCT_NAME = VentureApp;
+				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

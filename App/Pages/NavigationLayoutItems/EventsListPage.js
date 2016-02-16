@@ -48,6 +48,7 @@ var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/Match
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
+var SGListView = require('react-native-sglistview');
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
 
@@ -463,6 +464,7 @@ var AttendeeList = React.createClass({
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
+                    renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     pageSize={PAGE_SIZE}
                     automaticallyAdjustContentInsets={false}
@@ -763,6 +765,7 @@ var EventsListPage = React.createClass({
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this._renderEvent}
+                    renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     pageSize={PAGE_SIZE}
                     onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}

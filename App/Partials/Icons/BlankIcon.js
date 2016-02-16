@@ -22,7 +22,7 @@ import React, {
 
 import {Icon, } from 'react-native-icons';
 
-const SIZE = 25;
+const SIZE = 28;
 
 type Props = {
     style: View.propTypes.style

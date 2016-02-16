@@ -52,13 +52,14 @@ var Icon = require('react-native-vector-icons/Ionicons');
 var InvertibleScrollView = require('react-native-invertible-scroll-view');
 var LinearGradient = require('react-native-linear-gradient');
 var ReactFireMixin = require('reactfire');
-var SGListView = require('react-native-sglistview');
 var TimerMixin = require('react-timer-mixin');
 
 var {height, width} = Dimensions.get('window');
+var SCREEN_HEIGHT = height;
 var MAX_TEXT_INPUT_VAL_LENGTH = 15;
 var MESSAGE_TEXT_INPUT_REF = 'messageTextInput';
 var MESSAGES_LIST_REF = 'messagesList';
+var TIMER_BAR_HEIGHT = 40;
 
 var ChatPage = React.createClass({
 
@@ -73,11 +74,21 @@ var ChatPage = React.createClass({
             }),
             hasKeyboardSpace: false,
             hasTimerExpired: false,
+            headerHeight: 0,
+            infoContentVisible: false,
             loaded: false,
             message: '',
-            messageList: Object
+            messageList: Object,
+            messageListCount: 0,
+            messageListHeight: 0,
+            messageTextInputHeight: 0,
+            recipientInfoBarHeight: 0,
         };
     },
+
+    // see http://stackoverflow.com/questions/33049731/scroll-to-bottom-of-scrollview-in-react-native
+    footerY: null,
+    listHeight: null,
 
     componentWillMount() {
         InteractionManager.runAfterInteractions(() => {
@@ -98,6 +109,11 @@ var ChatPage = React.createClass({
         });
     },
 
+    componentDidMount() {
+        this.scrollResponder = this.refs[MESSAGES_LIST_REF] &&this.refs[MESSAGES_LIST_REF].getScrollResponder();
+        this.scrollToBottom();
+    },
+
     componentWillUnmount() {
         this.refs[MESSAGE_TEXT_INPUT_REF].blur();
     },
@@ -110,6 +126,10 @@ var ChatPage = React.createClass({
     containerTouched(event) {
         this.refs[MESSAGE_TEXT_INPUT_REF].blur();
         return false;
+    },
+
+    handleInfoContentVisibility(infoContentVisible: boolean) {
+        this.setState({infoContentVisible});
     },
 
     handleSetHasTimerExpiredState(hasTimerExpired:boolean){
@@ -125,25 +145,9 @@ var ChatPage = React.createClass({
         });
     },
 
-    _renderHeader() {
-        let chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle : this.props.chatRoomEventTitle);
-
-        return (
-            <Header containerStyle={{backgroundColor: '#040A19'}}>
-                <BackIcon onPress={() => {
-                this.props.navigator.pop();
-                }} style={{right: 10, bottom: 5}}
-                    />
-                <Text
-                    style={styles.activityPreferenceTitle}>
-                    {chatRoomTitle && chatRoomTitle.toUpperCase()} </Text>
-                <Text />
-            </Header>
-        );
-    },
-
     _renderMessage(message:Object, sectionID:number, rowID:number) {
-        if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return <View />;
+        if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return
+            <View />;
 
         var recipient = this.props.recipient,
             currentUserData = this.props.currentUserData,
@@ -172,7 +176,8 @@ var ChatPage = React.createClass({
                 locations={[0,1.0,0.9]}
                 style={styles.messageRow}>
                 { (!sentByCurrentUser) ? avatarThumbnail : null }
-                <View style={messageRowStyle}>
+                <View
+                    style={messageRowStyle}>
                     <Text style={styles.baseText}>
                         <Text style={messageTextStyle}>
                             {message.body}
@@ -182,6 +187,14 @@ var ChatPage = React.createClass({
                 { (sentByCurrentUser) ? avatarThumbnail : null }
             </LinearGradient>
         );
+    },
+
+    scrollToBottom() {
+        // See https://github.com/FaridSafi/react-native-gifted-messenger/blob/master/GiftedMessenger.js
+        if (this.listHeight && this.footerY && this.footerY > this.listHeight && this.listHeight > 10) { // listHeight > 10 make sure info Content is not down and compressing list
+            var scrollDistance = this.listHeight - this.footerY;
+            this.scrollResponder.scrollTo(-scrollDistance + this.state.recipientInfoBarHeight + this.state.headerHeight + TIMER_BAR_HEIGHT + 20);
+        }
     },
 
     _sendMessage() {
@@ -196,15 +209,18 @@ var ChatPage = React.createClass({
         this.state.chatRoomMessagesRef.once('value', (snapshot) => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
             _this.setState({
-                contentOffsetYValue: 0,
                 message: ''
             });
             _this.updateMessages(_.cloneDeep(_.values(snapshot.val())));
             _this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+
+            this.scrollToBottom();
         });
     },
 
     render() {
+        let chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle : this.props.chatRoomEventTitle);
+
         let messageTextInput = (
             <TextInput
                 autoCorrect={false}
@@ -216,7 +232,12 @@ var ChatPage = React.createClass({
                 onFocus={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     this.setState({hasKeyboardSpace: true, closeDropdownProfile: true})
+                    this.scrollToBottom();
                     }}
+                onLayout={(event) => {
+                    var {x, y, width, height} = event.nativeEvent.layout
+                    this.setState({messageTextInputHeight: height});
+                }}
                 multiline={true}
                 style={styles.messageTextInput}
                 onChangeText={(text) => this.setState({message: text})}
@@ -229,18 +250,37 @@ var ChatPage = React.createClass({
         return (
             <View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.96)'}}>
                 <View>
-                    {this._renderHeader()}
+                    <View onLayout={(event) => {
+                    var {x, y, width, height} = event.nativeEvent.layout
+                    this.setState({headerHeight: height});
+                }}>
+                        <Header containerStyle={{backgroundColor: '#040A19'}}>
+                            <BackIcon onPress={() => {
+                this.props.navigator.pop();
+                }} style={{right: 10, bottom: 5}}
+                                />
+                            <Text
+                                style={styles.activityPreferenceTitle}>
+                                {chatRoomTitle && chatRoomTitle.toUpperCase()} </Text>
+                            <Text />
+                        </Header>
+                    </View>
                 </View>
                 <View onStartShouldSetResponder={this.containerTouched} style={styles.container}>
                     <RecipientInfoBar chatRoomRef={this.props.chatRoomRef}
                                       closeDropdownProfile={this.state.closeDropdownProfile}
                                       closeKeyboard={this.closeKeyboard}
+                                      handleInfoContentVisibility={this.handleInfoContentVisibility}
                                       handleSetHasTimerExpiredState={this.handleSetHasTimerExpiredState}
                                       _id={this.props._id}
+                                      onLayout={(event) => {
+                                            var {x, y, width, height} = event.nativeEvent.layout
+                                            this.setState({recipientInfoBarHeight: height});
+                                        }}
                                       navigator={this.props.navigator}
                                       recipientData={this.props}
                         />
-                    <SGListView
+                    <ListView
                         ref={MESSAGES_LIST_REF}
                         contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
                         dataSource={this.state.dataSource}
@@ -248,7 +288,19 @@ var ChatPage = React.createClass({
                         onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
                         renderScrollComponent={props => <InvertibleScrollView {...props} />}
                         initialListSize={15}
+                        onLayout={(e)=>{
+                          this.listHeight = e.nativeEvent.layout.height;
+                        }}
+                        onScroll={() => {
+                        }}
+                        onMomentumScrollEnd={() => {
+                        }}
                         pageSize={15}
+                        renderFooter={() => {
+                          return <View onLayout={(e)=> {
+                            this.footerY = e.nativeEvent.layout.y;
+                          }}/>
+                        }}
                         scrollsToTop={false}
                         automaticallyAdjustContentInsets={false}
                         style={{backgroundColor: 'rgba(0,0,0,0.01)', width: width}}
@@ -278,8 +330,10 @@ var RecipientInfoBar = React.createClass({
         chatRoomRef: React.PropTypes.string.isRequired,
         closeDropdownProfile: React.PropTypes.bool.isRequired,
         closeKeyboard: React.PropTypes.func.isRequired,
+        handleInfoContentVisibilityChange: React.PropTypes.func,
         handleSetHasTimerExpiredState: React.PropTypes.func.isRequired,
         _id: React.PropTypes.string.isRequired,
+        onLayout: React.PropTypes.func.isRequired,
         navigator: React.PropTypes.object,
         recipientData: React.PropTypes.object.isRequired,
     },
@@ -336,14 +390,18 @@ var RecipientInfoBar = React.createClass({
             <View
                 style={{paddingVertical: (user === recipient ? height/30 : height/97), bottom: (this.state.hasKeyboardSpace ? height/3.5 : 0), backgroundColor: '#eee', flexDirection: 'column', justifyContent: 'center'}}>
                 {this.state.infoContent === 'recipient' ?
-                    <TouchableOpacity onPress={() => this.refs.recipientPicture.tada(400)}>
+                    <TouchableOpacity onPress={() => {
+                    if(!this.state.hasKeyboardSpace) this.refs.recipientPicture.tada(400)
+                    }}>
                         <Animatable.View ref="recipientPicture" onLayout={() => this.refs.recipientPicture.fadeIn(400)}>
                             <Image source={{uri: recipient.picture}}
                                    style={{width: width/2, height: width/2, borderRadius: width/4, alignSelf: 'center', marginVertical: width/18}}/>
                         </Animatable.View>
                     </TouchableOpacity>
                     :
-                    <TouchableOpacity onPress={() => this.refs.currentUserPicture.tada(400)}>
+                    <TouchableOpacity onPress={() => {
+                        if(!this.state.hasKeyboardSpace) this.refs.currentUserPicture.tada(400)
+                        }}>
                         <Animatable.View ref="currentUserPicture"
                                          onLayout={() => this.refs.currentUserPicture.fadeIn(400)}>
                             <Image source={{uri: currentUserData.picture}}
@@ -391,11 +449,12 @@ var RecipientInfoBar = React.createClass({
         );
 
         return (
-            <View style={{flexDirection: 'column', width: width}}>
+            <View onLayout={this.props.onLayout} style={{flexDirection: 'column', width: width}}>
                 <View style={styles.recipientBar}>
                     <RecipientAvatar onPress={() => {
                     var config = layoutAnimationConfigs[0];
                     LayoutAnimation.configureNext(config);
+                    this.props.handleInfoContentVisibility(this.state.infoContent === 'column');
                     this.setState({infoContent: 'recipient', dir: (this.state.dir === 'column' && this.state.infoContent === 'recipient' ? 'row' : 'column')})
                 }} navigator={this.props.navigator} recipient={recipient}/>
                     <View style={styles.rightContainer}>
@@ -405,6 +464,7 @@ var RecipientInfoBar = React.createClass({
                     <RecipientAvatar onPress={() => {
                     var config = layoutAnimationConfigs[0];
                     LayoutAnimation.configureNext(config);
+                     this.props.handleInfoContentVisibility(this.state.infoContent === 'column');
                    this.setState({infoContent: 'currentUser', dir: (this.state.dir === 'column' && this.state.infoContent === 'currentUser' ? 'row' : 'column')})
                 }} navigator={this.props.navigator} currentUserData={currentUserData} style={{marginRight: 20}}/>
                 </View>
@@ -545,7 +605,7 @@ var TimerBar = React.createClass({
 
         // decrement chat count by 1
         firebaseRef.child(`users/${currentUserIDHashed}/chatCount`).once('value', snapshot => {
-            firebaseRef.child(`users/${currentUserIDHashed}/chatCount`).set(snapshot.val()-1);
+            firebaseRef.child(`users/${currentUserIDHashed}/chatCount`).set(snapshot.val() - 1);
         });
 
         chatRoomRef.off();
@@ -620,7 +680,8 @@ var styles = StyleSheet.create({
         fontFamily: 'AvenirNextCondensed-Medium',
         textAlign: 'center',
         fontSize: 16,
-        marginTop: 15
+        marginVertical: 5,
+        bottom: 5
     },
     container: {
         alignItems: 'center',
@@ -731,7 +792,8 @@ var styles = StyleSheet.create({
     tagsTitle: {
         color: '#222',
         fontSize: 16,
-        fontFamily: 'AvenirNextCondensed-Regular'
+        fontFamily: 'AvenirNextCondensed-Regular',
+        marginHorizontal: 20
     },
     tagText: {
         color: 'rgba(255,255,255,0.95)',
@@ -763,7 +825,7 @@ var styles = StyleSheet.create({
     timerBar: {
         backgroundColor: 'rgba(0,0,0,0.2)',
         width: width,
-        height: 40,
+        height: TIMER_BAR_HEIGHT,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center'

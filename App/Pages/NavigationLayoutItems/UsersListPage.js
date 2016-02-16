@@ -45,6 +45,7 @@ var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRe
 var DefaultMatchStatusIcon = require('../../Partials/Icons/MatchStatusIndicators/DefaultMatchStatusIcon');
 var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
+var SGListView = require('react-native-sglistview');
 var TimerMixin = require('react-timer-mixin');
 
 var CHAT_DURATION_IN_MINUTES = 5;
@@ -80,7 +81,8 @@ var User = React.createClass({
     getInitialState() {
         return {
             dir: 'row',
-            expireTime: ''
+            expireTime: '',
+            thumbnailReady: false
         }
     },
 
@@ -288,7 +290,7 @@ var User = React.createClass({
                 _id: currentUserIDHashed
             }, 200);
             currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-                status: 'sent',
+                status: 'received',
                 _id: targetUserIDHashed
             }, 300);
         }
@@ -384,8 +386,9 @@ var User = React.createClass({
                             <View style={styles.rightContainer}>
                                 <Image
                                     onPress={this._onPressItem}
+                                    onLoadEnd={() => this.setState({thumbnailReady: true})}
                                     source={{uri: this.props.data && this.props.data.picture}}
-                                    style={[styles.thumbnail]}>
+                                    style={[styles.thumbnail, (this.state.thumbnailReady ? {} : {backgroundColor: '#040A19'})]}>
                                     <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                                         <Text
                                             style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs)) && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
@@ -435,7 +438,6 @@ var UsersListPage = React.createClass({
     getInitialState() {
         return {
             animating: false,
-            contentOffsetYValue: 0,
             dataSource: new ListView.DataSource({
                 rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
             }),
@@ -643,9 +645,9 @@ var UsersListPage = React.createClass({
                 </View>
                 <RefreshableListView
                     ref={USERS_LIST_VIEW_REF}
-                    contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
+                    renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     pageSize={PAGE_SIZE}
                     minPulldownDistance={5}
@@ -655,9 +657,6 @@ var UsersListPage = React.createClass({
                         this.setState({visibleRows, changedRows});
                     }}
                     onEndReachedThreshold={height/20}
-                    onEndReached={() => {
-                        if(this.state.rows.length > INITIAL_LIST_SIZE) this.setState({contentOffsetYValue: this.state.contentOffsetYValue + height/20}); // scroll to show remaining content
-                    }}
                     refreshDescription="Everyday I'm shufflin'..."
                     scrollRenderAheadDistance={600}
                     refreshingIndictatorComponent={CustomRefreshingIndicator}
@@ -865,6 +864,13 @@ var styles = StyleSheet.create({
         height: THUMBNAIL_SIZE,
         borderRadius: THUMBNAIL_SIZE / 2,
         marginVertical: 7,
+    },
+    thumbnailLoading: {
+        width: THUMBNAIL_SIZE,
+        height: THUMBNAIL_SIZE,
+        borderRadius: THUMBNAIL_SIZE / 2,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     timerValText: {
         opacity: 1.0,

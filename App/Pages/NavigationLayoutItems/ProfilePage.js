@@ -19,11 +19,18 @@ var {
     AsyncStorage,
     Image,
     LayoutAnimation,
+    NativeModules,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
     } = React;
+
+//var FBSDKShare = require('react-native-fbsdkshare');
+//var {
+//    FBSDKAppInviteContent,
+//    FBSDKAppInviteDialog
+//    } = FBSDKShare;
 
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
@@ -136,6 +143,22 @@ var ProfilePage = React.createClass({
         });
     },
 
+    _openAppInviteDialog() {
+        //// Build up a shareable link.
+        //var linkContent = new FBSDKAppInviteContent('https://fb.me/583451638480908', 'http://res.cloudinary.com/dwnyawluh/image/upload/c_scale,w_1200/v1455585747/Venture_Signature_180x180_hwbaqu.png');
+        //// Share the link using the native share dialog.
+        //FBSDKAppInviteDialog.show(linkContent, (error, result) => {
+        //    if (!error) {
+        //        if (result.isCancelled) {
+        //            alert('Share cancelled.');
+        //        } else {
+        //            alert('Thanks for sharing!');
+        //        }
+        //    } else {
+        //        alert('Error sharing.');
+        //    }
+        //});
+    },
 
     renderHeader() {
         return (
@@ -166,7 +189,7 @@ var ProfilePage = React.createClass({
                        style={styles.backdrop}>
                     <View style={styles.loginContainer}>
                         <View>
-                            { user && <Photo user={user}/> }
+                            { user && <Photo onPress={this._openAppInviteDialog} user={user}/> }
                             { user && ventureId &&
                             <Info firebaseRef={this.state.firebaseRef} ventureId={ventureId} user={user}/>}
                         </View>
@@ -219,14 +242,22 @@ var ProfilePage = React.createClass({
 
 var Photo = React.createClass({
     propTypes: {
+        onPress: React.PropTypes.func.isRequired,
         user: React.PropTypes.object.isRequired
     },
+
+    mixins: [TimerMixin],
+
+    _handle: null,
 
     render() {
         if (this.props.user.userId) {
             return (
                 <Animatable.View ref="currentUserPhoto" style={styles.photoContent}>
-                    <TouchableOpacity onPress={() => this.refs.currentUserPhoto.pulse(800)}>
+                    <TouchableOpacity onPress={() => {
+                        this.refs.currentUserPhoto.pulse(800);
+                        this.props.onPress();
+                    }}>
                         <Image
                             style={
                     {

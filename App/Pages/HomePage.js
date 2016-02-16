@@ -56,7 +56,8 @@ var VentureAppPage = require('./Base/VentureAppPage');
 
 var ADD_INFO_BUTTON_SIZE = 28;
 var ACTIVITY_TEXT_INPUT_PADDING = 5;
-var ACTIVITY_TITLE_INPUT_REF = 'activityTitleInput'
+var ACTIVITY_TITLE_INPUT_REF = 'activityTitleInput';
+var DEFAULT_CITY_COORDINATES = {latitude: 41.310809, longitude: -72.924953}; // New Haven
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var MAX_TEXT_INPUT_VAL_LENGTH = 15;
@@ -147,7 +148,9 @@ var HomePage = React.createClass({
                         this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
                     },
                     (error) => {
-                        console.error(error);
+                        AlertIOS.alert('Please Enable Location', 'Venture uses location to figure out who\'s near you. You can enable Location Services in Settings > Venture Yale > Location')
+                        currentUserRef.child(`location/coordinates`).set(DEFAULT_CITY_COORDINATES);
+                        this.setState({currentUserLocationCoords: [DEFAULT_CITY_COORDINATES.latitude, DEFAULT_CITY_COORDINATES.longitude]});
                     },
                     {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
                 );
@@ -256,7 +259,8 @@ var HomePage = React.createClass({
                     this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
                 },
                 (error) => {
-                    console.error(error);
+                    // no need to call Alert.IOS again since it was called before
+                    this.setState({currentUserLocationCoords: [DEFAULT_CITY_COORDINATES.latitude, DEFAULT_CITY_COORDINATES.longitude]});
                 },
                 {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
             );
@@ -402,7 +406,9 @@ var HomePage = React.createClass({
                     this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
                 },
                 (error) => {
-                    console.error(error);
+                    AlertIOS.alert('Please Enable Location', 'Venture uses location to figure out who\'s near you. You can enable Location Services in Settings > Venture Yale > Location')
+                    this.state.currentUserRef.child(`location/coordinates`).set(DEFAULT_CITY_COORDINATES);
+                    this.setState({currentUserLocationCoords: [DEFAULT_CITY_COORDINATES.latitude, DEFAULT_CITY_COORDINATES.longitude]});
                 },
                 {enableHighAccuracy: true, timeout: 40000, maximumAge: 1000}
             );

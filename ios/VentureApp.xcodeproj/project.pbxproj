@@ -910,7 +910,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer: Harrison Miller (8ZDWAFGY98)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEAD_CODE_STRIPPING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -931,7 +931,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.id13v9d7z1mmlohv1y89org;
 				PRODUCT_NAME = VentureApp;
-				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE = "9619f78d-a1d6-48f5-bf6b-6157b5b43ccf";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -941,7 +941,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer: Harrison Miller (8ZDWAFGY98)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -961,7 +961,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.id13v9d7z1mmlohv1y89org;
 				PRODUCT_NAME = VentureApp;
-				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE = "9619f78d-a1d6-48f5-bf6b-6157b5b43ccf";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

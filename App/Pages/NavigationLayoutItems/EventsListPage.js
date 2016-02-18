@@ -307,9 +307,11 @@ var User = React.createClass({
                     />
             case 'matched':
                 return <MatchSuccessIcon
+                    chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
                     color='rgba(0,0,0,0.2)'
                     onPress={this.handleMatchInteraction}
-                    style={{left: 10, bottom: 6}}
+                    style={{left: 10,  bottom: 6}}
+                    currentUserIDHashed={this.props.currentUserIDHashed}
                     />
             default:
                 return <DefaultMatchStatusIcon

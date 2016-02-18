@@ -75,7 +75,8 @@ var User = React.createClass({
         currentUserData: React.PropTypes.object,
         data: React.PropTypes.object,
         isCurrentUser: React.PropTypes.func,
-        navigator: React.PropTypes.object
+        navigator: React.PropTypes.object,
+        rowID: React.PropTypes.number,
     },
 
     getInitialState() {
@@ -317,9 +318,11 @@ var User = React.createClass({
                     />
             case 'matched':
                 return <MatchSuccessIcon
+                    chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
                     color='rgba(0,0,0,0.2)'
                     onPress={this.handleMatchInteraction}
                     style={{left: 10,  bottom: 6}}
+                    currentUserIDHashed={this.props.currentUserIDHashed}
                     />
             default:
                 return <DefaultMatchStatusIcon
@@ -438,10 +441,12 @@ var UsersListPage = React.createClass({
     getInitialState() {
         return {
             animating: false,
+            contentOffsetYValue: 0,
             dataSource: new ListView.DataSource({
                 rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
             }),
             firebaseRef: this.props.firebaseRef,
+            headerHeight: 0,
             maxSearchDistance: null,
             rows: [],
             searchText: '',
@@ -452,6 +457,10 @@ var UsersListPage = React.createClass({
     },
 
     _handle: null,
+
+    // see http://stackoverflow.com/questions/33049731/scroll-to-bottom-of-scrollview-in-react-native
+    footerY: null,
+    listHeight: null,
 
     componentWillMount() {
         // handle must go in componentWillMount
@@ -568,6 +577,13 @@ var UsersListPage = React.createClass({
         this.updateRows(_.cloneDeep(_.values(_.filter(this.state.rows, checkFilter))));
     },
 
+    scroll() {
+        if (this.listHeight && this.footerY && this.footerY > this.listHeight && this.listHeight > 10) { // listHeight > 10 make sure info Content is not down and compressing list
+            var scrollDistance = this.listHeight - this.footerY;
+            this.scrollResponder.scrollTo(-scrollDistance + this.currentUserBarHeight + this.headerHeight + height/24);
+        }
+    },
+
     shuffleUsers() {
         this.updateRows(_.shuffle(_.cloneDeep(_.values(this.state.rows))));
         this.forceUpdate();
@@ -593,6 +609,10 @@ var UsersListPage = React.createClass({
         var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 
         return (
+            <View onLayout={(event) => {
+                    var {x, y, width, height} = event.nativeEvent.layout
+                    this.setState({headerHeight: height});
+                }}>
             <Header>
                 <HomePageIcon onPress={() => this._navigateToHome()}/>
                 <TextInput
@@ -612,6 +632,7 @@ var UsersListPage = React.createClass({
                     style={{left: 14}}/>
                 <Text />
             </Header>
+                </View>
         )
     },
 
@@ -645,6 +666,7 @@ var UsersListPage = React.createClass({
                 </View>
                 <RefreshableListView
                     ref={USERS_LIST_VIEW_REF}
+                    contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
                     renderScrollComponent={props => <SGListView {...props} />}
@@ -657,10 +679,18 @@ var UsersListPage = React.createClass({
                         this.setState({visibleRows, changedRows});
                     }}
                     onEndReachedThreshold={height/20}
+                    onLayout={(e)=>{
+                          this.listHeight = e.nativeEvent.layout.height;
+                    }}
                     refreshDescription="Everyday I'm shufflin'..."
                     scrollRenderAheadDistance={600}
                     refreshingIndictatorComponent={CustomRefreshingIndicator}
                     removeClippedSubviews={true}
+                    renderFooter={() => {
+                          return <View onLayout={(e)=> {
+                            this.footerY = e.nativeEvent.layout.y;
+                          }}/>
+                    }}
                     />
                 <View style={{height: 48}}></View>
                 <ModalBase

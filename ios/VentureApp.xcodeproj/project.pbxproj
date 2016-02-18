@@ -931,7 +931,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.id13v9d7z1mmlohv1y89org;
 				PRODUCT_NAME = VentureApp;
-				PROVISIONING_PROFILE = "9619f78d-a1d6-48f5-bf6b-6157b5b43ccf";
+				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -961,7 +961,7 @@
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.id13v9d7z1mmlohv1y89org;
 				PRODUCT_NAME = VentureApp;
-				PROVISIONING_PROFILE = "9619f78d-a1d6-48f5-bf6b-6157b5b43ccf";
+				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

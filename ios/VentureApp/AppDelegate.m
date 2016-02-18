@@ -27,7 +27,7 @@
 
   // Start Batch.
   [BatchPush setupPush];
-  [Batch startWithAPIKey:@"56C22978992BC148E2B0D85184750F"];
+  [Batch startWithAPIKey:@"DEV56C2C100A41752AF9F239B5CCE0"];
 
   // Register for push notifications
   [BatchPush registerForRemoteNotifications];

@@ -191,7 +191,7 @@ var HomePage = React.createClass({
                 currentUserRef.child('match_requests').on('child_added', childSnapshot => {
                     childSnapshot.val() && childSnapshot.val()._id && firebaseRef.child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
                         if(childSnapshot.val() && (childSnapshot.val().status === 'received')) {
-                            this._sendNotification(snapshot.val(), childSnapshot.val().status);
+                            snapshot.val() && childSnapshot.val() && this._sendNotification(snapshot.val(), childSnapshot.val().status);
                         }
                     })
                 });
@@ -201,7 +201,7 @@ var HomePage = React.createClass({
                 currentUserRef.child('event_invite_match_requests').on('child_added', childSnapshot => {
                     childSnapshot.val() && childSnapshot.val()._id && firebaseRef.child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
                         if(childSnapshot.val() && (childSnapshot.val().status === 'received')) {
-                            this._sendNotification(snapshot.val(), childSnapshot.val().status);
+                            snapshot.val() && childSnapshot.val() && this._sendNotification(snapshot.val(), childSnapshot.val().status);
                         }
                     })
                 });
@@ -211,7 +211,7 @@ var HomePage = React.createClass({
                 currentUserRef.child('match_requests').on('child_changed', childSnapshot => {
                     childSnapshot.val() && childSnapshot.val()._id && firebaseRef.child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
                         if (childSnapshot.val() && (childSnapshot.val().status === 'matched')) {
-                            this._sendNotification(snapshot.val(), childSnapshot.val().status);
+                            snapshot.val() && childSnapshot.val() && this._sendNotification(snapshot.val(), childSnapshot.val().status);
                         }
                     })
                 });
@@ -221,7 +221,7 @@ var HomePage = React.createClass({
                 currentUserRef.child('event_invite_match_requests').on('child_changed', childSnapshot => {
                     childSnapshot.val() && childSnapshot.val()._id && firebaseRef.child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
                         if (childSnapshot.val() && (childSnapshot.val().status === 'matched')) {
-                            this._sendNotification(snapshot.val(), childSnapshot.val().status);
+                            snapshot.val() && childSnapshot.val() && this._sendNotification(snapshot.val(), childSnapshot.val().status);
                         }
                     })
                 });
@@ -279,12 +279,12 @@ var HomePage = React.createClass({
                         if (currentUserFriends) {
                             this.setState({currentUserFriends});
                             // push notification when user's friend has joined the app
-
-                            this.state.firebaseRef.child('users').on('child_added', childSnapshot => {
-                                if(childSnapshot.val() && childSnapshot.val().firstName && _.findIndex(currentUserFriends, {firstName: childSnapshot.val().firstName}) > -1) {
-                                    this._sendNotification(childSnapshot.val().firstName, 'joined');
-                                }
-                            });
+                            //
+                            //this.state.firebaseRef.child('users').on('child_added', childSnapshot => {
+                            //    if(childSnapshot.val() && childSnapshot.val().firstName && _.findIndex(currentUserFriends, {firstName: childSnapshot.val().firstName}) > -1) {
+                            //        this._sendNotification(childSnapshot.val().firstName, 'joined');
+                            //    }
+                            //});
                         }
 
                         else {
@@ -323,7 +323,7 @@ var HomePage = React.createClass({
             .catch(error => console.log(error.message))
             .done();
 
-        PushNotificationIOS.requestPermissions();
+        // PushNotificationIOS.requestPermissions();
         PushNotificationIOS.addEventListener('notification', this._onNotification);
     },
 
@@ -402,12 +402,12 @@ var HomePage = React.createClass({
         if (currentAppState === 'active') {
             navigator.geolocation.getCurrentPosition(
                 (currentPosition) => {
-                    this.state.currentUserRef && this.state.currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
+                    this.state.currentUserRef && this.state.currentUserRef.child(`location/coordinates`) && this.state.currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
                     this.setState({currentUserLocationCoords: [currentPosition.coords.latitude, currentPosition.coords.longitude]});
                 },
                 (error) => {
                     AlertIOS.alert('Please Enable Location', 'Venture uses location to figure out who\'s near you. You can enable Location Services in Settings > Venture Yale > Location')
-                    this.state.currentUserRef.child(`location/coordinates`).set(DEFAULT_CITY_COORDINATES);
+                    this.state.currentUserRef && this.state.currentUserRef.child(`location/coordinates`) && this.state.currentUserRef.child(`location/coordinates`).set(DEFAULT_CITY_COORDINATES);
                     this.setState({currentUserLocationCoords: [DEFAULT_CITY_COORDINATES.latitude, DEFAULT_CITY_COORDINATES.longitude]});
                 },
                 {enableHighAccuracy: true, timeout: 40000, maximumAge: 1000}

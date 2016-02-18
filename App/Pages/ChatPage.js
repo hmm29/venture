@@ -55,11 +55,35 @@ var ReactFireMixin = require('reactfire');
 var TimerMixin = require('react-timer-mixin');
 
 var {height, width} = Dimensions.get('window');
+var HEADER_CONTAINER_HEIGHT = height/20;
 var SCREEN_HEIGHT = height;
 var MAX_TEXT_INPUT_VAL_LENGTH = 15;
+var MESSAGE_TEXT_INPUT_HEIGHT = 30;
 var MESSAGE_TEXT_INPUT_REF = 'messageTextInput';
 var MESSAGES_LIST_REF = 'messagesList';
+var RECIPIENT_INFO_BAR_HEIGHT = 78;
 var TIMER_BAR_HEIGHT = 40;
+
+var ChatMateTypingLoader = React.createClass({
+    componentDidMount() {
+        this.refs.chatMateTypingLoader.zoomIn(500);
+    },
+
+    render() {
+        return (
+            <Animatable.View ref="chatMateTypingLoader" style={{alignSelf: 'center', bottom: height/20}}>
+                <TouchableOpacity onPress={() => {this.refs.chatMateTypingLoader.jello(300)}} >
+                    <Animatable.View ref="chatMateTypingLoader">
+                        <Text
+                            style={{color: '#ccc', fontFamily: 'AvenirNextCondensed-UltraLight', textAlign: 'center', fontSize: 50}}>
+                            <Text style={{fontSize: height/30, top: 15}}>{this.props.recipientFirstName + ' is typing ...'}</Text>
+                        </Text>
+                    </Animatable.View>
+                </TouchableOpacity>
+            </Animatable.View>
+        )
+    }
+})
 
 var ChatPage = React.createClass({
 
@@ -67,6 +91,7 @@ var ChatPage = React.createClass({
 
     getInitialState() {
         return {
+            chatMateIsTyping: false,
             chatRoomMessagesRef: null,
             contentOffsetYValue: 0,
             dataSource: new ListView.DataSource({
@@ -74,25 +99,22 @@ var ChatPage = React.createClass({
             }),
             hasKeyboardSpace: false,
             hasTimerExpired: false,
-            headerHeight: 0,
             infoContentVisible: false,
             loaded: false,
             message: '',
             messageList: Object,
             messageListCount: 0,
-            messageListHeight: 0,
-            messageTextInputHeight: 0,
-            recipientInfoBarHeight: 0,
         };
     },
 
     // see http://stackoverflow.com/questions/33049731/scroll-to-bottom-of-scrollview-in-react-native
-    footerY: null,
-    listHeight: null,
+    footerY: 0,
+    listHeight: 0,
 
     componentWillMount() {
         InteractionManager.runAfterInteractions(() => {
-            let chatRoomMessagesRef = this.props.chatRoomRef.child('messages'), _this = this;
+            let chatRoomRef = this.props.chatRoomRef,
+                chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages'), _this = this;
 
             this.bindAsObject(chatRoomMessagesRef, 'messageList');
 
@@ -110,21 +132,33 @@ var ChatPage = React.createClass({
     },
 
     componentDidMount() {
-        this.scrollResponder = this.refs[MESSAGES_LIST_REF] &&this.refs[MESSAGES_LIST_REF].getScrollResponder();
-        this.scrollToBottom();
+        this.scrollResponder = this.refs[MESSAGES_LIST_REF] && this.refs[MESSAGES_LIST_REF].getScrollResponder();
+        this.props.chatRoomRef.child('messageListHeightRef').once('value', snapshot => {
+            if(!snapshot.val()) return;
+            this.footerY = snapshot.val();
+            alert(this.footerY)
+        });
+        this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).on('value', snapshot => {
+           this.setState({chatMateIsTyping: snapshot.val()});
+        });
     },
 
     componentWillUnmount() {
-        this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+        // Note to self: cant update match request objects or will fuck with timers
+        // dont turn off chaRoomsRef
+
+        // alert(this.listHeight + " and " + this.footerY);
+        this.props.chatRoomRef.update({messageListHeightRef: this.footerY});
+        this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
     },
 
     closeKeyboard() {
         this.setState({hasKeyboardSpace: false, closeDropdownProfile: false});
-        this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+        this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
     },
 
     containerTouched(event) {
-        this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+        this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
         return false;
     },
 
@@ -170,6 +204,7 @@ var ChatPage = React.createClass({
         );
         return (
             <LinearGradient
+                onLayout={this.scrollToBottom}
                 colors={(!sentByCurrentUser) ? ['#124B8F', '#2C90C8', '#fff'] : ['#fff', '#fff']}
                 start={[0,1]}
                 end={[1,0.9]}
@@ -191,9 +226,9 @@ var ChatPage = React.createClass({
 
     scrollToBottom() {
         // See https://github.com/FaridSafi/react-native-gifted-messenger/blob/master/GiftedMessenger.js
-        if (this.listHeight && this.footerY && this.footerY > this.listHeight && this.listHeight > 10) { // listHeight > 10 make sure info Content is not down and compressing list
+        if (this.listHeight && this.footerY && (this.footerY > this.listHeight) && (this.listHeight > 10)) { // listHeight > 10 make sure info Content is not down and compressing list
             var scrollDistance = this.listHeight - this.footerY;
-            this.scrollResponder.scrollTo(-scrollDistance + this.state.recipientInfoBarHeight + this.state.headerHeight + TIMER_BAR_HEIGHT + 20);
+            this.scrollResponder.scrollTo(-scrollDistance + RECIPIENT_INFO_BAR_HEIGHT + HEADER_CONTAINER_HEIGHT + TIMER_BAR_HEIGHT + MESSAGE_TEXT_INPUT_HEIGHT * 3); // leave some space so user feels tempted to fill space with message
         }
     },
 
@@ -212,7 +247,7 @@ var ChatPage = React.createClass({
                 message: ''
             });
             _this.updateMessages(_.cloneDeep(_.values(snapshot.val())));
-            _this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+            _this.refs[MESSAGE_TEXT_INPUT_REF] && _this.refs[MESSAGE_TEXT_INPUT_REF].blur();
 
             this.scrollToBottom();
         });
@@ -229,15 +264,17 @@ var ChatPage = React.createClass({
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     this.setState({hasKeyboardSpace: false, closeDropdownProfile: false})
                     }}
+                onChange={() => this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).once('value', snapshot => {
+                    if(!snapshot.val()) this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(true);
+                })}
+                onEndEditing={() => this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).once('value', snapshot => {
+                    if(snapshot.val()) this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(false);
+                })}
                 onFocus={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     this.setState({hasKeyboardSpace: true, closeDropdownProfile: true})
                     this.scrollToBottom();
                     }}
-                onLayout={(event) => {
-                    var {x, y, width, height} = event.nativeEvent.layout
-                    this.setState({messageTextInputHeight: height});
-                }}
                 multiline={true}
                 style={styles.messageTextInput}
                 onChangeText={(text) => this.setState({message: text})}
@@ -249,14 +286,12 @@ var ChatPage = React.createClass({
 
         return (
             <View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.96)'}}>
-                <View>
-                    <View onLayout={(event) => {
-                    var {x, y, width, height} = event.nativeEvent.layout
-                    this.setState({headerHeight: height});
-                }}>
                         <Header containerStyle={{backgroundColor: '#040A19'}}>
                             <BackIcon onPress={() => {
-                this.props.navigator.pop();
+                                    this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+                                    var seenMessagesId = `seenMessages_${this.props.currentUserData.ventureId}`;
+                                    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList && this.state.messageList.length);
+                                    this.props.navigator.pop();
                 }} style={{right: 10, bottom: 5}}
                                 />
                             <Text
@@ -264,8 +299,6 @@ var ChatPage = React.createClass({
                                 {chatRoomTitle && chatRoomTitle.toUpperCase()} </Text>
                             <Text />
                         </Header>
-                    </View>
-                </View>
                 <View onStartShouldSetResponder={this.containerTouched} style={styles.container}>
                     <RecipientInfoBar chatRoomRef={this.props.chatRoomRef}
                                       closeDropdownProfile={this.state.closeDropdownProfile}
@@ -273,10 +306,6 @@ var ChatPage = React.createClass({
                                       handleInfoContentVisibility={this.handleInfoContentVisibility}
                                       handleSetHasTimerExpiredState={this.handleSetHasTimerExpiredState}
                                       _id={this.props._id}
-                                      onLayout={(event) => {
-                                            var {x, y, width, height} = event.nativeEvent.layout
-                                            this.setState({recipientInfoBarHeight: height});
-                                        }}
                                       navigator={this.props.navigator}
                                       recipientData={this.props}
                         />
@@ -286,6 +315,7 @@ var ChatPage = React.createClass({
                         dataSource={this.state.dataSource}
                         renderRow={this._renderMessage}
                         onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
+                        onLayout={this.scrollToBottom}
                         renderScrollComponent={props => <InvertibleScrollView {...props} />}
                         initialListSize={15}
                         onLayout={(e)=>{
@@ -299,12 +329,13 @@ var ChatPage = React.createClass({
                         renderFooter={() => {
                           return <View onLayout={(e)=> {
                             this.footerY = e.nativeEvent.layout.y;
+                            this.scrollToBottom();
                           }}/>
                         }}
                         scrollsToTop={false}
                         automaticallyAdjustContentInsets={false}
-                        style={{backgroundColor: 'rgba(0,0,0,0.01)', width: width}}
-                        />
+                        style={{backgroundColor: 'rgba(0,0,0,0.01)', width: width}}/>
+                    {this.state.chatMateIsTyping && !this.state.infoContentVisible ? <ChatMateTypingLoader recipientFirstName={this.props.recipient && this.props.recipient.firstName} /> : undefined}
                     <View style={{height: width / 8}}/>
                     <View style={{position: 'absolute', bottom: 0}}>
                         <View
@@ -312,7 +343,7 @@ var ChatPage = React.createClass({
                             {messageTextInput}
                             <TouchableOpacity onPress={() => {
                         if(this.state.message.length) this._sendMessage();
-                        else this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+                        else this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
                     }}>
                                 <Text
                                     style={{color: 'white', fontFamily: 'AvenirNextCondensed-Regular', marginHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.3)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 3}}>Send</Text>
@@ -333,7 +364,6 @@ var RecipientInfoBar = React.createClass({
         handleInfoContentVisibilityChange: React.PropTypes.func,
         handleSetHasTimerExpiredState: React.PropTypes.func.isRequired,
         _id: React.PropTypes.string.isRequired,
-        onLayout: React.PropTypes.func.isRequired,
         navigator: React.PropTypes.object,
         recipientData: React.PropTypes.object.isRequired,
     },
@@ -391,7 +421,7 @@ var RecipientInfoBar = React.createClass({
                 style={{paddingVertical: (user === recipient ? height/30 : height/97), bottom: (this.state.hasKeyboardSpace ? height/3.5 : 0), backgroundColor: '#eee', flexDirection: 'column', justifyContent: 'center'}}>
                 {this.state.infoContent === 'recipient' ?
                     <TouchableOpacity onPress={() => {
-                    if(!this.state.hasKeyboardSpace) this.refs.recipientPicture.tada(400)
+                    if(!this.state.hasKeyboardSpace) this.refs.recipientPicture.tada(900)
                     }}>
                         <Animatable.View ref="recipientPicture" onLayout={() => this.refs.recipientPicture.fadeIn(400)}>
                             <Image source={{uri: recipient.picture}}
@@ -400,7 +430,7 @@ var RecipientInfoBar = React.createClass({
                     </TouchableOpacity>
                     :
                     <TouchableOpacity onPress={() => {
-                        if(!this.state.hasKeyboardSpace) this.refs.currentUserPicture.tada(400)
+                        if(!this.state.hasKeyboardSpace) this.refs.currentUserPicture.tada(900)
                         }}>
                         <Animatable.View ref="currentUserPicture"
                                          onLayout={() => this.refs.currentUserPicture.fadeIn(400)}>
@@ -449,8 +479,8 @@ var RecipientInfoBar = React.createClass({
         );
 
         return (
-            <View onLayout={this.props.onLayout} style={{flexDirection: 'column', width: width}}>
-                <View style={styles.recipientBar}>
+            <View style={{flexDirection: 'column', width: width}}>
+                <View style={styles.recipientInfoBar}>
                     <RecipientAvatar onPress={() => {
                     var config = layoutAnimationConfigs[0];
                     LayoutAnimation.configureNext(config);
@@ -696,7 +726,7 @@ var styles = StyleSheet.create({
     messageTextInput: {
         width: width / 1.2,
         backgroundColor: 'rgba(255,255,255,0.75)',
-        height: 30,
+        height: MESSAGE_TEXT_INPUT_HEIGHT,
         paddingLeft: 10,
         borderColor: 'gray',
         borderRadius: 10,
@@ -710,11 +740,11 @@ var styles = StyleSheet.create({
         fontSize: 24,
         marginRight: 40,
     },
-    recipientBar: {
+    recipientInfoBar: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
-        height: 78
+        height: RECIPIENT_INFO_BAR_HEIGHT
     },
     recipientAvatar: {
         flexDirection: 'column',

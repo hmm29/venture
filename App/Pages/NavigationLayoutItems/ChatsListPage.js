@@ -278,6 +278,8 @@ var User = React.createClass({
                     currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
                     targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
 
+                    let targetUserMatchRequestObjectInCurrentUserMatchRequests = currentUserMatchRequestsRef.child(targetUserIDHashed);
+
                     firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
                         let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
@@ -302,6 +304,7 @@ var User = React.createClass({
                             component: ChatPage,
                             passProps: {
                                 _id,
+                                targetUserMatchRequestObjectInCurrentUserMatchRequests,
                                 recipient: _this.props.data,
                                 distance,
                                 chatRoomEventTitle,
@@ -442,9 +445,11 @@ var User = React.createClass({
                     />
             case 'matched':
                 return <MatchSuccessIcon
+                    chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
                     color='rgba(0,0,0,0.2)'
-                    onPress={() => this.handleMatchInteraction()}
+                    onPress={this.handleMatchInteraction}
                     style={{left: 10,  bottom: 6}}
+                    currentUserIDHashed={this.props.currentUserIDHashed}
                     />
             default:
                 return <DefaultMatchStatusIcon

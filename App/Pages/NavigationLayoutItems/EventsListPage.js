@@ -243,7 +243,7 @@ var User = React.createClass({
 
                     let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
 
-                    if (snapshot.val() === null) {
+                    if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
                         // TODO: in the future should be able to account for timezone differences?
                         // probably not because if youre going to match with someone youll be in same timezone
 

@@ -67,6 +67,14 @@ String.prototype.capitalize = function () {
     return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
+function arrayRotate(arr, reverse){
+    if(reverse)
+        arr.unshift(arr.pop());
+    else
+        arr.push(arr.shift());
+    return arr;
+}
+
 var User = React.createClass({
 
     propTypes: {
@@ -177,7 +185,6 @@ var User = React.createClass({
         if (!(this.state.expireTime && currentTimeInMs)) return -1;
 
         let timerValInSeconds = Math.floor((this.state.expireTime - currentTimeInMs) / 1000);
-
         if (timerValInSeconds >= 0) return timerValInSeconds;
 
         let targetUserIDHashed = this.props.data.ventureId,
@@ -254,7 +261,7 @@ var User = React.createClass({
 
                     let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
 
-                    if (snapshot.val() === null) {
+                    if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
                         // TODO: in the future should be able to account for timezone differences?
                         // probably not because if youre going to match with someone youll be in same timezone
 
@@ -577,16 +584,9 @@ var UsersListPage = React.createClass({
         this.updateRows(_.cloneDeep(_.values(_.filter(this.state.rows, checkFilter))));
     },
 
-    scroll() {
-        if (this.listHeight && this.footerY && this.footerY > this.listHeight && this.listHeight > 10) { // listHeight > 10 make sure info Content is not down and compressing list
-            var scrollDistance = this.listHeight - this.footerY;
-            this.scrollResponder.scrollTo(-scrollDistance + this.currentUserBarHeight + this.headerHeight + height/24);
-        }
-    },
-
     shuffleUsers() {
-        this.updateRows(_.shuffle(_.cloneDeep(_.values(this.state.rows))));
         this.forceUpdate();
+        this.updateRows(_.shuffle(_.cloneDeep(_.values(this.state.rows))));
     },
 
     updateRows(rows) {

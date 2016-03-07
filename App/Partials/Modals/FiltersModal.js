@@ -26,7 +26,7 @@ var {height} = Dimensions.get('window');
 
 var FiltersModal = React.createClass({
     propTypes: {
-        firebaseRef: React.PropTypes.string,
+        firebaseRef: React.PropTypes.object,
         modalStyle: View.propTypes.style,
         modalVisible: React.PropTypes.bool.isRequired,
         transparent: React.PropTypes.bool,

@@ -120,14 +120,19 @@ var User = React.createClass({
         }
         if(currentAppState === 'active') {
             this.setState({showTimerVal: true});
-            this.clearInterval(this.props.chatsListHandle)
-            this._handle = this.setInterval(() => {
-                this.setState({currentTimeInMs: (new Date()).getTime()})
-            }, 1000);
+            //this.clearInterval(this.props.chatsListHandle)
+            //this._handle = this.setInterval(() => {
+            //    this.setState({currentTimeInMs: (new Date()).getTime()})
+            //}, 1000);
         }
     },
 
     componentWillReceiveProps(nextProps) {
+        // this.clearInterval(this.props.chatsListHandle)
+        this._handle = this.setInterval(() => {
+            this.setState({currentTimeInMs: (new Date()).getTime()})
+        }, 1000);
+
         this.setState({currentTimeInMs: nextProps.currentTimeInMs});
         let distance = nextProps.data && nextProps.data.location && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
             _this = this;
@@ -690,11 +695,10 @@ var ChatsListPage = React.createClass({
 
                     eventInvites = [];
 
-                    if(!_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].match_requests) || !_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].event_invite_match_requests)) this.setState({showFunFact: false});
+                    if(!_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].match_requests) || !_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].event_invite_match_requests)) {LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                        this.setState({showFunFact: false});
+                    }
                     else this.setState({showFunFact: true});
-
-                    // @hmm: only show easing effect when fun fact reappears
-                    if(!this.state.showFunFact) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
                 });
 
@@ -726,6 +730,7 @@ var ChatsListPage = React.createClass({
     },
 
     updateRows(userRows:Array) {
+        // LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
         // sorting logic goes here, sort by match status which happens to be alphabetical => "matched" > "received" > "sent"
         userRows = _.orderBy(userRows, [`match_requests.${this.props.ventureId}.status`], ['asc']);
 
@@ -740,7 +745,7 @@ var ChatsListPage = React.createClass({
         return (
             <Header containerStyle={{position: 'relative'}}>
                 <HomePageIcon onPress={() => this._navigateToHomePage()} />
-                <Text>MY CHATS</Text>
+                <Text>MY  CONNECTIONS</Text>
                 <FiltersModalIcon
                     onPress={() => {
                         this.setState({showFiltersModal: true});
@@ -789,7 +794,7 @@ var ChatsListPage = React.createClass({
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
-                    renderScrollComponent={props => <SGListView {...props} />}
+                    // renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
                     pageSize={PAGE_SIZE}

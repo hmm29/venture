@@ -25,7 +25,6 @@ var {
     LayoutAnimation,
     PixelRatio,
     Platform,
-    PushNotificationIOS,
     Text,
     TextInput,
     TouchableOpacity,
@@ -190,7 +189,7 @@ var HomePage = React.createClass({
 
                 currentUserRef.child('match_requests').on('child_added', childSnapshot => {
                     childSnapshot.val() && childSnapshot.val()._id && firebaseRef.child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
-                        if(childSnapshot.val() && (childSnapshot.val().status === 'received')) {
+                        if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
                             snapshot.val() && childSnapshot.val() && this._sendNotification(snapshot.val(), childSnapshot.val().status);
                         }
                     })
@@ -200,7 +199,7 @@ var HomePage = React.createClass({
 
                 currentUserRef.child('event_invite_match_requests').on('child_added', childSnapshot => {
                     childSnapshot.val() && childSnapshot.val()._id && firebaseRef.child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
-                        if(childSnapshot.val() && (childSnapshot.val().status === 'received')) {
+                        if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
                             snapshot.val() && childSnapshot.val() && this._sendNotification(snapshot.val(), childSnapshot.val().status);
                         }
                     })
@@ -216,8 +215,6 @@ var HomePage = React.createClass({
                     })
                 });
 
-                // listener: for notifications when match
-
                 currentUserRef.child('event_invite_match_requests').on('child_changed', childSnapshot => {
                     childSnapshot.val() && childSnapshot.val()._id && firebaseRef.child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
                         if (childSnapshot.val() && (childSnapshot.val().status === 'matched')) {
@@ -226,15 +223,12 @@ var HomePage = React.createClass({
                     })
                 });
 
-
-                // listener: decrease chat count when chat destroyed, only need this here once on users list and not in chats page
+                // listener:
                 chatRoomsRef.on('child_removed', function (oldChildSnapshot) {
                     // if old snapshot has current users id in it, then subtract one from current user chat count
                     if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id && (oldChildSnapshot.val()._id).indexOf(account.ventureId) > -1) {
                         firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
-                            alert('remove');
-                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val()-1);
-                            PushNotificationIOS.setApplicationIconBadgeNumber(snapshot.val()-1);
+                            firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() - 1);
                         });
                     }
                 });
@@ -242,9 +236,7 @@ var HomePage = React.createClass({
                 chatRoomsRef.on('child_added', function (childSnapshot) {
                     if (childSnapshot && childSnapshot.val() && childSnapshot.val()._id && (childSnapshot.val()._id).indexOf(account.ventureId) > -1) {
                         firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
-                            alert('add');
                             firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() + 1);
-                            PushNotificationIOS.setApplicationIconBadgeNumber(snapshot.val()+1);
                         });
                     }
                 });
@@ -266,7 +258,7 @@ var HomePage = React.createClass({
             );
         }
 
-        if(!this.state.firebaseRef) this.setState({firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/')});
+        if (!this.state.firebaseRef) this.setState({firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/')});
 
         AsyncStorage.getItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL')
             .then((friendsAPICallURL) => friendsAPICallURL)
@@ -278,13 +270,6 @@ var HomePage = React.createClass({
 
                         if (currentUserFriends) {
                             this.setState({currentUserFriends});
-                            // push notification when user's friend has joined the app
-                            //
-                            //this.state.firebaseRef.child('users').on('child_added', childSnapshot => {
-                            //    if(childSnapshot.val() && childSnapshot.val().firstName && _.findIndex(currentUserFriends, {firstName: childSnapshot.val().firstName}) > -1) {
-                            //        this._sendNotification(childSnapshot.val().firstName, 'joined');
-                            //    }
-                            //});
                         }
 
                         else {
@@ -303,13 +288,11 @@ var HomePage = React.createClass({
                                             })
                                             .then(() => {
                                                 // push notification when user's friend has joined the app
-
-                                                this.state.firebaseRef.child('users').on('child_added', childSnapshot => {
-                                                    if(childSnapshot.val() && childSnapshot.val().firstName && _.findIndex(this.state.currentUserFriends, {firstName: childSnapshot.val().firstName}) > -1) {
-                                                        this._sendNotification(childSnapshot.val().firstName, 'joined');
-                                                    }
-                                                });
-
+                                                //this.state.firebaseRef.child('users').on('child_added', childSnapshot => {
+                                                //    if (childSnapshot.val() && childSnapshot.val().firstName && _.findIndex(this.state.currentUserFriends, {firstName: childSnapshot.val().firstName}) > -1) {
+                                                //        this._sendNotification(childSnapshot.val().firstName, 'joined');
+                                                //    }
+                                                //});
                                             })
                                             .done();
                                     }
@@ -323,14 +306,13 @@ var HomePage = React.createClass({
             .catch(error => console.log(error.message))
             .done();
 
-        // PushNotificationIOS.requestPermissions();
-        PushNotificationIOS.addEventListener('notification', this._onNotification);
+        // PushNotificationIOS.addEventListener('notification', this._onNotification);
     },
 
     componentWillUnmount() {
         AppStateIOS.removeEventListener('change', this._handleAppStateChange);
         this.state.firebaseRef && this.state.firebaseRef.off();
-        PushNotificationIOS.removeEventListener('notification', this._onNotification);
+        // PushNotificationIOS.removeEventListener('notification', this._onNotification);
     },
 
     animateViewLayout(text:string) {
@@ -339,6 +321,7 @@ var HomePage = React.createClass({
                 borderRadius: text.length ? 10 : 0
             }
         });
+        if(!text.length) this.setState({showAddInfoBox: false});
     },
 
     _createTrendingItem(type, uri, i) {
@@ -382,7 +365,7 @@ var HomePage = React.createClass({
 
     _getTimeString(date) {
         var t = date.toLocaleTimeString();
-        t = t.replace(/\u200E/g, '');
+        t = t.replace(/\u200E/g, ''); // remove left-to-right marks
         t = t.replace(/^([^\d]*\d{1,2}:\d{1,2}):\d{1,2}([^\d]*)$/, '$1$2');
         // @hmm: get rid of time zone
         t = t.substr(0, t.length - 4);
@@ -395,7 +378,7 @@ var HomePage = React.createClass({
     _handleAppStateChange(currentAppState) {
         this.setState({currentAppState});
 
-        if(currentAppState === 'background') {
+        if (currentAppState === 'background') {
             this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
         }
 
@@ -444,10 +427,7 @@ var HomePage = React.createClass({
     },
 
     _onNotification(notification) {
-        PushNotificationIOS.scheduleLocalNotification({
-            fireDate: (new Date(new Date().getTime() + 5000)).getTime(),
-            alertBody: notification.getMessage()
-        })
+
     },
 
     onSubmitActivity() {
@@ -465,7 +445,7 @@ var HomePage = React.createClass({
                 updatedAt: new Date()
             },
             firebaseRef = this.state.firebaseRef;
-        if(!firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
+        if (!firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
 
         firebaseRef.child(`users/${this.state.ventureId}/activityPreference`).set(activityPreferenceChange);
         this.props.navigator.push({
@@ -489,25 +469,14 @@ var HomePage = React.createClass({
     },
 
     _sendNotification(userFirstName, action) {
-        if(action === 'joined') {
-            require('RCTDeviceEventEmitter').emit('remoteNotificationReceived', {
-                aps: {
-                    alert: `Your friend ${userFirstName} just joined Venture!`,
-                    badge: '+1',
-                    sound: 'default',
-                    category: 'VENTURE'
-                }
-            });
-        } else {
-            require('RCTDeviceEventEmitter').emit('remoteNotificationReceived', {
-                aps: {
-                    alert: `${userFirstName} just ${(action === 'received' ? 'sent you an activity request' : 'accepted your activity request')} on Venture!`,
-                    badge: '+1',
-                    sound: 'default',
-                    category: 'VENTURE'
-                }
-            });
-        }
+        require('RCTDeviceEventEmitter').emit('remoteNotificationReceived', {
+            aps: {
+                alert: `${userFirstName} just ${(action === 'received' ? 'sent you an activity request' : 'accepted your activity request')} on Venture!`,
+                badge: '+1',
+                sound: 'default',
+                category: 'VENTURE'
+            }
+        });
     },
 
     render() {
@@ -541,7 +510,7 @@ var HomePage = React.createClass({
 
         let addInfoButton = (
             <View
-                style={[styles.addInfoButtonContainer, {bottom: (this.state.showNextButton && this.state.showAddInfoBox ? height/20 : height/32 )}]}>
+                style={[styles.addInfoButtonContainer, {bottom: (this.state.showNextButton && this.state.showAddInfoBox ? height/18 : height/32 )}]}>
                 <TouchableOpacity
                     activeOpacity={0.4}
                     onPress={() => {

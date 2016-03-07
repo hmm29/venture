@@ -10,18 +10,6 @@
  * @flow
  */
 
-/**
- * Copyright (c) 2015-present, Venture Applications, LLC.
- * All rights reserved.
- *
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
- *
- * @providesModule Chat
- * @flow
- */
-
 'use strict';
 
 var React = require('react-native');
@@ -33,7 +21,6 @@ var {
     LayoutAnimation,
     ListView,
     Navigator,
-    PushNotificationIOS,
     ScrollView,
     StyleSheet,
     Text,
@@ -136,7 +123,6 @@ var ChatPage = React.createClass({
         this.props.chatRoomRef.child('messageListHeightRef').once('value', snapshot => {
             if(!snapshot.val()) return;
             this.footerY = snapshot.val();
-            alert(this.footerY)
         });
         this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).on('value', snapshot => {
            this.setState({chatMateIsTyping: snapshot.val()});
@@ -449,7 +435,8 @@ var RecipientInfoBar = React.createClass({
                         {'\n'}
                     </Text>
                 </Text>
-                {user === currentUserData ? <TextInput
+                {user === currentUserData ?
+                    <TextInput
                     onBlur={() => {
                         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                         this.setState({hasKeyboardSpace: false})
@@ -656,7 +643,7 @@ var TimerBar = React.createClass({
             this.setState({activeToBackgroundStateTimeRecordInMs: (new Date().getTime())})
         }
 
-        if (previousAppState === 'background' && currentAppState === 'active') {
+        if (currentAppState === 'active') {
             let currentTime = (new Date()).getTime(),
                 timeSpentInBackgroundState = Math.floor((currentTime - this.state.activeToBackgroundStateTimeRecordInMs) / 1000)
 
@@ -916,3 +903,4 @@ var layoutAnimationConfigs = [
 ];
 
 module.exports = ChatPage;
+

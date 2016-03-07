@@ -52,7 +52,7 @@ class ProfilePageIcon extends Component {
                 <Icon
                     name="ion|person"
                     size={this.props.size || SIZE}
-                    color={this.props.color || 'rgba(255,255,255,0.4'}
+                    color={this.props.color || '#ccc'}
                     style={[styles.icon]}
                     />
             </TouchableOpacity>
@@ -63,7 +63,7 @@ class ProfilePageIcon extends Component {
 
 const styles = StyleSheet.create({
     icon: {
-        opacity: 0.7,
+        opacity: 0.6,
         width: SIZE,
         height: SIZE
     }

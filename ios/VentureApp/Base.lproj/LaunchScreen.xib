@@ -11,16 +11,16 @@
             <rect key="frame" x="0.0" y="0.0" width="480" height="480"/>
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
             <subviews>
-                <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" image="Image" translatesAutoresizingMaskIntoConstraints="NO" id="WT5-fR-YKV">
-                    <rect key="frame" x="120" y="160" width="240" height="128"/>
+                <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" image="Image" translatesAutoresizingMaskIntoConstraints="NO" id="hca-Q7-BCM">
+                    <rect key="frame" x="120" y="176" width="240" height="128"/>
                 </imageView>
             </subviews>
             <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
             <constraints>
-                <constraint firstItem="WT5-fR-YKV" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="8GG-aq-0c8"/>
-                <constraint firstItem="WT5-fR-YKV" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="FdJ-gh-RB9"/>
-                <constraint firstAttribute="trailing" secondItem="WT5-fR-YKV" secondAttribute="trailing" id="V3k-Gp-fuc"/>
-                <constraint firstAttribute="bottom" secondItem="WT5-fR-YKV" secondAttribute="bottom" id="a0Y-qy-0Qi"/>
+                <constraint firstAttribute="trailing" secondItem="hca-Q7-BCM" secondAttribute="trailing" id="GNB-vB-Zrj"/>
+                <constraint firstItem="hca-Q7-BCM" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" id="QW4-oe-uPv"/>
+                <constraint firstItem="hca-Q7-BCM" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="UgU-2v-GDK"/>
+                <constraint firstAttribute="bottom" secondItem="hca-Q7-BCM" secondAttribute="bottom" id="j4S-a2-eCt"/>
             </constraints>
             <nil key="simulatedStatusBarMetrics"/>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
@@ -28,6 +28,6 @@
         </view>
     </objects>
     <resources>
-        <image name="Image" width="320" height="480"/>
+        <image name="Image" width="1125" height="2001"/>
     </resources>
 </document>

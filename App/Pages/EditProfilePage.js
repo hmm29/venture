@@ -30,21 +30,12 @@ var _ = require('lodash');
 var AutoComplete = require('react-native-autocomplete');
 var Dimensions = require('Dimensions');
 var {Icon, } = require('react-native-icons');
+var ImagePickerManager = require('NativeModules').ImagePickerManager;
 
-var CAMERA_ICON_SIZE = 48;
-var CAMERA_REF = 'camera';
-var CAMERA_ROLL_OPTION = 'Camera Roll';
 var EDIT_GENDER_AUTOCOMPLETE_REF = 'editGenderAutocomplete';
 var EDIT_GENDER_ICON_SIZE = 22;
 var MAX_TEXT_INPUT_VAL_LENGTH = 30;
-var TAKE_PHOTO_OPTION = 'Take Photo';
 
-var BUTTONS = [
-    TAKE_PHOTO_OPTION,
-    CAMERA_ROLL_OPTION,
-    'Cancel'
-];
-var CANCEL_INDEX = 3;
 var {height, width} = Dimensions.get('window');
 
 String.prototype.capitalize = function () {
@@ -62,12 +53,13 @@ var EditProfilePage = React.createClass({
             // cameraType: Camera.constants.Type.back,
             firebaseRef: this.props.firebaseRef,
             hasKeyboardSpace: false,
+            imgSource: null,
+            isEditingGenderField: false,
+            genderMatches: [],
             showAutocomplete: false,
             showGenderAutocompleteLabel: true,
             showBioField: true,
             showCamera: false,
-            isEditingGenderField: false,
-            genderMatches: []
         }
     },
 
@@ -143,8 +135,14 @@ var EditProfilePage = React.createClass({
         if (this.state.selectedGender !== this.state.originalGender)
             this.state.firebaseRef.child(`users/${ventureId}/gender`).set(this.state.selectedGender.toLowerCase());
 
-        if (this.state.currentPic !== this.state.originalPic)
-            this.state.firebaseRef.child(`users/${ventureId}/picture`).set(this.state.currentPic);
+        if (this.state.currentPic !== this.state.originalPic || this.state.imgSource) {
+            if(this.state.imgSource) {
+                //alert(JSON.stringify(this.state.imgSource.uri));
+                this.state.firebaseRef.child(`users/${ventureId}/picture`).set(this.state.imgSource.uri)
+            } else {
+                this.state.firebaseRef.child(`users/${ventureId}/picture`).set(this.state.currentPic);
+            }
+        }
 
         this.props.navigator.pop();
     },
@@ -155,47 +153,58 @@ var EditProfilePage = React.createClass({
         this._onBlurGender()
     },
 
-    /* _showActionSheet() {
-        ActionSheetIOS.showActionSheetWithOptions({
-                options: BUTTONS,
-                cancelButtonIndex: CANCEL_INDEX
+    _showImagePickerOptions() {
+        let options = {
+            title: null, // specify null or empty string to remove the title
+            cancelButtonTitle: 'Cancel',
+            takePhotoButtonTitle: 'Take Photo...', // specify null or empty string to remove this button
+            chooseFromLibraryButtonTitle: 'Choose from Library...', // specify null or empty string to remove this button
+            customButtons: {
+            //    'Choose Photo from Facebook': 'fb', // [Button Text] : [String returned upon selection]
             },
-            (buttonIndex) => {
+            cameraType: 'front', // 'front' or 'back'
+            mediaType: 'photo', // 'photo' or 'video'
+            videoQuality: 'high', // 'low', 'medium', or 'high'
+            maxWidth: width, // photos only
+            maxHeight: height, // photos only
+            aspectX: 2, // aspectX:aspectY, the cropping image's ratio of width to height
+            aspectY: 1, // aspectX:aspectY, the cropping image's ratio of width to height
+            quality: 0.8, // photos only
+            angle: 0, // photos only
+            allowsEditing: true, // Built in functionality to resize/reposition the image
+            noData: false, // photos only - disables the base64 `data` field from being generated (greatly improves performance on large photos)
+            //storageOptions: { // if this key is provided, the image will get saved in the documents/pictures directory (rather than a temporary directory)
+              //  skipBackup: true, // image will NOT be backed up to icloud
+                // path: 'images' // will save image at /Documents/images rather than the root
+            //}
+        };
 
-                if (BUTTONS[buttonIndex] === TAKE_PHOTO_OPTION) {
-                    //@hmm: open React Native camera
-                    this.setState({showCamera: true});
-                }
+        ImagePickerManager.showImagePicker(options, (response) => {
+            console.log('Response = ', response);
 
-                if (BUTTONS[buttonIndex] == CAMERA_ROLL_OPTION) {
-                    //@hmm: show camera roll
-                    // alert('show camera roll');
-                }
+            if (response.didCancel) {
+                console.log('User cancelled image picker');
+            }
+            else if (response.error) {
+                console.log('ImagePickerManager Error: ', response.error);
+            }
+            else if (response.customButton && response.customButton === 'fb') {
+                // alert('fb')
+                console.log('User tapped custom button: ', response.customButton);
+            }
+            else {
+                // You can display the image using either data:
+                const source = {uri: 'data:image/jpeg;base64,' + response.data, isStatic: true};
 
-            });
+                // uri on iOS
+                //const source = {uri: response.uri.replace('file://', ''), isStatic: true};
+
+                this.setState({
+                    imgSource: source
+                });
+            }
+        })
     },
-
-    _switchCamera() {
-        let state = this.state;
-        state.cameraType = state.cameraType === Camera.constants.Type.back
-            ? Camera.constants.Type.front : Camera.constants.Type.back;
-        this.setState(state);
-    },
-
-    _takePicture() {
-        let _this = this;
-
-        this.refs[CAMERA_REF].capture(function (err, data) {
-            console.log(err, data);
-
-            //@hmm: HACK to add base_64 data to camera images
-            // See https://medium.com/@scottdixon/react-native-creating-a-custom-module-to-upload-camera-roll-images-7a3c26bac309
-
-            NativeModules.ReadImageData.readImage(data, (image) => {
-                _this.setState({currentPic: 'data:image/jpeg;base64,' + image, showCamera: false});
-            })
-        });
-    }, */
 
     render() {
         let editBio = (
@@ -222,9 +231,9 @@ var EditProfilePage = React.createClass({
 
         let editPhoto = (
             <View>
-                <TouchableOpacity // onPress={this._showActionSheet}
+                <TouchableOpacity onPress={this._showImagePickerOptions}
                     >
-                    <Image source={{isStatic: true, uri: this.state.currentPic}} style={styles.currentPic}/>
+                    <Image source={this.state.imgSource || {isStatic: true, uri: this.state.currentPic}} style={styles.currentPic}/>
                 </TouchableOpacity>
             </View>
         );
@@ -273,17 +282,12 @@ var EditProfilePage = React.createClass({
             </View>
         );
 
-        return this.state.showCamera ?
-
-            <View />
-
-            :
-
+        return (
             <View style={styles.container}>
                 <View>
                     {this._renderHeader()}
                 </View>
-                <View style={{bottom: this.state.hasKeyboardSpace ? height/ 3 : 0, backgroundCOlor: ''}}>
+                <View style={{bottom: this.state.hasKeyboardSpace ? height/ 3 : 0}}>
                     <Image defaultSource={require('../../img/about.png')} style={styles.backdrop}>
 
                         {editPhoto}
@@ -304,7 +308,7 @@ var EditProfilePage = React.createClass({
 
                     </Image>
                 </View>
-            </View>
+            </View> );
     },
 
     _renderHeader() {

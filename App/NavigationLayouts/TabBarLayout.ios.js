@@ -14,7 +14,6 @@ import React, {
     AsyncStorage,
     Component,
     Dimensions,
-    PushNotificationIOS,
     StyleSheet,
     Text,
     View,
@@ -72,7 +71,6 @@ class TabBarLayout extends Component {
 
         chatCountRef.on('value', snapshot => {
             this.setState({chatCount: snapshot.val(), chatCountRef});
-            PushNotificationIOS.setApplicationIconBadgeNumber(snapshot.val());
         });
     };
 

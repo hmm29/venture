@@ -26,11 +26,13 @@ var {
     View
     } = React;
 
-//var FBSDKShare = require('react-native-fbsdkshare');
-//var {
-//    FBSDKAppInviteContent,
-//    FBSDKAppInviteDialog
-//    } = FBSDKShare;
+/*
+ var FBSDKShare = require('react-native-fbsdkshare');
+ var {
+ FBSDKAppInviteContent,
+ FBSDKAppInviteDialog
+ } = FBSDKShare;
+ */
 
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
@@ -93,7 +95,7 @@ var ProfilePage = React.createClass({
 
             loginStatusRef.set(false);
 
-            // @hmm: CLEAN UP: remove old match requests
+            // @hmm: clean up user session: remove old match requests
 
             currentUserRef.child('match_requests').once('value', snapshot => {
                 snapshot.val() && _.each(snapshot.val(), (match) => {
@@ -144,20 +146,22 @@ var ProfilePage = React.createClass({
     },
 
     _openAppInviteDialog() {
-        //// Build up a shareable link.
-        //var linkContent = new FBSDKAppInviteContent('https://fb.me/583451638480908', 'http://res.cloudinary.com/dwnyawluh/image/upload/c_scale,w_1200/v1455585747/Venture_Signature_180x180_hwbaqu.png');
-        //// Share the link using the native share dialog.
-        //FBSDKAppInviteDialog.show(linkContent, (error, result) => {
-        //    if (!error) {
-        //        if (result.isCancelled) {
-        //            alert('Share cancelled.');
-        //        } else {
-        //            alert('Thanks for sharing!');
-        //        }
-        //    } else {
-        //        alert('Error sharing.');
-        //    }
-        //});
+        /*
+         // Build up a shareable link.
+         var linkContent = new FBSDKAppInviteContent('https://fb.me/583451638480908', 'http://res.cloudinary.com/dwnyawluh/image/upload/c_scale,w_1200/v1455585747/Venture_Signature_180x180_hwbaqu.png');
+         // Share the link using the native share dialog.
+         FBSDKAppInviteDialog.show(linkContent, (error, result) => {
+         if (!error) {
+         if (result.isCancelled) {
+         alert('Share cancelled.');
+         } else {
+         alert('Thanks for sharing!');
+         }
+         } else {
+         alert('Error sharing.');
+         }
+         });
+         */
     },
 
     renderHeader() {
@@ -189,12 +193,14 @@ var ProfilePage = React.createClass({
                        style={styles.backdrop}>
                     <View style={styles.loginContainer}>
                         <View>
-                            { user && <Photo onPress={this._openAppInviteDialog} user={user}/> }
+                            { user &&
+                            <Photo firebaseRef={this.state.firebaseRef} onPress={this._openAppInviteDialog} user={user}
+                                   ventureId={ventureId}/> }
                             { user && ventureId &&
-                            <Info firebaseRef={this.state.firebaseRef} ventureId={ventureId} user={user}/>}
+                            <Info firebaseRef={this.state.firebaseRef} user={user} ventureId={ventureId}/>}
                         </View>
 
-                        <FBLogin style={styles.FBLoginButton}
+                        <FBLogin style={this.state.user ? styles.FBLoginButton : {}}
                                  permissions={['email', 'user_friends']}
                                  onLogout={function(){
                                     if(user && ventureId) _this._updateUserLoginStatus(false);
@@ -242,13 +248,29 @@ var ProfilePage = React.createClass({
 
 var Photo = React.createClass({
     propTypes: {
+        firebaseRef: React.PropTypes.object.isRequired,
         onPress: React.PropTypes.func.isRequired,
-        user: React.PropTypes.object.isRequired
+        user: React.PropTypes.object.isRequired,
+        ventureId: React.PropTypes.string
+    },
+
+    getInitialState() {
+        return {
+            currentPic: null,
+        }
     },
 
     mixins: [TimerMixin],
 
     _handle: null,
+
+    componentWillMount() {
+        this.props.firebaseRef.child(`users/${this.props.ventureId}/picture`).on('value', snapshot => {
+            this.setState({
+                currentPic: snapshot.val()
+            })
+        });
+    },
 
     render() {
         if (this.props.user.userId) {
@@ -267,7 +289,7 @@ var Photo = React.createClass({
                       bottom: 20
                     }
                   }
-                            source={{uri: `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user.userId}.jpg`}}
+                            source={{uri: this.state.currentPic || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user.userId}.jpg`}}
                             />
                     </TouchableOpacity>
                 </Animatable.View>
@@ -278,7 +300,7 @@ var Photo = React.createClass({
 
 var Info = React.createClass({
     propTypes: {
-        firebaseRef: React.PropTypes.string,
+        firebaseRef: React.PropTypes.object.isRequired,
         user: React.PropTypes.object.isRequired,
         ventureId: React.PropTypes.string
     },
@@ -314,11 +336,11 @@ var Info = React.createClass({
 
     componentDidMount() {
         this.setTimeout(() => {
-            if(_.isEmpty(this.state.info)) this.setState({showLoadingModal: true});
-        }, 3000);
+            if (_.isEmpty(this.state.info)) this.setState({showLoadingModal: true});
+        }, 2000);
     },
 
-    componentWillUnmount() {
+    componentDidUnmount() {
         this.state.firebaseCurrentUserDataRef && this.state.firebaseCurrentUserDataRef.off();
     },
 

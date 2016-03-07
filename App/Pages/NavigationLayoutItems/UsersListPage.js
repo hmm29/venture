@@ -34,6 +34,7 @@ var {
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
 var BlankIcon = require('../../Partials/Icons/BlankIcon');
+var BrandLogo = require('../../Partials/BrandLogo');
 var ChatPage = require('../ChatPage');
 var Dimensions = require('Dimensions');
 var FiltersModal = require('../../Partials/Modals/FiltersModal')
@@ -45,6 +46,7 @@ var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRe
 var DefaultMatchStatusIcon = require('../../Partials/Icons/MatchStatusIndicators/DefaultMatchStatusIcon');
 var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
+var RefreshableListView = require('react-native-refreshable-listview');
 var SGListView = require('react-native-sglistview');
 var TimerMixin = require('react-timer-mixin');
 
@@ -67,14 +69,6 @@ String.prototype.capitalize = function () {
     return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
-function arrayRotate(arr, reverse){
-    if(reverse)
-        arr.unshift(arr.pop());
-    else
-        arr.push(arr.shift());
-    return arr;
-}
-
 var User = React.createClass({
 
     propTypes: {
@@ -82,9 +76,9 @@ var User = React.createClass({
         currentUserLocationCoords: React.PropTypes.array,
         currentUserData: React.PropTypes.object,
         data: React.PropTypes.object,
-        isCurrentUser: React.PropTypes.func,
+        isCurrentUser: React.PropTypes.bool,
         navigator: React.PropTypes.object,
-        rowID: React.PropTypes.number,
+        rowID: React.PropTypes.string,
     },
 
     getInitialState() {
@@ -99,7 +93,7 @@ var User = React.createClass({
         let distance = this.props.currentUserLocationCoords && this.props.data && this.props.data.location && this.props.data.location.coordinates && this.calculateDistance(this.props.currentUserLocationCoords, [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
             _this = this;
 
-        // must have this to clean up old match subs
+        // @hmm: must have this to clean up old Firebase match request subscriptions
         this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId)
         && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`).child(this.props.data.ventureId).off();
 
@@ -115,20 +109,20 @@ var User = React.createClass({
     },
 
     componentDidMount() {
-        this.refs.user.fadeInUp(600);
+        if (!this.props.isCurrentUser) this.refs.user.fadeIn(600 + this.props.rowID * 300); // @hmm: fade in one after another
     },
 
     componentWillReceiveProps(nextProps) {
         let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
             _this = this;
 
-        // must have this to clean up old match subs
+        // @hmm: must have this to clean up old match subs
         nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
         && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).off();
 
         nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId)
         && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`).child(nextProps.data.ventureId).on('value', snapshot => {
-            //@hmm: quickly reset status
+            // @hmm: quickly reset status
             _this.setState({
                 chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
                 distance,
@@ -183,6 +177,7 @@ var User = React.createClass({
 
     _getTimerValue(currentTimeInMs:number) {
         if (!(this.state.expireTime && currentTimeInMs)) return -1;
+        if (!currentTimeInMs) currentTimeInMs = (new Date()).getTime();
 
         let timerValInSeconds = Math.floor((this.state.expireTime - currentTimeInMs) / 1000);
         if (timerValInSeconds >= 0) return timerValInSeconds;
@@ -193,7 +188,7 @@ var User = React.createClass({
             targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
             currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests');
 
-        // end match interactions
+        // @hmm: end match interactions
         targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
         currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
 
@@ -223,7 +218,6 @@ var User = React.createClass({
         else if (this.state.status === 'received') {
 
             // @hmm: accept the request
-            // chatroom reference uses id of the user who accepts the received matchInteraction
 
             targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
                 _id: currentUserIDHashed,
@@ -263,7 +257,7 @@ var User = React.createClass({
 
                     if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
                         // TODO: in the future should be able to account for timezone differences?
-                        // probably not because if youre going to match with someone youll be in same timezone
+                        // good for now because in nearly all cases your match will be in same timezone
 
                         let currentTime = new Date().getTime(),
                             expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
@@ -298,7 +292,7 @@ var User = React.createClass({
                 _id: currentUserIDHashed
             }, 200);
             currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-                status: 'received',
+                status: 'sent',
                 _id: targetUserIDHashed
             }, 300);
         }
@@ -478,7 +472,6 @@ var UsersListPage = React.createClass({
 
     componentDidMount() {
         InteractionManager.runAfterInteractions(() => {
-
             let currentUserRef = this.props.ventureId && this.state.firebaseRef && this.state.firebaseRef.child(`users/${this.props.ventureId}`),
                 firebaseRef = this.state.firebaseRef,
                 usersListRef = firebaseRef.child('users'),
@@ -531,7 +524,6 @@ var UsersListPage = React.createClass({
                         });
                         _this.setTimeout(() => {
                             _this.updateRows(_.cloneDeep(_.values(filteredUsersArray)));
-                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                             _this.setState({
                                 rows: _.cloneDeep(_.values(filteredUsersArray)),
                                 currentUserRef,
@@ -585,13 +577,13 @@ var UsersListPage = React.createClass({
     },
 
     shuffleUsers() {
-        this.forceUpdate();
+        this.updateRows([]); // refresh rows to rerender and prevent timer freezes
         this.updateRows(_.shuffle(_.cloneDeep(_.values(this.state.rows))));
     },
 
     updateRows(rows) {
-        this.setState({dataSource: this.state.dataSource.cloneWithRows(rows)});
         if (rows.length) this.setState({showLoadingModal: false});
+        this.setState({dataSource: this.state.dataSource.cloneWithRows(rows)});
     },
 
     _renderCurrentUser() {
@@ -613,26 +605,26 @@ var UsersListPage = React.createClass({
                     var {x, y, width, height} = event.nativeEvent.layout
                     this.setState({headerHeight: height});
                 }}>
-            <Header>
-                <HomePageIcon onPress={() => this._navigateToHome()}/>
-                <TextInput
-                    ref={SEARCH_TEXT_INPUT_REF}
-                    autoCapitalize='none'
-                    autoCorrect={true}
-                    clearButtonMode='always'
-                    onChangeText={(text) => this.search(text)}
-                    placeholder='Search name or activity'
-                    placeholderTextColor='rgba(0,0,0,0.4)'
-                    returnKeyType='done'
-                    style={styles.searchTextInput}/>
-                <FiltersModalIcon
-                    onPress={() => {
+                <Header>
+                    <HomePageIcon onPress={() => this._navigateToHome()}/>
+                    <TextInput
+                        ref={SEARCH_TEXT_INPUT_REF}
+                        autoCapitalize='none'
+                        autoCorrect={true}
+                        clearButtonMode='always'
+                        onChangeText={(text) => this.search(text)}
+                        placeholder='Search for a name or activity'
+                        placeholderTextColor='rgba(0,0,0,0.4)'
+                        returnKeyType='done'
+                        style={styles.searchTextInput}/>
+                    <FiltersModalIcon
+                        onPress={() => {
                         this.setState({showFiltersModal: true});
                     }}
-                    style={{left: 14}}/>
-                <Text />
-            </Header>
-                </View>
+                        style={{left: 14}}/>
+                    <Text />
+                </Header>
+            </View>
         )
     },
 
@@ -641,7 +633,7 @@ var UsersListPage = React.createClass({
         if (user.ventureId === this.state.currentUserVentureId) return <View />;
 
         if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID] && !this.state.visibleRows[sectionID][rowID]) return
-        <View />;
+            <View />;
 
         return <User currentTimeInMs={this.state.currentTimeInMs}
                      currentUserData={this.state.currentUserData}
@@ -655,9 +647,6 @@ var UsersListPage = React.createClass({
     },
 
     render() {
-        var BrandLogo = require('../../Partials/BrandLogo');
-        var RefreshableListView = require('react-native-refreshable-listview');
-
         return (
             <View style={styles.usersListBaseContainer}>
                 <View>
@@ -669,12 +658,15 @@ var UsersListPage = React.createClass({
                     contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
-                    renderScrollComponent={props => <SGListView {...props} />}
+                    // renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     pageSize={PAGE_SIZE}
-                    minPulldownDistance={5}
+                    minPulldownDistance={15} // 15 px
+                    minDisplayTime={5} // 5 ms
                     automaticallyAdjustContentInsets={false}
-                    loadData={this.shuffleUsers}
+                    loadData={() => {
+                        this.shuffleUsers();
+                    }}
                     onChangeVisibleRows={(visibleRows, changedRows) => {
                         this.setState({visibleRows, changedRows});
                     }}

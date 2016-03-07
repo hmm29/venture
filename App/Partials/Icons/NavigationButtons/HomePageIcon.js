@@ -58,7 +58,8 @@ const styles = StyleSheet.create({
     icon: {
         opacity: 1.0,
         width: SIZE,
-        height: SIZE
+        height: SIZE,
+        right: SIZE/10
     }
 });
 

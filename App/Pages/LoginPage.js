@@ -271,6 +271,7 @@ var LoginPage = React.createClass({
 
                                    AsyncStorage.setItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL', api)
                                     .then(() => {
+                                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                                        _this._updateUserLoginStatus(true);
                                     })
                                     .catch(error => console.log(error.message))

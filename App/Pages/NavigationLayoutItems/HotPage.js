@@ -140,7 +140,7 @@ var HotPage = React.createClass({
                         }}
                         style={styles.trendingItem}>
                         <Image
-                            onLoadEnd={() => {
+                            onLoadStart={() => {
                              // reset trending content title to yalies when image loads
                              this.setState({trendingUsers: 'YALIES'});
 
@@ -257,7 +257,7 @@ var HotPage = React.createClass({
     _renderHeader() {
         return (
             <Header containerStyle={{backgroundColor: '#040A19'}}>
-                <HomePageIcon onPress={() => this.props.navigator.popToTop()} style={{right: 14}}/>
+                <HomePageIcon onPress={() => this.props.navigator.popToTop()}/>
                 <Text>HOT</Text>
                 <Text/>
             </Header>
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
     },
     scrollView: {
-        backgroundColor: 'rgba(0,0,0,0.008)'
+        backgroundColor: 'rgba(0,0,0,0.008)',
     },
     tabContent: {
         flexDirection: 'column',

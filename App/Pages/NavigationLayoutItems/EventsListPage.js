@@ -466,7 +466,7 @@ var AttendeeList = React.createClass({
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this._renderUser}
-                    renderScrollComponent={props => <SGListView {...props} />}
+                    // renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     pageSize={PAGE_SIZE}
                     automaticallyAdjustContentInsets={false}
@@ -632,7 +632,7 @@ var Event = React.createClass({
                                 <Text style={{fontFamily: 'AvenirNextCondensed-Regular', color: '#fff'}}>{this.props.data && this.props.data.organization && this.props.data.organization.displayName && this.props.data.organization.displayName.split('').join(' ')}</Text>
                             </View>
                             <View style={[styles.rightContainer, {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}]}>
-                                <Text style={{}/*styles.eventTitleBanner*/}>{this.props.data && this.props.data.title && this.props.data.title.toUpperCase()}</Text>
+                                <Text style={{}}>{/*THIS IS A PADDER FOR THE STATUS ICON*/}</Text>
                                 <View style={{position: 'absolute', right: width/10}}>{this._renderEventAttendanceStatusIcon()}</View>
                             </View>
                         </Image>
@@ -767,7 +767,7 @@ var EventsListPage = React.createClass({
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this._renderEvent}
-                    renderScrollComponent={props => <SGListView {...props} />}
+                    // renderScrollComponent={props => <SGListView {...props} />}
                     initialListSize={INITIAL_LIST_SIZE}
                     pageSize={PAGE_SIZE}
                     onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}

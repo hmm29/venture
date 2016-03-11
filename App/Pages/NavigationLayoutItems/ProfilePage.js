@@ -26,14 +26,6 @@ var {
     View
     } = React;
 
-/*
- var FBSDKShare = require('react-native-fbsdkshare');
- var {
- FBSDKAppInviteContent,
- FBSDKAppInviteDialog
- } = FBSDKShare;
- */
-
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
 var BrandLogo = require('../../Partials/BrandLogo');
@@ -96,7 +88,6 @@ var ProfilePage = React.createClass({
             loginStatusRef.set(false);
 
             // @hmm: clean up user session: remove old match requests
-
             currentUserRef.child('match_requests').once('value', snapshot => {
                 snapshot.val() && _.each(snapshot.val(), (match) => {
                     if (match && match._id) {
@@ -111,7 +102,6 @@ var ProfilePage = React.createClass({
             });
 
             // @hmm: remove old event invite match requests
-
             currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
                 snapshot.val() && _.each(snapshot.val(), (match) => {
                     if (match && match._id) {
@@ -134,7 +124,8 @@ var ProfilePage = React.createClass({
         if (isOnline && loginStatusRef) loginStatusRef.set(isOnline);
 
         currentUserRef.once('value', snapshot => {
-            let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName', 'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
+            let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName',
+                'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
 
             // @hmm: slight defer to allow time for snapshot.val()
             this.setTimeout(() => {
@@ -146,22 +137,7 @@ var ProfilePage = React.createClass({
     },
 
     _openAppInviteDialog() {
-        /*
-         // Build up a shareable link.
-         var linkContent = new FBSDKAppInviteContent('https://fb.me/583451638480908', 'http://res.cloudinary.com/dwnyawluh/image/upload/c_scale,w_1200/v1455585747/Venture_Signature_180x180_hwbaqu.png');
-         // Share the link using the native share dialog.
-         FBSDKAppInviteDialog.show(linkContent, (error, result) => {
-         if (!error) {
-         if (result.isCancelled) {
-         alert('Share cancelled.');
-         } else {
-         alert('Thanks for sharing!');
-         }
-         } else {
-         alert('Error sharing.');
-         }
-         });
-         */
+
     },
 
     renderHeader() {
@@ -173,7 +149,8 @@ var ProfilePage = React.createClass({
                 <Text>MY PROFILE</Text>
                 <EditProfilePageIcon
                     onPress={() => {
-                          this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,  passProps: {firebaseRef: this.state.firebaseRef, ventureId: this.state.ventureId}});
+                          this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,
+                          passProps: {firebaseRef: this.state.firebaseRef, ventureId: this.state.ventureId}});
                     }}/>
             </Header>
         )
@@ -207,36 +184,34 @@ var ProfilePage = React.createClass({
                                     _this.setState({user : null, ventureId: null});
                                     _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
 
-                                     AsyncStorage.multiRemove(['@AsyncStorage:Venture:account', '@AsyncStorage:Venture:currentUser:friendsAPICallURL', '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'])
+                                     //@hmm: clean up async storage cache
+                                     AsyncStorage.multiRemove(['@AsyncStorage:Venture:account',
+                                     '@AsyncStorage:Venture:currentUser:friendsAPICallURL',
+                                     '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'])
                                         .catch(error => console.log(error.message))
                                         .done();
                                 }}
 
                                  onLoginFound={function(data){
-
-                                _this.setState({ user : data.credentials, ventureId: hash(data.credentials.userId)});
-                                console.log("Existing login found.");
-
+                                    _this.setState({ user : data.credentials, ventureId: hash(data.credentials.userId)});
+                                    console.log("Existing login found.");
                                 }}
 
                                  onLoginNotFound={function(){
-
-                                _this.setState({ user : null, ventureId: null });
-
-                                console.log("No user logged in.");
-
+                                    _this.setState({ user : null, ventureId: null });
+                                    console.log("No user logged in.");
                                 }}
 
                                  onError={function(data){
-                                console.error("Error in fetching facebook data: ", data);
+                                    console.error("Error in fetching facebook data: ", data);
                                 }}
 
                                  onCancel={function(){
-                                console.log("User cancelled.");
+                                    console.log("User cancelled.");
                                 }}
 
                                  onPermissionsMissing={function(data){
-                                console.error("Check permissions!");
+                                    console.error("Check permissions!");
                                 }}
                             />
                     </View>
@@ -289,7 +264,8 @@ var Photo = React.createClass({
                       bottom: 20
                     }
                   }
-                            source={{uri: this.state.currentPic || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user.userId}.jpg`}}
+                            source={{uri: this.state.currentPic
+                            ||`https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user.userId}.jpg`}}
                             />
                     </TouchableOpacity>
                 </Animatable.View>
@@ -351,9 +327,11 @@ var Info = React.createClass({
             <View>
                 <View style={styles.infoContent}>
                     <Text
-                        style={[styles.infoText, styles.infoTextNameAge]}>{ info && (info.firstName + ', ') } { info && info.age && info.age.value }</Text>
+                        style={[styles.infoText, styles.infoTextNameAge]}>{ info && (info.firstName + ', ') }
+                        { info && info.age && info.age.value }</Text>
                     <Text
-                        style={[styles.infoText, styles.infoTextGender]}>{ info && info.gender && info.gender.capitalize() }</Text>
+                        style={[styles.infoText, styles.infoTextGender]}>{ info && info.gender
+                    && info.gender.capitalize() }</Text>
                     <Text style={[styles.infoText, styles.infoTextBio]}>{ info && info.bio }</Text>
                 </View>
                 <ModalBase

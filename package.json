@@ -10,7 +10,6 @@
     "apphub": "^0.5.0",
     "firebase": "^2.4.1",
     "geofire": "^4.0.0",
-    "jest-cli": "^0.9.0",
     "lodash": "^4.6.1",
     "react-native": "^0.21.0",
     "react-native-animatable": "^0.5.0",
@@ -18,7 +17,7 @@
     "react-native-facebook-login": "^1.0.3",
     "react-native-fbsdkcore": "0.0.8",
     "react-native-icons": "^0.7.1",
-    "react-native-image-picker": "^0.18.1",
+    "react-native-image-picker": "^0.18.3",
     "react-native-invertible-scroll-view": "^0.2.0",
     "react-native-linear-gradient": "^1.5.2",
     "react-native-orientation": "^1.14.0",
@@ -31,6 +30,6 @@
     "sha256": "^0.2.0"
   },
   "devDependencies": {
-    "jest-cli": "^0.8.2"
+    "jest-cli": "^0.9.1"
   }
 }

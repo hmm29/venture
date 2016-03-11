@@ -37,7 +37,7 @@ var {height, width} = Dimensions.get('window');
 
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
-}
+};
 
 var getInitialAgeRangeLimits = (ageVal:number, lim:string) => {
     if (lim === 'upper') {
@@ -82,7 +82,8 @@ var LoginPage = React.createClass({
     _createAccount() {
         let user = this.state.user,
             ventureId = this.state.ventureId,
-            api = `https://graph.facebook.com/v2.3/${user && user.userId}?fields=name,email,gender,age_range&access_token=${user.token}`;
+            api = `https://graph.facebook.com/v2.3/${user && user.userId}
+            ?fields=name,email,gender,age_range&access_token=${user.token}`;
 
         fetch(api)
             .then(response => response.json())
@@ -200,8 +201,8 @@ var LoginPage = React.createClass({
     _navigateToHomePage() {
         // @hmm: MUST MUST MUST include HomePage require here
         var HomePage = require('../Pages/HomePage');
-        // use replace!!
-        this.props.navigator.replace({title: 'Home', component: HomePage})
+        // @hmm: use replace method of navigator for cleanest transition
+        this.props.navigator.replace({title: 'Home', component: HomePage});
     },
 
     _updateUserLoginStatus(isOnline:boolean) {
@@ -216,7 +217,8 @@ var LoginPage = React.createClass({
                 loginStatusRef.set(isOnline);
 
                 currentUserRef.once('value', snapshot => {
-                    let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName', 'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
+                    let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
+                        'lastName', 'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
 
                     // @hmm: slight defer to allow for snapshot.val()
                     this.setTimeout(() => {
@@ -237,7 +239,8 @@ var LoginPage = React.createClass({
             currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${ventureId}`);
 
         currentUserRef.once('value', snapshot => {
-            let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName', 'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
+            let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName',
+                'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
 
             AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
                 .then(() => this._navigateToHomePage())
@@ -252,8 +255,10 @@ var LoginPage = React.createClass({
             <View>
                 <Image>
                     <Swiper style={styles.wrapper}
-                            dot={<View style={{backgroundColor:'rgba(255,255,255,.3)', width: 13, height: 13,borderRadius: 7, top: height / 30, marginLeft: 7, marginRight: 7,}} />}
-                            activeDot={<View style={{backgroundColor: '#fff', width: 13, height: 13, borderRadius: 7, top: height / 30, marginLeft: 7, marginRight: 7}} />}
+                            dot={<View style={{backgroundColor:'rgba(255,255,255,.3)', width: 13,
+                            height: 13,borderRadius: 7, top: height / 30, marginLeft: 7, marginRight: 7}} />}
+                            activeDot={<View style={{backgroundColor: '#fff', width: 13, height: 13,
+                            borderRadius: 7, top: height / 30, marginLeft: 7, marginRight: 7}} />}
                             paginationStyle={{bottom: height/22}}
                             loop={false}>
                         <View style={styles.slide}>
@@ -265,23 +270,25 @@ var LoginPage = React.createClass({
                                 <FBLogin style={{ top: height/2.5 }}
                                          permissions={['email','user_friends']}
                                          onLogin={function(data){
+                                            let api = `https://graph.facebook.com/v2.3/${data.credentials
+                                            && data.credentials.userId}/friends?access_token=${data.credentials
+                                            && data.credentials.token}`;
+                                            _this.setState({user: data.credentials,
+                                            ventureId: hash(data.credentials.userId)});
 
-                                let api = `https://graph.facebook.com/v2.3/${data.credentials && data.credentials.userId}/friends?access_token=${data.credentials && data.credentials.token}`;
-                                _this.setState({user: data.credentials, ventureId: hash(data.credentials.userId)});
+                                           AsyncStorage.setItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL',
+                                           api)
+                                            .then(() => {
+                                               _this._updateUserLoginStatus(true);
+                                            })
+                                            .catch(error => console.log(error.message))
+                                            .done();
 
-                                   AsyncStorage.setItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL', api)
-                                    .then(() => {
-                                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                                       _this._updateUserLoginStatus(true);
-                                    })
-                                    .catch(error => console.log(error.message))
-                                    .done();
-
-                                  AsyncStorage.setItem('@AsyncStorage:Venture:isOnline', 'true')
-                                    .then(() => console.log('Logged in!'))
-                                    .catch((error) => console.log(error.message))
-                                    .done();
-                        }}
+                                          AsyncStorage.setItem('@AsyncStorage:Venture:isOnline', 'true')
+                                            .then(() => console.log('Logged in!'))
+                                            .catch((error) => console.log(error.message))
+                                            .done();
+                                        }}
                                     />
                             </Image>
                         </View>
@@ -322,9 +329,6 @@ var LoginPage = React.createClass({
 });
 
 const styles = StyleSheet.create({
-    ageSelectionModalContent: {
-        backgroundColor: 'black'
-    },
     backdrop: {
         flex: 1,
         justifyContent: 'center',

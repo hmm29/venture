@@ -48,7 +48,7 @@
    * on the same Wi-Fi network.
    */
 
-   jsCodeLocation = [NSURL URLWithString:@"http://172.27.146.83:8081/index.ios.bundle?platform=ios&dev=false"];
+   // jsCodeLocation = [NSURL URLWithString:@"http://172.27.146.83:8081/index.ios.bundle?platform=ios&dev=false"];
 
   /**
    * OPTION 2
@@ -65,9 +65,9 @@
    *
    */
 
-   // AHBuild *build = [[AppHub buildManager] currentBuild];
-   // jsCodeLocation = [build.bundle URLForResource:@"main"
-   //                             withExtension:@"jsbundle"];
+    AHBuild *build = [[AppHub buildManager] currentBuild];
+    jsCodeLocation = [build.bundle URLForResource:@"main"
+                                withExtension:@"jsbundle"];
 
   RCTRootView *rootView = [[RCTRootView alloc] initWithBundleURL:jsCodeLocation
                                                       moduleName:@"VentureApp"

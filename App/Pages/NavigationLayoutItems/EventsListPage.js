@@ -14,1059 +14,1063 @@
 
 var React = require('react-native');
 var {
-    ActivityIndicatorIOS,
-    Animated,
-    AsyncStorage,
-    Image,
-    LayoutAnimation,
-    ListView,
-    Navigator,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableHighlight,
-    TouchableOpacity,
-    View
-    } = React;
+  ActivityIndicatorIOS,
+  Animated,
+  AsyncStorage,
+  Image,
+  LayoutAnimation,
+  ListView,
+  Navigator,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableHighlight,
+  TouchableOpacity,
+  View
+  } = React;
 
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
-var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
+var BrandLogo = require('../../Partials/BrandLogo');
 var ChatPage = require('../ChatPage');
-var DynamicCheckBoxIcon = require('../../Partials/Icons/DynamicCheckBoxIcon');
-var DefaultMatchStatusIcon = require('../../Partials/Icons/MatchStatusIndicators/DefaultMatchStatusIcon');
-var CloseIcon = require('../../Partials/Icons/CloseIcon');
-
 var Dimensions = require('Dimensions');
+var DynamicCheckBoxIcon = require('../../Partials/Icons/DynamicCheckBoxIcon');
 var Firebase = require('firebase');
 var GeoFire = require('geofire');
-var Header = require('../../Partials/Header');
-var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 var LinearGradient = require('react-native-linear-gradient');
-var BrandLogo = require('../../Partials/BrandLogo');
-var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
-var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
+var VentureAppPage = require('../Base/VentureAppPage');
 
+// Header Components
+var CloseIcon = require('../../Partials/Icons/CloseIcon');
+var Header = require('../../Partials/Header');
+var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
+
+// Match Status Indicators
+var DefaultMatchStatusIcon = require('../../Partials/Icons/MatchStatusIndicators/DefaultMatchStatusIcon');
+var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
+var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
+var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
+
+// Globals
+var {height, width} = Dimensions.get('window');
 var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
-var {height, width} = Dimensions.get('window');
+var THUMBNAIL_SIZE = 50;
 
-var YELLOW_HEX_CODE = '#ffe770';
 var BLACK_HEX_CODE = '#000';
 var BLUE_HEX_CODE = '#40cbfb';
 var GREEN_HEX_CODE = '#84FF9B';
 var WHITE_HEX_CODE = '#fff';
-var THUMBNAIL_SIZE = 50;
+var YELLOW_HEX_CODE = '#ffe770';
 
 String.prototype.capitalize = function () {
-    return this.charAt(0).toUpperCase() + this.slice(1);
+  return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
 var hash = (msg:string) => sha256(msg);
 
 var User = React.createClass({
 
-    propTypes: {
-        currentTime: React.PropTypes.number,
-        currentUserLocationCoords: React.PropTypes.array,
-        currentUserData: React.PropTypes.object,
-        data: React.PropTypes.object,
-        isCurrentUser: React.PropTypes.func,
-        navigator: React.PropTypes.object
-    },
+  propTypes: {
+    currentTime: React.PropTypes.number,
+    currentUserLocationCoords: React.PropTypes.array,
+    currentUserData: React.PropTypes.object,
+    data: React.PropTypes.object,
+    isCurrentUser: React.PropTypes.func,
+    navigator: React.PropTypes.object
+  },
 
-    getInitialState() {
-        return {
-            dir: 'row',
-            expireTime: ''
-        }
-    },
+  getInitialState() {
+    return {
+      dir: 'row',
+      expireTime: ''
+    }
+  },
 
-    componentWillMount() {
-        let distance = this.props.currentUserLocationCoords && this.props.data
-                && this.props.data.location && this.props.data.location.coordinates
-                && this.calculateDistance(this.props.currentUserLocationCoords,
-                    [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
-            _this = this;
+  componentWillMount() {
+    let distance = this.props.currentUserLocationCoords && this.props.data
+        && this.props.data.location && this.props.data.location.coordinates
+        && this.calculateDistance(this.props.currentUserLocationCoords,
+          [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
+      _this = this;
 
-        this.props.firebaseRef && this.props.data && this.props.data.ventureId
-        && this.props.currentUserIDHashed && this.props.firebaseRef
-            .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
-        && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
-            .child(this.props.data.ventureId).on('value', snapshot => {
-            _this.setState({
-                chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-                distance,
-                status: snapshot.val() && snapshot.val().status,
-                expireTime: snapshot.val() && snapshot.val().expireTime
-            });
+    this.props.firebaseRef && this.props.data && this.props.data.ventureId
+    && this.props.currentUserIDHashed && this.props.firebaseRef
+      .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
+    && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+      .child(this.props.data.ventureId).on('value', snapshot => {
+        _this.setState({
+          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+          distance,
+          status: snapshot.val() && snapshot.val().status,
+          expireTime: snapshot.val() && snapshot.val().expireTime
         });
-    },
+      });
+  },
 
-    componentDidMount() {
-        this.refs.attendee.fadeInUp(600);
-    },
+  componentDidMount() {
+    this.refs.attendee.fadeInUp(600);
+  },
 
-    componentWillReceiveProps(nextProps) {
-        let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location
-                && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords,
-                    [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
-            _this = this;
+  componentWillReceiveProps(nextProps) {
+    let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location
+        && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords,
+          [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
+      _this = this;
 
-        nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
-        && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-            .child(nextProps.data.ventureId)
-        && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-            .child(nextProps.data.ventureId).on('value', snapshot => {
-            _this.setState({
-                chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-                distance,
-                status: snapshot.val() && snapshot.val().status,
-                expireTime: snapshot.val() && snapshot.val().expireTime
-            });
+    nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
+    && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
+      .child(nextProps.data.ventureId)
+    && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
+      .child(nextProps.data.ventureId).on('value', snapshot => {
+        _this.setState({
+          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+          distance,
+          status: snapshot.val() && snapshot.val().status,
+          expireTime: snapshot.val() && snapshot.val().expireTime
         });
-    },
+      });
+  },
 
-    componentWillUnmount() {
-        let currentUserIDHashed = this.props.currentUserIDHashed,
-            firebaseRef = this.props.firebaseRef,
-            currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
-                    + '/event_invite_match_requests');
+  componentWillUnmount() {
+    let currentUserIDHashed = this.props.currentUserIDHashed,
+      firebaseRef = this.props.firebaseRef,
+      currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
+          + '/event_invite_match_requests');
 
-        currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
-    },
+    currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
+  },
 
-    calculateDistance(location1:Array, location2:Array) {
-        return location1 && location2 && (GeoFire.distance(location1, location2) * 0.621371).toFixed(1);
-    },
+  calculateDistance(location1:Array, location2:Array) {
+    return location1 && location2 && (GeoFire.distance(location1, location2) * 0.621371).toFixed(1);
+  },
 
-    _getSecondaryStatusColor() {
-        switch (this.state.status) {
-            case 'sent':
-                return '#FFF9B9';
-            case 'received':
-                return '#D1F8FF';
-            case 'matched':
-                return '#AAFFA9';
-            default:
-                return '#FBFBF1';
-        }
-    },
+  _getSecondaryStatusColor() {
+    switch (this.state.status) {
+      case 'sent':
+        return '#FFF9B9';
+      case 'received':
+        return '#D1F8FF';
+      case 'matched':
+        return '#AAFFA9';
+      default:
+        return '#FBFBF1';
+    }
+  },
 
-    getStatusColor() {
-        switch (this.state.status) {
-            case 'sent':
-                return YELLOW_HEX_CODE;
-            case 'received':
-                return BLUE_HEX_CODE;
-            case 'matched':
-                return GREEN_HEX_CODE;
-            default:
-                return WHITE_HEX_CODE;
-        }
-    },
+  getStatusColor() {
+    switch (this.state.status) {
+      case 'sent':
+        return YELLOW_HEX_CODE;
+      case 'received':
+        return BLUE_HEX_CODE;
+      case 'matched':
+        return GREEN_HEX_CODE;
+      default:
+        return WHITE_HEX_CODE;
+    }
+  },
 
-    _getTimerValue(currentTimeInMs:number) {
-        if (!(this.state.expireTime && currentTimeInMs)) return -1;
+  _getTimerValue(currentTimeInMs:number) {
+    if (!(this.state.expireTime && currentTimeInMs)) return -1;
 
-        let timerValInSeconds = Math.floor((this.state.expireTime - currentTimeInMs) / 1000);
+    let timerValInSeconds = Math.floor((this.state.expireTime - currentTimeInMs) / 1000);
 
-        if (timerValInSeconds >= 0) return timerValInSeconds;
+    if (timerValInSeconds >= 0) return timerValInSeconds;
 
-        let targetUserIDHashed = this.props.data.ventureId,
-            currentUserIDHashed = this.props.currentUserIDHashed,
-            firebaseRef = this.props.firebaseRef,
-            targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
-            currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests');
+    let targetUserIDHashed = this.props.data.ventureId,
+      currentUserIDHashed = this.props.currentUserIDHashed,
+      firebaseRef = this.props.firebaseRef,
+      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
+      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests');
 
-        // end match interactions
-        targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
-        currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+    // end match interactions
+    targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
+    currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
 
-        this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
+    this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
 
-        return -1;
-    },
+    return -1;
+  },
 
-    handleMatchInteraction() {
-        // @hmm: use hashed targetUserID as key for data for user in list
+  handleMatchInteraction() {
+    // @hmm: use hashed targetUserID as key for data for user in list
+    let targetUserIDHashed = this.props.data.ventureId,
+      currentUserIDHashed = this.props.currentUserIDHashed,
+      firebaseRef = this.props.firebaseRef,
+      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
+      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
+      _this = this;
 
-        let targetUserIDHashed = this.props.data.ventureId,
-            currentUserIDHashed = this.props.currentUserIDHashed,
-            firebaseRef = this.props.firebaseRef,
-            targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
-            currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
-            _this = this;
+    if (this.state.status === 'sent') {
 
-        if (this.state.status === 'sent') {
+      // @hmm: delete the requests
+      targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
+      currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+    }
 
-            // @hmm: delete the request
+    else if (this.state.status === 'received') {
 
-            targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
-            currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
-        }
+      // @hmm: accept the request
+      // chatroom reference uses id of the user who accepts the received matchInteraction
+      targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
+        _id: currentUserIDHashed,
+        status: 'matched',
+        role: 'recipient'
+      }, 100);
 
-        else if (this.state.status === 'received') {
+      currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
+        _id: targetUserIDHashed,
+        status: 'matched',
+        role: 'sender'
+      }, 100);
+    }
 
-            // @hmm: accept the request
-            // chatroom reference uses id of the user who accepts the received matchInteraction
+    else if (this.state.status === 'matched') {
+      let chatRoomActivityPreferenceTitle,
+        distance = this.state.distance + 'mi',
+        _id;
 
-            targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
-                _id: currentUserIDHashed,
-                status: 'matched',
-                role: 'recipient'
-            }, 100);
+      currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
 
-            currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-                _id: targetUserIDHashed,
-                status: 'matched',
-                role: 'sender'
-            }, 100);
-        }
-
-        else if (this.state.status === 'matched') {
-            let chatRoomActivityPreferenceTitle,
-                distance = this.state.distance + 'mi',
-                _id;
-
-            currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
-
-                if (snapshot.val() && snapshot.val().role === 'sender') {
-                    _id = targetUserIDHashed + '_TO_' + currentUserIDHashed;
-                    chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
-                } else {
-                    _id = currentUserIDHashed + '_TO_' + targetUserIDHashed;
-                    chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
-                }
-
-                // @hmm put chat ids in match request object so overlays know which chat to destroy
-                currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
-                targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
-
-                firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
-
-                    let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
-
-                    if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
-                        // TODO: in the future should be able to account for timezone differences?
-                        // probably not because if youre going to match with someone youll be in same timezone
-
-                        let currentTime = new Date().getTime(),
-                            expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES*60*1000)).getTime();
-
-                        chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
-                        chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
-                        chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
-                        chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
-                            .set(this.props.currentUserData.activityPreference.title);
-                        chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed)
-                            .set(this.props.data.activityPreference.title);
-                    }
-
-                    _this.props.navigator.push({
-                        title: 'Chat',
-                        component: ChatPage,
-                        passProps: {
-                            _id,
-                            recipient: _this.props.data,
-                            distance,
-                            chatRoomActivityPreferenceTitle,
-                            chatRoomRef,
-                            currentUserData: _this.props.currentUserData
-                        }
-                    });
-
-                });
-            });
+        if (snapshot.val() && snapshot.val().role === 'sender') {
+          _id = targetUserIDHashed + '_TO_' + currentUserIDHashed;
+          chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
+        } else {
+          _id = currentUserIDHashed + '_TO_' + targetUserIDHashed;
+          chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
         }
 
-        else {
-            targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
-                status: 'received',
-                _id: currentUserIDHashed
-            }, 200);
-            currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-                status: 'sent',
-                _id: targetUserIDHashed
-            }, 300);
-        }
-    },
+        // @hmm put chat ids in match request object so overlays know which chat to destroy
+        currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
+        targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
 
-    _onPressItem() {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-        this.setState({dir: this.state.dir === 'row' ? 'column' : 'row'});
-    },
+        firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
-    _renderStatusIcon() {
-        switch (this.state.status) {
-            case 'sent':
-                return <SentRequestIcon
-                    color='rgba(0,0,0,0.2)'
-                    onPress={this.handleMatchInteraction}
-                    style={{left: 10, bottom: 6}}
-                    />
-            case 'received':
-                return <ReceivedRequestIcon
-                    color='rgba(0,0,0,0.2)'
-                    onPress={this.handleMatchInteraction}
-                    style={{left: 10, bottom: 6}}
-                    />
-            case 'matched':
-                return <MatchSuccessIcon
-                    chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
-                    color='rgba(0,0,0,0.2)'
-                    onPress={this.handleMatchInteraction}
-                    style={{left: 10,  bottom: 6}}
-                    currentUserIDHashed={this.props.currentUserIDHashed}
-                    />
-            default:
-                return <DefaultMatchStatusIcon
-                    color='rgba(0,0,0,0.2)'
-                    onPress={this.handleMatchInteraction}
-                    style={{left: 10, bottom: 6}}
-                    />
-        }
-    },
+          let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
 
-    render() {
-        let profileModal = (
-            <View style={[styles.profileModalContainer, {alignSelf: 'center'}]}>
-                <View
-                    style={[styles.profileModal, {backgroundColor: this._getSecondaryStatusColor()}]}>
-                    <Image
-                        source={{uri: this.props.data && this.props.data.picture}}
-                        style={styles.profileModalUserPicture}/>
-                    <Text
-                        style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
-                        {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
-                        | {'\t'}
-                        <Text style={styles.profileModalActivityInfo}>
-                            <Text
-                                style={styles.profileModalActivityPreference}>{this.props.eventTitle}</Text>
-                            {'\t'} {this.props.data && this.props.data.activityPreference
-                        && (this.props.data.activityPreference.start.time
-                        || this.props.data.activityPreference.status)} {'\n'}
-                        </Text>
-                    </Text>
-                    <Text
-                        style={[styles.profileModalSectionTitle, {alignSelf: 'center'}]}>{this.props.eventLogistics}</Text>
-                    <Text
-                        style={[styles.profileModalBio, {alignSelf: 'center'}]}>{this.props.data && this.props.data.bio}</Text>
-                </View>
-            </View>
-        );
+          if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
+            // TODO: in the future should be able to account for timezone differences?
+            // probably not because if youre going to match with someone youll be in same timezone
 
-        return (
-            <Animatable.View ref="attendee">
-            <TouchableHighlight
-                underlayColor={WHITE_HEX_CODE}
-                activeOpacity={0.3}
-                onPress={this._onPressItem}
-                style={styles.userRow}>
-                <View
-                    style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
-                    <LinearGradient
-                        colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor])
+            let currentTime = new Date().getTime(),
+              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+
+            chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
+            chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
+            chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
+            chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
+              .set(this.props.currentUserData.activityPreference.title);
+            chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed)
+              .set(this.props.data.activityPreference.title);
+          }
+
+          _this.props.navigator.push({
+            title: 'Chat',
+            component: ChatPage,
+            passProps: {
+              _id,
+              recipient: _this.props.data,
+              distance,
+              chatRoomActivityPreferenceTitle,
+              chatRoomRef,
+              currentUserData: _this.props.currentUserData
+            }
+          });
+
+        });
+      });
+    }
+
+    else {
+      targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
+        status: 'received',
+        _id: currentUserIDHashed
+      }, 200);
+      currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
+        status: 'sent',
+        _id: targetUserIDHashed
+      }, 300);
+    }
+  },
+
+  _onPressItem() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+    this.setState({dir: this.state.dir === 'row' ? 'column' : 'row'});
+  },
+
+  _renderStatusIcon() {
+    switch (this.state.status) {
+      case 'sent':
+        return <SentRequestIcon
+          color='rgba(0,0,0,0.2)'
+          onPress={this.handleMatchInteraction}
+          style={{left: 10, bottom: 6}}
+          />;
+      case 'received':
+        return <ReceivedRequestIcon
+          color='rgba(0,0,0,0.2)'
+          onPress={this.handleMatchInteraction}
+          style={{left: 10, bottom: 6}}
+          />;
+      case 'matched':
+        return <MatchSuccessIcon
+          chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
+          color='rgba(0,0,0,0.2)'
+          onPress={this.handleMatchInteraction}
+          style={{left: 10,  bottom: 6}}
+          currentUserIDHashed={this.props.currentUserIDHashed}
+          />;
+      default:
+        return <DefaultMatchStatusIcon
+          color='rgba(0,0,0,0.2)'
+          onPress={this.handleMatchInteraction}
+          style={{left: 10, bottom: 6}}
+          />
+    }
+  },
+
+  render() {
+    let profileModal = (
+      <View style={[styles.profileModalContainer, {alignSelf: 'center'}]}>
+        <View
+          style={[styles.profileModal, {backgroundColor: this._getSecondaryStatusColor()}]}>
+          <Image
+            source={{uri: this.props.data && this.props.data.picture}}
+            style={styles.profileModalUserPicture}/>
+          <Text
+            style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
+            {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
+            | {'\t'}
+            <Text style={styles.profileModalActivityInfo}>
+              <Text
+                style={styles.profileModalActivityPreference}>{this.props.eventTitle}</Text>
+              {'\t'} {this.props.data && this.props.data.activityPreference
+            && (this.props.data.activityPreference.start.time
+            || this.props.data.activityPreference.status)} {'\n'}
+            </Text>
+          </Text>
+          <Text
+            style={[styles.profileModalSectionTitle, {alignSelf: 'center'}]}>{this.props.eventLogistics}</Text>
+          <Text
+            style={[styles.profileModalBio, {alignSelf: 'center'}]}>{this.props.data && this.props.data.bio}</Text>
+        </View>
+      </View>
+    );
+
+    return (
+      <Animatable.View ref="attendee">
+        <TouchableHighlight
+          underlayColor={WHITE_HEX_CODE}
+          activeOpacity={0.3}
+          onPress={this._onPressItem}
+          style={styles.userRow}>
+          <View
+            style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
+            <LinearGradient
+              colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor])
                         || [this.getStatusColor(), this._getSecondaryStatusColor(), WHITE_HEX_CODE, 'transparent']}
-                        start={[0,1]}
-                        end={[1,1]}
-                        locations={[0.3,0.99,1.0]}
-                        style={styles.container}>
-                        <View style={styles.rightContainer}>
-                        <Image
-                            onPress={this._onPressItem}
-                            source={{uri: this.props.data && this.props.data.picture}}
-                            style={[styles.thumbnail]}>
-                            <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
-                                <Text
-                                    style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs))
+              start={[0,1]}
+              end={[1,1]}
+              locations={[0.3,0.99,1.0]}
+              style={styles.container}>
+              <View style={styles.rightContainer}>
+                <Image
+                  onPress={this._onPressItem}
+                  source={{uri: this.props.data && this.props.data.picture}}
+                  style={[styles.thumbnail]}>
+                  <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
+                    <Text
+                      style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs))
                                     && _.parseInt((this._getTimerValue(this.props.currentTimeInMs))/60) === 0 ?
                                     {color: '#F12A00'} :{})]}>
-                                    {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
-                                    && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
-                                    && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'}
-                                    {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
-                                    && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
-                                    && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
-                                </Text>
-                            </View>
-                        </Image>
-                            <Text
-                                style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
-                            <Text style={styles.eventTitle}>
-                                {this.props.eventTitle} ?
-                            </Text>
-                            <View style={{top: 10, right: width/25}}>{this._renderStatusIcon()}</View>
-                        </View>
-                    </LinearGradient>
-                    {this.state.dir === 'column' ? profileModal : <View />}
-                </View>
-            </TouchableHighlight>
-            </Animatable.View>
-        );
-    }
+                      {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
+                      && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
+                      && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'}
+                      {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
+                      && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
+                      && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
+                    </Text>
+                  </View>
+                </Image>
+                <Text
+                  style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
+                <Text style={styles.eventTitle}>
+                  {this.props.eventTitle} ?
+                </Text>
+                <View style={{top: 10, right: width/25}}>{this._renderStatusIcon()}</View>
+              </View>
+            </LinearGradient>
+            {this.state.dir === 'column' ? profileModal : <View />}
+          </View>
+        </TouchableHighlight>
+      </Animatable.View>
+    );
+  }
 });
 
 
 var AttendeeList = React.createClass({
-    mixins: [TimerMixin, ReactFireMixin],
+  mixins: [TimerMixin, ReactFireMixin],
 
-    getInitialState() {
-        return {
-            dataSource: new ListView.DataSource({
-                rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
-            }),
-            rows: []
-        };
-    },
+  getInitialState() {
+    return {
+      dataSource: new ListView.DataSource({
+        rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
+      }),
+      rows: []
+    };
+  },
 
-    _handle: null,
+  _handle: null,
 
-    componentWillMount() {
-            let attendeesListRef = this.props.eventsListRef && this.props.eventData && this.props.eventData.id
-                    && this.props.eventsListRef.child(`${this.props.eventData.id}/attendees`),
-                usersListRef = this.props.firebaseRef && this.props.firebaseRef.child('users'),
-                _this = this;
+  componentWillMount() {
+    let attendeesListRef = this.props.eventsListRef && this.props.eventData && this.props.eventData.id
+        && this.props.eventsListRef.child(`${this.props.eventData.id}/attendees`),
+      usersListRef = this.props.firebaseRef && this.props.firebaseRef.child('users'),
+      _this = this;
 
-            attendeesListRef && attendeesListRef.on('value', snapshot => {
-                    _this.updateRows(_.cloneDeep(_.values(snapshot.val())));
-                    _this.setState({rows: _.cloneDeep(_.values(snapshot.val())), attendeesListRef, usersListRef});
-            });
+    attendeesListRef && attendeesListRef.on('value', snapshot => {
+      _this.updateRows(_.cloneDeep(_.values(snapshot.val())));
+      _this.setState({rows: _.cloneDeep(_.values(snapshot.val())), attendeesListRef, usersListRef});
+    });
 
-            this.bindAsArray(usersListRef, 'rows');
+    this.bindAsArray(usersListRef, 'rows');
 
-        this._handle = this.setInterval(() => {
-            this.setState({currentTimeInMs: (new Date()).getTime()})
-        }, 1000);
-    },
+    this._handle = this.setInterval(() => {
+      this.setState({currentTimeInMs: (new Date()).getTime()})
+    }, 1000);
+  },
 
-    componentWillUnmount() {
-        this.state.currentUserRef && this.state.currentUserRef.off();
-        this.state.usersListRef && this.state.usersListRef.off();
-    },
+  componentWillUnmount() {
+    this.state.currentUserRef && this.state.currentUserRef.off();
+    this.state.usersListRef && this.state.usersListRef.off();
+  },
 
-    updateRows(rows) {
-        this.setState({dataSource: this.state.dataSource.cloneWithRows(rows)});
-    },
+  updateRows(rows) {
+    this.setState({dataSource: this.state.dataSource.cloneWithRows(rows)});
+  },
 
-    _renderHeader() {
-        // make sure to have three children in Header with text in center
-        return (
-            <Header>
-                <View />
-                <Text>WHO'S GOING TO : <Text style={{color: '#F06449'}}>{this.props.eventData
-                && this.props.eventData.title}</Text></Text>
-                <CloseIcon style={{bottom: height / 15, left: width / 18}}
-                           onPress={this.props.closeAttendeeListModal} />
-            </Header>
-        )
-    },
+  _renderHeader() {
+    // make sure to have three children in Header with text in center
+    return (
+      <Header>
+        <View />
+        <Text>WHO'S GOING TO : <Text style={{color: '#F06449'}}>{this.props.eventData
+        && this.props.eventData.title}</Text></Text>
+        <CloseIcon style={{bottom: height / 15, left: width / 18}}
+                   onPress={this.props.closeAttendeeListModal}/>
+      </Header>
+    )
+  },
 
 
-    _renderUser(user:Object, sectionID:number, rowID:number) {
-        if (user.ventureId === this.props.ventureId) return <View />;
+  _renderUser(user:Object, sectionID:number, rowID:number) {
+    if (user.ventureId === this.props.ventureId) return <View />;
 
-        return <User currentTimeInMs={this.state.currentTimeInMs}
-                     currentUserData={this.props.currentUserData}
-                     currentUserIDHashed={this.props.ventureId}
-                     currentUserLocationCoords={this.props.currentUserLocationCoords}
-                     data={user}
-                     eventId={this.props.eventData && this.props.eventData.id}
-                     eventLogistics={`${this.props.eventData && this.props.eventData.start
+    return <User currentTimeInMs={this.state.currentTimeInMs}
+                 currentUserData={this.props.currentUserData}
+                 currentUserIDHashed={this.props.ventureId}
+                 currentUserLocationCoords={this.props.currentUserLocationCoords}
+                 data={user}
+                 eventId={this.props.eventData && this.props.eventData.id}
+                 eventLogistics={`${this.props.eventData && this.props.eventData.start
                      && this.props.eventData.start.date}, ${this.props.eventData
                      && this.props.eventData.start && this.props.eventData.start.dateTime}\t
                      | \t${this.props.eventData && this.props.eventData.location}`}
-                     eventTitle={this.props.eventData && this.props.eventData.title}
-                     firebaseRef={this.props.firebaseRef}
-                     navigator={this.props.navigator}/>;
-    },
+                 eventTitle={this.props.eventData && this.props.eventData.title}
+                 firebaseRef={this.props.firebaseRef}
+                 navigator={this.props.navigator}/>;
+  },
 
-    render() {
-        return (
-            <View style={styles.attendeeListBaseContainer}>
-                {this._renderHeader()}
-                <ListView
-                    dataSource={this.state.dataSource}
-                    renderRow={this._renderUser}
-                    initialListSize={INITIAL_LIST_SIZE}
-                    pageSize={PAGE_SIZE}
-                    automaticallyAdjustContentInsets={false}
-                    scrollRenderAheadDistance={600} />
-            </View>
-        )
-    }
+  render() {
+    return (
+      <View style={styles.attendeeListBaseContainer}>
+        {this._renderHeader()}
+        <ListView
+          dataSource={this.state.dataSource}
+          renderRow={this._renderUser}
+          initialListSize={INITIAL_LIST_SIZE}
+          pageSize={PAGE_SIZE}
+          automaticallyAdjustContentInsets={false}
+          scrollRenderAheadDistance={600}/>
+      </View>
+    )
+  }
 });
 
 var Event = React.createClass({
-    getInitialState() {
-        return {
-            dir: 'row',
-            status: 'notAttending'
-        }
-    },
+  getInitialState() {
+    return {
+      dir: 'row',
+      status: 'notAttending'
+    }
+  },
 
-    componentWillMount() {
-        let _this = this;
+  componentWillMount() {
+    let _this = this;
 
-        this.props.eventsListRef && this.props.data && this.props.currentUserData
-        && this.props.currentUserIDHashed && this.props.data.id
-        && this.props.eventsListRef.child(`${this.props.data.id}/attendees/${this.props.currentUserIDHashed}`)
-            .once('value', snapshot => {
-            if(snapshot.val()) _this.setState({status: 'attending'});
-            else _this.setState({status: 'notAttending'});
-        });
+    this.props.eventsListRef && this.props.data && this.props.currentUserData
+    && this.props.currentUserIDHashed && this.props.data.id
+    && this.props.eventsListRef.child(`${this.props.data.id}/attendees/${this.props.currentUserIDHashed}`)
+      .once('value', snapshot => {
+        if (snapshot.val()) _this.setState({status: 'attending'});
+        else _this.setState({status: 'notAttending'});
+      });
 
-    },
+  },
 
-    componentDidMount() {
-        this.refs.event.fadeInUp(600);
-    },
+  componentDidMount() {
+    this.refs.event.fadeInUp(600);
+  },
 
-    componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps(nextProps) {
+    let _this = this;
 
-        let _this = this;
+    nextProps.eventsListRef && nextProps.data && nextProps.currentUserData
+    && nextProps.currentUserIDHashed && nextProps.data.id
+    && nextProps.eventsListRef.child(`${nextProps.data.id}/attendees/${nextProps.currentUserIDHashed}`)
+      .once('value', snapshot => {
+        _this.setState({status: ''});
+        if (snapshot.val()) _this.setState({status: 'attending'});
+        else _this.setState({status: 'notAttending'});
+      });
 
-        nextProps.eventsListRef && nextProps.data && nextProps.currentUserData
-        && nextProps.currentUserIDHashed && nextProps.data.id
-        && nextProps.eventsListRef.child(`${nextProps.data.id}/attendees/${nextProps.currentUserIDHashed}`)
-            .once('value', snapshot => {
-            _this.setState({status: ''})
-            if(snapshot.val()) _this.setState({status: 'attending'});
-            else _this.setState({status: 'notAttending'});
-        });
+  },
 
-    },
+  componentWillUnmount() {
+    let currentUserIDHashed = this.props.currentUserIDHashed,
+      firebaseRef = this.props.firebaseRef,
+      currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
+          + '/event_invite_match_requests');
 
-    componentWillUnmount() {
-        let currentUserIDHashed = this.props.currentUserIDHashed,
-            firebaseRef = this.props.firebaseRef,
-            currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
-                    + '/event_invite_match_requests');
+    currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
+  },
 
-        currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
-    },
+  _getSecondaryStatusColor() {
+    switch (this.state.status) {
+      case 'attending':
+        return '#AAFFA9';
+      default:
+        return '#111';
+    }
+  },
 
-    _getSecondaryStatusColor() {
-        switch (this.state.status) {
-            case 'attending':
-                return '#AAFFA9';
-            default:
-                return '#111';
-        }
-    },
+  _getEventProfileBackgroundColor() {
+    switch (this.state.status) {
+      case 'attending':
+        return '#AAFFA9';
+      default:
+        return '#FBFBF1';
+    }
+  },
 
-    _getEventProfileBackgroundColor() {
-        switch (this.state.status) {
-            case 'attending':
-                return '#AAFFA9';
-            default:
-                return '#FBFBF1';
-        }
-    },
+  getStatusColor() {
+    switch (this.state.status) {
+      case 'attending':
+        return GREEN_HEX_CODE;
+      default:
+        return BLACK_HEX_CODE;
+    }
+  },
 
-    getStatusColor() {
-        switch (this.state.status) {
-            case 'attending':
-                return GREEN_HEX_CODE;
-            default:
-                return BLACK_HEX_CODE;
-        }
-    },
+  handleEventInteraction() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
-    handleEventInteraction() {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (this.state.status === 'notAttending') {
+      this.setState({status: 'attending'});
+      this.props.eventsListRef && this.props.data && this.props.currentUserData && this.props.currentUserIDHashed
+      && this.props.data.id && this.props.eventsListRef
+        .child(`${this.props.data.id}/attendees/${this.props.currentUserIDHashed}`)
+        .set(_.pick(this.props.currentUserData, 'firstName', 'name', 'picture', 'ventureId', 'bio', 'age', 'location'));
+      this.props.usersListRef && this.props.data && this.props.currentUserIDHashed && this.props.data.id
+      && this.props.usersListRef.child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}`)
+        .set(_.pick(this.props.data, 'id', 'title', 'description', 'location', 'start'));
 
-        if (this.state.status === 'notAttending') {
-            this.setState({status: 'attending'});
-            this.props.eventsListRef && this.props.data && this.props.currentUserData && this.props.currentUserIDHashed
-            && this.props.data.id && this.props.eventsListRef
-                .child(`${this.props.data.id}/attendees/${this.props.currentUserIDHashed}`)
-                .set(_.pick(this.props.currentUserData, 'firstName', 'name', 'picture', 'ventureId', 'bio', 'age', 'location'))
-            this.props.usersListRef && this.props.data && this.props.currentUserIDHashed && this.props.data.id
-            && this.props.usersListRef.child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}`)
-                .set(_.pick(this.props.data, 'id', 'title', 'description', 'location', 'start'));
+    }
+    else {
+      this.setState({status: 'notAttending'});
+      this.props.eventsListRef && this.props.data && this.props.currentUserData && this.props.currentUserIDHashed
+      && this.props.data.id && this.props.eventsListRef
+        .child(`${this.props.data.id}/attendees/${this.props.currentUserIDHashed}`)
+        .set(null);
+      this.props.usersListRef && this.props.data && this.props.currentUserIDHashed
+      && this.props.data.id && this.props.usersListRef
+        .child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}`)
+        .set(null);
+    }
+  },
 
-        }
-        else {
-            this.setState({status: 'notAttending'});
-            this.props.eventsListRef && this.props.data && this.props.currentUserData && this.props.currentUserIDHashed
-            && this.props.data.id && this.props.eventsListRef
-                .child(`${this.props.data.id}/attendees/${this.props.currentUserIDHashed}`)
-                .set(null);
-            this.props.usersListRef && this.props.data && this.props.currentUserIDHashed
-            && this.props.data.id && this.props.usersListRef
-                .child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}`)
-                .set(null);
-        }
-    },
+  _onPressItem() {
+    // @hmm: set to selected event for attendee list
+    // have to press item to access attendee list so makes sense to change selected event here
+    this.props.handleSelectedEventStateChange(this.props.data);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+    this.setState({dir: this.state.dir === 'row' ? 'column' : 'row'});
+  },
 
-    _onPressItem() {
-        // @hmm: set to selected event for attendee list
-        // have to press item to access attendee list so makes sense to change selected event here
-        this.props.handleSelectedEventStateChange(this.props.data);
+  _renderEventAttendanceStatusIcon() {
+    return (
+      <DynamicCheckBoxIcon
+        size={27}
+        selected={this.state.status === 'attending'}
+        showChevronWhenDisabled={[true, 'right']}
+        onPress={this.handleEventInteraction}
+        style={styles.eventAttendanceStatusIcon}
+        />
+    );
+  },
 
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-        this.setState({dir: this.state.dir === 'row' ? 'column' : 'row'});
-    },
+  render() {
 
-    _renderEventAttendanceStatusIcon() {
-                return (
-                    <DynamicCheckBoxIcon
-                    size={27}
-                    selected={this.state.status === 'attending'}
-                    showChevronWhenDisabled={[true, 'right']}
-                    onPress={this.handleEventInteraction}
-                    style={styles.eventAttendanceStatusIcon}
-                    />
-            );
-    },
-
-    render() {
-
-        let profileModal = (
-            <View style={[styles.profileModalContainer, {flexDirection: 'column', alignItems: 'center'}]}>
-                <View
-                    style={[styles.profileModal, {backgroundColor: this._getEventProfileBackgroundColor(),
+    let profileModal = (
+      <View style={[styles.profileModalContainer, {flexDirection: 'column', alignItems: 'center'}]}>
+        <View
+          style={[styles.profileModal, {backgroundColor: this._getEventProfileBackgroundColor(),
                     alignSelf: 'stretch', alignItems: 'center'}]}>
-                    <Text style={styles.profileModalNameAgeInfo}>WHEN: {this.props.data
-                    && this.props.data.start && this.props.data.start.date}, {this.props.data
-                    && this.props.data.start && this.props.data.start.dateTime} {'\n'}
-                    </Text>
-                    <Text style={styles.profileModalNameAgeInfo}>WHERE: {this.props.data
-                    && this.props.data.location} {'\n'}
-                    </Text>
-                    <Text style={styles.profileModalSectionTitle}>EVENT DESCRIPTION:</Text>
-                    <Text style={[styles.profileModalBio, {width: width / 1.4}]}>{this.props.data
-                    && this.props.data.description} {'\n'}</Text>
+          <Text style={styles.profileModalNameAgeInfo}>WHEN: {this.props.data
+          && this.props.data.start && this.props.data.start.date}, {this.props.data
+          && this.props.data.start && this.props.data.start.dateTime} {'\n'}
+          </Text>
+          <Text style={styles.profileModalNameAgeInfo}>WHERE: {this.props.data
+          && this.props.data.location} {'\n'}
+          </Text>
+          <Text style={styles.profileModalSectionTitle}>EVENT DESCRIPTION:</Text>
+          <Text style={[styles.profileModalBio, {width: width / 1.4}]}>{this.props.data
+          && this.props.data.description} {'\n'}</Text>
 
-                     <TouchableOpacity onPress={() => {
+          <TouchableOpacity onPress={() => {
                      this.props.openAttendeeListModal();
                      }} style={{backgroundColor: 'rgba(0,0,0,0.001)'}}><Text style={{color: '#3F7CFF',
                      fontFamily: 'AvenirNextCondensed-Medium', fontSize: 20, paddingHorizontal: 40, paddingBottom: 10}}>
-                         WHO'S GOING?</Text></TouchableOpacity>
-                </View>
-            </View>
-        );
+            WHO'S GOING?</Text></TouchableOpacity>
+        </View>
+      </View>
+    );
 
-        return (
-            <Animatable.View ref="event">
-            <TouchableHighlight
-                underlayColor={WHITE_HEX_CODE}
-                activeOpacity={0.9}
-                onPress={this._onPressItem}
-                style={[styles.userRow, {height: THUMBNAIL_SIZE * 2}]}>
-                <View
-                    style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
-                    <LinearGradient
-                        colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor])
+    return (
+      <Animatable.View ref="event">
+        <TouchableHighlight
+          underlayColor={WHITE_HEX_CODE}
+          activeOpacity={0.9}
+          onPress={this._onPressItem}
+          style={[styles.userRow, {height: THUMBNAIL_SIZE * 2}]}>
+          <View
+            style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
+            <LinearGradient
+              colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor])
                         || [this.getStatusColor(), this._getSecondaryStatusColor(), WHITE_HEX_CODE, 'transparent']}
-                        start={[0,1]}
-                        end={[1,1]}
-                        locations={[0.3,0.99,1.0]}
-                        style={styles.container}>
-                        <Image
-                            onLoad={() => {this.props.handleShowLoadingModal(false);
+              start={[0,1]}
+              end={[1,1]}
+              locations={[0.3,0.99,1.0]}
+              style={styles.container}>
+              <Image
+                onLoad={() => {this.props.handleShowLoadingModal(false);
                             }}
-                            source={{uri: this.props.data && this.props.data.event_img}}
-                            style={{resizeMode: 'cover', height: THUMBNAIL_SIZE * 2, flex: 1, flexDirection: 'row',
+                source={{uri: this.props.data && this.props.data.event_img}}
+                style={{resizeMode: 'cover', height: THUMBNAIL_SIZE * 2, flex: 1, flexDirection: 'row',
                             backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'space-between', alignItems: 'center'}}>
-                            <View
-                                onPress={this._onPressItem}
-                                style={[styles.eventThumbnail, {backgroundColor: 'rgba(0,0,0,0.9)', justifyContent:
+                <View
+                  onPress={this._onPressItem}
+                  style={[styles.eventThumbnail, {backgroundColor: 'rgba(0,0,0,0.9)', justifyContent:
                                 'center', alignItems: 'center'}]}>
-                                <Text style={{fontFamily: 'AvenirNextCondensed-Regular', color: '#fff'}}>
-                                    {this.props.data && this.props.data.organization
-                                    && this.props.data.organization.displayName
-                                    && this.props.data.organization.displayName.split('').join(' ')}</Text>
-                            </View>
-                            <View style={[styles.rightContainer, {flexDirection: 'row', justifyContent: 'space-between',
-                            alignItems: 'center'}]}>
-                                <Text style={{}}>{/*THIS IS A PADDER FOR THE STATUS ICON*/}</Text>
-                                <View style={{position: 'absolute', right: width/10}}>
-                                    {this._renderEventAttendanceStatusIcon()}</View>
-                            </View>
-                        </Image>
-                    </LinearGradient>
-                    {this.state.dir === 'column' ? profileModal: <View />}
+                  <Text style={{fontFamily: 'AvenirNextCondensed-Regular', color: '#fff'}}>
+                    {this.props.data && this.props.data.organization
+                    && this.props.data.organization.displayName
+                    && this.props.data.organization.displayName.split('').join(' ')}</Text>
                 </View>
-            </TouchableHighlight>
-                </Animatable.View>
-        );
-    }
+                <View style={[styles.rightContainer, {flexDirection: 'row', justifyContent: 'space-between',
+                            alignItems: 'center'}]}>
+                  <Text style={{}}>{/*THIS IS A PADDER FOR THE STATUS ICON*/}</Text>
+                  <View style={{position: 'absolute', right: width/10}}>
+                    {this._renderEventAttendanceStatusIcon()}</View>
+                </View>
+              </Image>
+            </LinearGradient>
+            {this.state.dir === 'column' ? profileModal : <View />}
+          </View>
+        </TouchableHighlight>
+      </Animatable.View>
+    );
+  }
 });
 
 var EventsListPage = React.createClass({
-    mixins: [ReactFireMixin, TimerMixin],
+  mixins: [ReactFireMixin, TimerMixin],
 
-    watchID: null,
+  statics: {
+    title: '<EventsListPage/>',
+    description: 'Events list view.'
+  },
 
-    getInitialState() {
-        let firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/'),
-            eventsListRef = firebaseRef && firebaseRef.child('events'),
-            usersListRef = firebaseRef && firebaseRef.child('users');
+  watchID: null,
 
-        return {
-            currentPosition: null,
-            dataSource: new ListView.DataSource({
-                rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
-            }),
-            eventsListRef,
-            firebaseRef,
-            eventsRows: [],
-            selectedEvent: null,
-            showAttendeeListModal: false,
-            showLoadingModal: false, // must be false first
-            userRows: [],
-            usersListRef
-        };
-    },
+  getInitialState() {
+    let firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/'),
+      eventsListRef = firebaseRef && firebaseRef.child('events'),
+      usersListRef = firebaseRef && firebaseRef.child('users');
 
-    componentWillMount() {
-            let eventsListRef = this.state.eventsListRef,
-                usersListRef = this.state.usersListRef,
-                _this = this;
+    return {
+      currentPosition: null,
+      dataSource: new ListView.DataSource({
+        rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
+      }),
+      eventsListRef,
+      firebaseRef,
+      eventsRows: [],
+      selectedEvent: null,
+      showAttendeeListModal: false,
+      showLoadingModal: false,
+      userRows: [],
+      usersListRef
+    };
+  },
 
-            this.bindAsArray(usersListRef, 'userRows');
-            this.bindAsArray(eventsListRef, 'eventsRows');
+  componentWillMount() {
+    let eventsListRef = this.state.eventsListRef,
+      usersListRef = this.state.usersListRef,
+      _this = this;
 
-            eventsListRef.on('value', snapshot => {
-                _this.updateRows(_.cloneDeep(_.values(snapshot.val())));
-                _this.setState({eventsRows: _.cloneDeep(_.values(snapshot.val())), eventsListRef, usersListRef});
-            });
+    this.bindAsArray(usersListRef, 'userRows');
+    this.bindAsArray(eventsListRef, 'eventsRows');
 
-            this.setState({currentUserVentureId: this.props.ventureId})
+    eventsListRef.on('value', snapshot => {
+      _this.updateRows(_.cloneDeep(_.values(snapshot.val())));
+      _this.setState({eventsRows: _.cloneDeep(_.values(snapshot.val())), eventsListRef, usersListRef});
+    });
 
-            this.state.firebaseRef.child(`/users/${this.props.ventureId}`).once('value', snapshot => {
-                _this.setState({currentUserData: snapshot.val()});
-            });
+    this.setState({currentUserVentureId: this.props.ventureId});
 
-    },
+    this.state.firebaseRef.child(`/users/${this.props.ventureId}`).once('value', snapshot => {
+      _this.setState({currentUserData: snapshot.val()});
+    });
 
-    componentDidMount() {
-        this.setTimeout(() => {
-            // if no rows in users list being recognized, show laoding modal till they are
-            if (_.isEmpty(this.state.eventsRows)) this.setState({showLoadingModal: true});
-        }, 2000);
-    },
+  },
 
-    componentWillUnmount() {
-        let eventsListRef = this.state.eventsListRef,
-            usersListRef = this.state.usersListRef;
+  componentDidMount() {
+    this.setTimeout(() => {
+      // @hmm: show laoding modal if eventsRows still empty after 2 seconds
+      if (_.isEmpty(this.state.eventsRows)) this.setState({showLoadingModal: true});
+      this.setTimeout(() => {
+        if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
+      }, 5000); // @hmm: timeout for loading modal
+    }, 2000);
+  },
 
-        eventsListRef && eventsListRef.off();
-        eventsListRef && usersListRef.off();
-    },
+  componentWillUnmount() {
+    let eventsListRef = this.state.eventsListRef,
+      usersListRef = this.state.usersListRef;
 
-    _openAttendeeListModal() {
-        this.setState({showAttendeeListModal: true});
-    },
+    eventsListRef && eventsListRef.off();
+    eventsListRef && usersListRef.off();
+  },
 
-    _closeAttendeeListModal() {
-        this.setState({showAttendeeListModal: false});
-    },
+  _openAttendeeListModal() {
+    this.setState({showAttendeeListModal: true});
+  },
 
-    _handleSelectedEventStateChange(selectedEvent: Object) {
-        this.setState({selectedEvent});
-    },
+  _closeAttendeeListModal() {
+    this.setState({showAttendeeListModal: false});
+  },
 
-    _handleShowLoadingModal(showLoadingModal: boolean) {
-            this.setState({showLoadingModal});
-    },
+  _handleSelectedEventStateChange(selectedEvent:Object) {
+    this.setState({selectedEvent});
+  },
 
-    _navigateToHome() {
-        this.props.navigator.popToTop();
-    },
+  _handleShowLoadingModal(showLoadingModal:boolean) {
+    this.setState({showLoadingModal});
+  },
 
-    updateRows(eventsRows:Array) {
-        this.setState({dataSource: this.state.dataSource.cloneWithRows(eventsRows)});
-    },
-    _renderHeader() {
-        return (
-            <Header containerStyle={{position: 'relative'}}>
-                <HomePageIcon onPress={() => this._navigateToHome()}/>
-                <Text>EVENTS</Text>
-                <View />
-            </Header>
-        )
-    },
+  _navigateToHome() {
+    this.props.navigator.popToTop();
+  },
+
+  updateRows(eventsRows:Array) {
+    this.setState({dataSource: this.state.dataSource.cloneWithRows(eventsRows)});
+  },
+  _renderHeader() {
+    return (
+      <Header containerStyle={{position: 'relative'}}>
+        <HomePageIcon onPress={() => this._navigateToHome()}/>
+        <Text>EVENTS</Text>
+        <View />
+      </Header>
+    )
+  },
 
 
-    _renderEvent(event:Object, sectionID:number, rowID:number) {
-        // dont render if not visible :), little optimization
-        if(this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID]
-            && !this.state.visibleRows[sectionID][rowID]) return <View />;
+  _renderEvent(event:Object, sectionID:number, rowID:number) {
+    // dont render if not visible :), little optimization
+    if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID]
+      && !this.state.visibleRows[sectionID][rowID]) return <View />;
 
-        return <Event currentUserData={this.state.currentUserData}
-                      currentUserIDHashed={this.state.currentUserVentureId}
-                      data={event}
-                      eventsListRef={this.state.eventsListRef}
-                      firebaseRef={this.state.firebaseRef}
-                      handleSelectedEventStateChange={this._handleSelectedEventStateChange}
-                      handleShowLoadingModal={this._handleShowLoadingModal}
-                      openAttendeeListModal={this._openAttendeeListModal}
-                      navigator={this.props.navigator}
-                      usersListRef={this.state.usersListRef}
-            />;
-    },
+    return <Event currentUserData={this.state.currentUserData}
+                  currentUserIDHashed={this.state.currentUserVentureId}
+                  data={event}
+                  eventsListRef={this.state.eventsListRef}
+                  firebaseRef={this.state.firebaseRef}
+                  handleSelectedEventStateChange={this._handleSelectedEventStateChange}
+                  handleShowLoadingModal={this._handleShowLoadingModal}
+                  openAttendeeListModal={this._openAttendeeListModal}
+                  navigator={this.props.navigator}
+                  usersListRef={this.state.usersListRef}
+      />;
+  },
 
-    render() {
-        return (
-            <View style={styles.eventsListBaseContainer}>
-                <View>
-                    {this._renderHeader()}
-                </View>
-                <ListView
-                    dataSource={this.state.dataSource}
-                    renderRow={this._renderEvent}
-                    // renderScrollComponent={props => <SGListView {...props} />}
-                    initialListSize={INITIAL_LIST_SIZE}
-                    pageSize={PAGE_SIZE}
-                    onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
-                    automaticallyAdjustContentInsets={false}
-                    scrollRenderAheadDistance={200}/>
-                <View style={{height: 48}}></View>
-                <ModalBase
-                    modalStyle={styles.modalStyle}
-                    animated={true}
-                    modalVisible={this.state.showLoadingModal}
-                    transparent={false}>
-                    <View style={styles.modalView}>
-                        <BrandLogo
-                            logoContainerStyle={styles.logoContainerStyle}
-                            logoStyle={styles.logoStyle}/>
-                        <ActivityIndicatorIOS
-                            color='#fff'
-                            animating={this.state.animating}
-                            style={styles.loadingModalActivityIndicatorIOS}
-                            size='small'/>
-                        <TouchableOpacity activeOpacity={0.8}>
-                            <Text
-                                style={styles.loadingModalFunFactText}>
-                                <Text style={styles.loadingModalFunFactTextTitle}>Did You Know ?</Text>
-                                {'\n\n'} The phrase "Let's grab a meal" has a 12% success rate.</Text>
-                        </TouchableOpacity>
-                    </View>
-                </ModalBase>
-                <ModalBase
-                    animated={true}
-                    modalStyle={styles.attendeeModalStyle}
-                    modalVisible={this.state.showAttendeeListModal}>
-                    <View>
-                        {this.state.selectedEvent ?
-                            <AttendeeList
-                                closeAttendeeListModal={this._closeAttendeeListModal}
-                                currentUserData={this.state.currentUserData}
-                                currentUserLocationCoords={this.props.currentUserLocationCoords}
-                                eventData={this.state.selectedEvent}
-                                eventsListRef={this.state.eventsListRef}
-                                firebaseRef={this.state.firebaseRef}
-                                navigator={this.props.navigator}
-                                ventureId={this.props.ventureId} /> : <View/> }
-                    </View>
-                </ModalBase>
-            </View>
-        )
-    }
+  render() {
+    return (
+      <VentureAppPage backgroundColor='#040A19'>
+        <View>
+          {this._renderHeader()}
+        </View>
+        <ListView
+          dataSource={this.state.dataSource}
+          renderRow={this._renderEvent}
+          // renderScrollComponent={props => <SGListView {...props} />}
+          initialListSize={INITIAL_LIST_SIZE}
+          pageSize={PAGE_SIZE}
+          onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
+          automaticallyAdjustContentInsets={false}
+          scrollRenderAheadDistance={200}/>
+        <View style={{height: 48}}></View>
+        <ModalBase
+          modalStyle={styles.modalStyle}
+          animated={true}
+          modalVisible={this.state.showLoadingModal}
+          transparent={false}>
+          <View style={styles.modalView}>
+            <BrandLogo
+              logoContainerStyle={styles.logoContainerStyle}
+              logoStyle={styles.logoStyle}/>
+            <ActivityIndicatorIOS
+              color='#fff'
+              animating={this.state.animating}
+              style={styles.loadingModalActivityIndicatorIOS}
+              size='small'/>
+            <TouchableOpacity activeOpacity={0.8}>
+              <Text
+                style={styles.loadingModalFunFactText}>
+                <Text style={styles.loadingModalFunFactTextTitle}>Did You Know ?</Text>
+                {'\n\n'} The phrase "Let's grab a meal" has a 12% success rate.</Text>
+            </TouchableOpacity>
+          </View>
+        </ModalBase>
+        <ModalBase
+          animated={true}
+          modalStyle={styles.attendeeModalStyle}
+          modalVisible={this.state.showAttendeeListModal}>
+          <View>
+            {this.state.selectedEvent ?
+              <AttendeeList
+                closeAttendeeListModal={this._closeAttendeeListModal}
+                currentUserData={this.state.currentUserData}
+                currentUserLocationCoords={this.props.currentUserLocationCoords}
+                eventData={this.state.selectedEvent}
+                eventsListRef={this.state.eventsListRef}
+                firebaseRef={this.state.firebaseRef}
+                navigator={this.props.navigator}
+                ventureId={this.props.ventureId}/> : <View/> }
+          </View>
+        </ModalBase>
+      </VentureAppPage>
+    )
+  }
 });
 
 var styles = StyleSheet.create({
-    attendeeListBaseContainer: {
-        flex: 1,
-        backgroundColor: '#040A19',
-        paddingTop: height / 18
-    },
-    attendeeModalStyle: {
-        backgroundColor: '#02030F',
-        justifyContent: 'flex-start'
-    },
-    eventAttendanceStatusIcon: {
-        width: 22,
-        height: 22,
-        marginHorizontal: 20,
-        borderRadius: 11,
-        justifyContent: 'center',
-        alignItems: 'center',
-        top: 1,
-        left: width / 15
-    },
-    eventThumbnail: {
-        width: height / 10,
-        height: height / 10,
-        borderRadius: height / 20,
-        marginVertical: 7,
-        marginLeft: 10
-    },
-    eventsListBaseContainer: {
-        flex: 1,
-        backgroundColor: '#040A19'
-    },
-    eventTitleBanner: {
-        fontFamily: 'AvenirNextCondensed-Medium',
-        color: '#fff',
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        width: width / 1.1,
-        fontSize: height / 35,
-        paddingVertical: height / 130,
-        paddingLeft: width / 15,
-        paddingRight: width / 9.5,
-        textAlign: 'center',
-        right: width / 30,
-    },
-    loadingModalActivityIndicatorIOS: {
-        height: 80,
-        bottom: height/40
-    },
-    loadingModalFunFactText: {
-        color: '#fff',
-        fontFamily: 'AvenirNextCondensed-Medium',
-        textAlign: 'center',
-        fontSize: 18,
-        alignSelf: 'center',
-        width: width / 1.4,
-        backgroundColor: 'transparent',
-        padding: width / 15,
-        borderRadius: width / 10
-    },
-    loadingModalFunFactTextTitle: {
-        fontSize: height / 30
-    },
-    loadingModalStyle: {
-        backgroundColor: '#02030F'
-    },
-    logoContainerStyle: {
-        marginHorizontal: (width - LOGO_WIDTH) / 2
-    },
-    logoStyle: {
-        width: LOGO_WIDTH,
-        height: LOGO_HEIGHT
-    },
-    modalStyle: {
-        backgroundColor: '#02030F',
-    },
-    modalView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    profileModal: {
-        paddingVertical: height / 30,
-        flexDirection: 'column',
-        justifyContent: 'center'
-    },
-    profileModalContainer: {
-        backgroundColor: WHITE_HEX_CODE,
-    },
-    profileModalActivityInfo: {
-        fontFamily: 'AvenirNextCondensed-Medium'
-    },
-    profileModalActivityPreference: {
-        fontFamily: 'AvenirNextCondensed-Medium'
-    },
-    profileModalBio: {
-        color: '#222',
-        fontFamily: 'AvenirNextCondensed-Medium',
-        textAlign: 'center',
-        fontSize: 16,
-        marginTop: 15
-    },
-    profileModalNameAgeInfo: {
-        color: '#222',
-        fontSize: 20,
-        fontFamily: 'AvenirNextCondensed-Medium',
-        textAlign: 'center'
-    },
-    profileModalSectionTitle: {
-        color: '#222',
-        fontSize: 16,
-        fontFamily: 'AvenirNextCondensed-Regular'
-    },
-    profileModalUserPicture: {
-        width: width / 2.6,
-        height: width / 2.6,
-        borderRadius: width / 5.2,
-        alignSelf: 'center',
-        marginBottom: width / 22
-    },
-    rightContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    thumbnail: {
-        width: THUMBNAIL_SIZE,
-        height: THUMBNAIL_SIZE,
-        borderRadius: THUMBNAIL_SIZE / 2,
-        marginVertical: 7,
-        marginLeft: 10
-    },
-    timerValOverlay: {
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        width: THUMBNAIL_SIZE,
-        height: THUMBNAIL_SIZE,
-        borderRadius: THUMBNAIL_SIZE / 2,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    userContentWrapper: {
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'transparent'
-    },
-    userRow: {
-        flex: 1,
-        backgroundColor: '#fefefb'
-    },
-    eventTitle: {
-        width: 154,
-        right: 20,
-        fontSize: 17,
-        top: 2,
-        fontFamily: 'AvenirNextCondensed-Regular',
-        fontWeight: '400'
-    },
-    backdrop: {
-        paddingTop: 30,
-        flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        width: Dimensions.get('window').width,
-        height: Dimensions.get('window').height
-    },
-    container: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderColor: 'rgba(100,100,105,0.2)',
-        borderWidth: 1
-    },
-    distance: {
-        width: 75,
-        right: 10,
-        textAlign: 'center',
-        fontSize: 16,
-        marginHorizontal: 25,
-        fontFamily: 'AvenirNext-UltraLight',
-        fontWeight: '300'
-    },
-    filterPageButton: {
-        width: 30,
-        height: 30
-    },
-    timerValText: {
-        opacity: 1.0,
-        color: '#fff',
-        fontFamily: 'AvenirNextCondensed-Medium'
-    }
+  attendeeListBaseContainer: {
+    flex: 1,
+    backgroundColor: '#040A19',
+    paddingTop: height / 18
+  },
+  attendeeModalStyle: {
+    backgroundColor: '#02030F',
+    justifyContent: 'flex-start'
+  },
+  eventAttendanceStatusIcon: {
+    width: 22,
+    height: 22,
+    marginHorizontal: 20,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    top: 1,
+    left: width / 15
+  },
+  eventThumbnail: {
+    width: height / 10,
+    height: height / 10,
+    borderRadius: height / 20,
+    marginVertical: 7,
+    marginLeft: 10
+  },
+  eventTitleBanner: {
+    fontFamily: 'AvenirNextCondensed-Medium',
+    color: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: width / 1.1,
+    fontSize: height / 35,
+    paddingVertical: height / 130,
+    paddingLeft: width / 15,
+    paddingRight: width / 9.5,
+    textAlign: 'center',
+    right: width / 30,
+  },
+  loadingModalActivityIndicatorIOS: {
+    height: 80,
+    bottom: height / 40
+  },
+  loadingModalFunFactText: {
+    color: '#fff',
+    fontFamily: 'AvenirNextCondensed-Medium',
+    textAlign: 'center',
+    fontSize: 18,
+    alignSelf: 'center',
+    width: width / 1.4,
+    backgroundColor: 'transparent',
+    padding: width / 15,
+    borderRadius: width / 10
+  },
+  loadingModalFunFactTextTitle: {
+    fontSize: height / 30
+  },
+  loadingModalStyle: {
+    backgroundColor: '#02030F'
+  },
+  logoContainerStyle: {
+    marginHorizontal: (width - LOGO_WIDTH) / 2
+  },
+  logoStyle: {
+    width: LOGO_WIDTH,
+    height: LOGO_HEIGHT
+  },
+  modalStyle: {
+    backgroundColor: '#02030F',
+  },
+  modalView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  profileModal: {
+    paddingVertical: height / 30,
+    flexDirection: 'column',
+    justifyContent: 'center'
+  },
+  profileModalContainer: {
+    backgroundColor: WHITE_HEX_CODE,
+  },
+  profileModalActivityInfo: {
+    fontFamily: 'AvenirNextCondensed-Medium'
+  },
+  profileModalActivityPreference: {
+    fontFamily: 'AvenirNextCondensed-Medium'
+  },
+  profileModalBio: {
+    color: '#222',
+    fontFamily: 'AvenirNextCondensed-Medium',
+    textAlign: 'center',
+    fontSize: 16,
+    marginTop: 15
+  },
+  profileModalNameAgeInfo: {
+    color: '#222',
+    fontSize: 20,
+    fontFamily: 'AvenirNextCondensed-Medium',
+    textAlign: 'center'
+  },
+  profileModalSectionTitle: {
+    color: '#222',
+    fontSize: 16,
+    fontFamily: 'AvenirNextCondensed-Regular'
+  },
+  profileModalUserPicture: {
+    width: width / 2.6,
+    height: width / 2.6,
+    borderRadius: width / 5.2,
+    alignSelf: 'center',
+    marginBottom: width / 22
+  },
+  rightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  thumbnail: {
+    width: THUMBNAIL_SIZE,
+    height: THUMBNAIL_SIZE,
+    borderRadius: THUMBNAIL_SIZE / 2,
+    marginVertical: 7,
+    marginLeft: 10
+  },
+  timerValOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: THUMBNAIL_SIZE,
+    height: THUMBNAIL_SIZE,
+    borderRadius: THUMBNAIL_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  userContentWrapper: {
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent'
+  },
+  userRow: {
+    flex: 1,
+    backgroundColor: '#fefefb'
+  },
+  eventTitle: {
+    width: 154,
+    right: 20,
+    fontSize: 17,
+    top: 2,
+    fontFamily: 'AvenirNextCondensed-Regular',
+    fontWeight: '400'
+  },
+  backdrop: {
+    paddingTop: 30,
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height
+  },
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: 'rgba(100,100,105,0.2)',
+    borderWidth: 1
+  },
+  distance: {
+    width: 75,
+    right: 10,
+    textAlign: 'center',
+    fontSize: 16,
+    marginHorizontal: 25,
+    fontFamily: 'AvenirNext-UltraLight',
+    fontWeight: '300'
+  },
+  filterPageButton: {
+    width: 30,
+    height: 30
+  },
+  timerValText: {
+    opacity: 1.0,
+    color: '#fff',
+    fontFamily: 'AvenirNextCondensed-Medium'
+  }
 });
 
 module.exports = EventsListPage;

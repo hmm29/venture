@@ -13,29 +13,38 @@
 'use strict';
 
 import React, {
-    Component,
-    InteractionManager,
-    StyleSheet,
-    View
+  Component,
+  InteractionManager,
+  StyleSheet,
+  View
 } from 'react-native'
 
+type Props = {
+  backgroundColor: React.PropTypes.string,
+  pageStyle: View.propTypes.style
+};
+
 class VentureAppPage extends Component {
-    render() {
-        return (
-            <View style={styles.container}>
-                {this.props.children}
-            </View>
-        )
-    }
+  constructor(props:Props) {
+    super(props);
+  };
+
+  render() {
+    return (
+      <View style={[this.props.pageStyle || styles.container, {backgroundColor: this.props.backgroundColor}]}>
+        {this.props.children}
+      </View>
+    )
+  };
 }
 
 const styles = StyleSheet.create({
-   container: {
-       flex: 1,
-       flexDirection: 'column',
-       justifyContent: 'center',
-       backgroundColor: '#02030F'
-   }
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    backgroundColor: '#02030F'
+  }
 });
 
 module.exports = VentureAppPage;

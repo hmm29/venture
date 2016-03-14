@@ -12,45 +12,45 @@
 
 'use strict';
 
-var React = require('react-native');
-var {
-    AppRegistry,
-    NavigatorIOS,
-    StatusBarIOS,
-    StyleSheet,
-    View
-} = React;
+import React, {
+  AppRegistry,
+  Component,
+  NavigatorIOS,
+  StatusBarIOS,
+  StyleSheet,
+  View
+  } from 'react-native';
 
-var HomePage = require('./App/Pages/HomePage');
-var Orientation = require('react-native-orientation');
+import HomePage from './App/Pages/HomePage';
+import Orientation from 'react-native-orientation';
 
-var VentureApp = React.createClass({
+class VentureApp extends Component {
   componentDidMount() {
-      Orientation.lockToPortrait();
-      StatusBarIOS.setStyle('light-content', true);
-  },
+    Orientation.lockToPortrait();
+    StatusBarIOS.setStyle('light-content', true);
+  };
 
   render() {
     return (
-        <View style={{flex: 1}}>
-          <NavigatorIOS
-              ref="nav"
-              navigationBarHidden={true}
-              style={styles.container}
-              initialRoute={{
+      <View style={{flex: 1}}>
+        <NavigatorIOS
+          ref="nav"
+          navigationBarHidden={true}
+          style={styles.container}
+          initialRoute={{
                     title: 'HomePage',
                     component: HomePage
                   }}
-              />
-        </View>
+          />
+      </View>
     );
-  }
-});
+  };
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1
-  },
+  }
 });
 
 AppRegistry.registerComponent('VentureApp', () => VentureApp);

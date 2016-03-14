@@ -12,9 +12,7 @@
 
 var React = require('react-native');
 var {
-    DrawerLayoutAndroid
-    } = React;
+  DrawerLayoutAndroid
+  } = React;
 
-var TabBarLayout = React.createClass({
-
-});
+var TabBarLayout = React.createClass({});

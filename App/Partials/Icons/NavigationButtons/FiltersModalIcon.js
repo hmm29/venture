@@ -13,12 +13,12 @@
 'use strict';
 
 import React, {
-    Component,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Component,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 import {Icon, } from 'react-native-icons';
@@ -26,42 +26,43 @@ import {Icon, } from 'react-native-icons';
 const SIZE = 30;
 
 type Props = {
-    color: React.PropTypes.string,
-    onPress: React.PropTypes.func.isRequired,
-    size: React.PropTypes.number,
-    style: View.propTypes.style
+  color: React.PropTypes.string,
+  onPress: React.PropTypes.func.isRequired,
+  size: React.PropTypes.number,
+  style: View.propTypes.style
 };
 
 class FiltersModalIcon extends Component {
-    constructor(props:Props) {
-        super(props);
-        this.state = {};
-    };
+  constructor(props:Props) {
+    super(props);
+    this.state = {};
+  };
 
-    render() {
-        return (
-            <TouchableOpacity
-                activeOpacity={0.3}
-                onPress={this.props.onPress}
-                style={[this.props.style,{width: (this.props.size || SIZE) * 1.48, height: (this.props.size || SIZE) * 1.48, alignItems: 'center'}]} // scale size, 1.48, 1 less than homepageicon scale size due to ios icon difference
-                >
-                <Icon
-                    name={"ion|" + (Platform.OS === 'ios' ? "ios-gear-outline" : "android-settings")}
-                    size={this.props.size || SIZE}
-                    color={this.props.color || '#ccc'}
-                    style={[styles.icon]}
-                    />
-            </TouchableOpacity>
-        );
-    }
+  render() {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.3}
+        onPress={this.props.onPress}
+        style={[this.props.style,{width: (this.props.size || SIZE) * 1.48,
+                height: (this.props.size || SIZE) * 1.48, alignItems: 'center'}]} // scale size: 1.48
+        >
+        <Icon
+          name={"ion|" + (Platform.OS === 'ios' ? "ios-gear-outline" : "android-settings")}
+          size={this.props.size || SIZE}
+          color={this.props.color || '#ccc'}
+          style={[styles.icon]}
+          />
+      </TouchableOpacity>
+    );
+  };
 }
 
 const styles = StyleSheet.create({
-    icon: {
-        opacity: 1.0,
-        width: SIZE,
-        height: SIZE
-    }
+  icon: {
+    opacity: 1.0,
+    width: SIZE,
+    height: SIZE
+  }
 });
 
 module.exports = FiltersModalIcon;

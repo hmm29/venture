@@ -18,6 +18,7 @@
 
 import React, {
   Component,
+  InteractionManager,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -43,7 +44,13 @@ class InviteUserIcon extends Component {
   };
 
   componentDidMount() {
-    this.refs.inviteUserIcon.shake(400);
+    this._animate();
+  };
+
+  _animate() {
+    InteractionManager.runAfterInteractions(() => {
+      this.refs.inviteUserIcon.pulse(1000);
+    });
   };
 
   render() {
@@ -52,11 +59,11 @@ class InviteUserIcon extends Component {
         <TouchableOpacity
           activeOpacity={0.3}
           onPress={this.props.onPress}
-          style={[this.props.style, {backgroundColor: 'transparent', width: (this.props.size || SIZE) * 2.48,
-                    height: (this.props.size || SIZE) * 2.48, justifyContent: 'center', alignItems: 'flex-start'}]}>
+          style={[{backgroundColor: '#3b5998', width: (this.props.size || SIZE), // @hmm: facebook blue bg color
+                    height: (this.props.size || SIZE), justifyContent: 'center', alignItems: 'center', borderRadius: (this.props.size || SIZE) * 0.5}, this.props.style]}>
           <Icon
             name="ion|ios-personadd"
-            size={this.props.size || SIZE}
+            size={this.props.size || SIZE * 0.6}
             color={this.props.color || 'rgba(255,255,255,0.4'}
             style={[styles.icon]}
             />

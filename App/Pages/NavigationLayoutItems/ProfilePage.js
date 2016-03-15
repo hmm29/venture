@@ -36,6 +36,7 @@ var FBLogin = require('react-native-facebook-login');
 var Firebase = require('firebase');
 var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
+var InviteUserIcon = require('../../Partials/Icons/InviteUserIcon');
 var LoginPage = require('../LoginPage');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var sha256 = require('sha256');
@@ -179,6 +180,7 @@ var ProfilePage = React.createClass({
               <Info firebaseRef={this.state.firebaseRef} user={user} ventureId={ventureId}/>}
             </View>
 
+            <View style={{flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', top: height/16}}>
             <FBLogin style={this.state.user ? styles.FBLoginButton : {}}
                      permissions={['email', 'user_friends']}
                      onLogout={function(){
@@ -186,7 +188,7 @@ var ProfilePage = React.createClass({
                                     _this.setState({user : null, ventureId: null});
                                     _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
 
-                                     //@hmm: clean up async storage cache
+                                     // @hmm: clean up async storage cache
                                      AsyncStorage.multiRemove(['@AsyncStorage:Venture:account',
                                      '@AsyncStorage:Venture:currentUser:friendsAPICallURL',
                                      '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'])
@@ -216,6 +218,8 @@ var ProfilePage = React.createClass({
                                     console.error("Check permissions!");
                                 }}
               />
+              <InviteUserIcon color="#fff" />
+            </View>
           </View>
         </Image>
       </VentureAppPage>
@@ -376,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   FBLoginButton: {
-    top: height / 16
+    marginHorizontal: width/40
   },
   infoContent: {
     paddingLeft: 20,

@@ -29,6 +29,7 @@ var _ = require('lodash');
 var Dimensions = require('Dimensions');
 var FBLogin = require('react-native-facebook-login');
 var Firebase = require('firebase');
+var {GoogleSignin, GoogleSigninButton} = require('react-native-google-signin');
 var sha256 = require('sha256');
 var Swiper = require('react-native-swiper');
 var TimerMixin = require('react-timer-mixin');
@@ -70,6 +71,8 @@ var LoginPage = React.createClass({
     return {
       asyncStorageAccountData: null,
       firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
+      isFirstSession: false,
+      loginError: false,
       user: null,
     }
   },
@@ -83,20 +86,26 @@ var LoginPage = React.createClass({
   _createAccount() {
     let user = this.state.user,
       ventureId = this.state.ventureId,
-      api = `https://graph.facebook.com/v2.3/${user && user.userId}
-            ?fields=name,email,gender,age_range&access_token=${user.token}`;
+      api = `https://graph.facebook.com/v2.3/${user && user.userId}?fields=name,email,gender,age_range&access_token=${user.token}`;
 
     fetch(api)
       .then(response => response.json())
       .then(responseData => {
         let ageRange = responseData.age_range;
 
-        if (ageRange.max === 17 && ageRange.min === 13) {
+
+        if (!ageRange) {
+          alert(JSON.stringify(responseData));
+          this.setState({loginError: true});
+          return;
+        }
+
+        if (ageRange.max && ageRange.min && ageRange.max === 17 && ageRange.min === 13) {
           this.state.firebaseRef.child(`users/${ventureId}/age/value`).set(17);
           this._setAsyncStorageAccountData();
         }
 
-        else if (ageRange.max === 20 && ageRange.min === 18) {
+        else if (ageRange.max && ageRange.min && ageRange.max === 20 && ageRange.min === 18) {
           AlertIOS.alert(
             'Venture: Specify Your Age',
             'Venture uses age to give you the best experience with activity partners.',
@@ -123,7 +132,7 @@ var LoginPage = React.createClass({
           )
         }
 
-        else if (ageRange.min === 21) {
+        else if (ageRange.min && ageRange.min === 21) {
           AlertIOS.alert(
             'Venture: Specify Your Age',
             'Venture uses age to give you the best experience with activity partners.',
@@ -209,9 +218,21 @@ var LoginPage = React.createClass({
           match_requests: {},
           events: [],
           event_invite_match_requests: {},
-          createdAt: new Date()
+          createdAt: new Date(),
+          firstSession: {
+            hasSeenAddInfoButtonTutorial: false,
+            hasSentFirstRequest: false,
+            hasReceivedFirstRequest: false,
+            hasMatched: false,
+            hasStartedFirstChat: false,
+            hasVisitedChatsListPage: false,
+            hasVisitedEventsPage: false,
+            hasVisitedHotPage: false,
+            hasEditProfilePage: false
+          }
         };
 
+        this.setState({isFirstSession: true});
         this.state.firebaseRef.child(`users/${ventureId}`).set(newUserData);
       })
       .done();
@@ -221,6 +242,39 @@ var LoginPage = React.createClass({
     var HomePage = require('../Pages/HomePage'); // @hmm: MUST MUST MUST include HomePage require here
     this.props.navigator.replace({title: 'Home', component: HomePage}); // @hmm: use replace method for best transition
 
+  },
+
+  _setAsyncStorageAccountData() {
+    let ventureId = this.state.ventureId,
+      currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${ventureId}`);
+
+    currentUserRef.once('value', snapshot => {
+      let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName',
+        'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
+
+      if (this.state.isFirstSession) _.assign({isFirstSession: true}, asyncStorageAccountData);
+
+      AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
+        .then(() => this._navigateToHomePage())
+        .catch(error => console.log(error.message))
+        .done();
+    });
+  },
+
+  _signInWithGoogleAccount() {
+    GoogleSignin.configure({
+      iosClientId: '52968692525-a6nhs31vnm9itavou919j4jcm2hr9dtc.apps.googleusercontent.com', // only for iOS
+    });
+
+    GoogleSignin.signIn()
+      .then((user) => {
+        console.log(user);
+        this.setState({user: user});
+      })
+      .catch((err) => {
+        console.log('WRONG SIGNIN', err);
+      })
+      .done();
   },
 
   _updateUserLoginStatus(isOnline:boolean) {
@@ -252,21 +306,6 @@ var LoginPage = React.createClass({
     });
   },
 
-  _setAsyncStorageAccountData() {
-    let ventureId = this.state.ventureId,
-      currentUserRef = this.state.firebaseRef && this.state.firebaseRef.child(`users/${ventureId}`);
-
-    currentUserRef.once('value', snapshot => {
-      let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName',
-        'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
-
-      AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
-        .then(() => this._navigateToHomePage())
-        .catch(error => console.log(error.message))
-        .done();
-    });
-  },
-
   render() {
     let _this = this;
 
@@ -283,24 +322,25 @@ var LoginPage = React.createClass({
             <View style={styles.slide}>
               <Image
                 resizeMode={Image.resizeMode.stretch}
-                defaultSource={require('../../img/onboarding_facebook_sign_up.png')}
+                defaultSource={require('../../img/onboarding_find_activity_partners.png')}
                 style={styles.backdrop}>
 
-                <FBLogin style={{ top: height/2.5 }}
+                <FBLogin style={{ top: height/2.7 }}
                          permissions={['email','user_friends']}
                          onLogin={function(data){
-                                            let api = `https://graph.facebook.com/v2.3/${data.credentials
+                                            let friendsAPICallURL = `https://graph.facebook.com/v2.3/${data.credentials
                                             && data.credentials.userId}/friends?access_token=${data.credentials
                                             && data.credentials.token}`;
+
                                             _this.setState({user: data.credentials,
                                             ventureId: hash(data.credentials.userId)});
 
-                                            console.log(JSON.stringify('this data: ' + data.credentials));
-
                                            AsyncStorage.setItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL',
-                                           api)
+                                           friendsAPICallURL)
                                             .then(() => {
                                                _this._updateUserLoginStatus(true);
+
+                                               if(_this.state.loginError) return;
                                             })
                                             .catch(error => console.log(error.message))
                                             .done();
@@ -311,6 +351,11 @@ var LoginPage = React.createClass({
                                             .done();
                                         }}
                   />
+                <GoogleSigninButton
+                  style={{width: 185, height: 48, top: height/2.5}}
+                  size={GoogleSigninButton.Size.Wide}
+                  color={GoogleSigninButton.Color.Dark}
+                  onPress={this._signInWithGoogleAccount}/>
               </Image>
             </View>
             <View style={styles.slide}>

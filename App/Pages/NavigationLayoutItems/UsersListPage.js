@@ -15,6 +15,7 @@
 var React = require('react-native');
 var {
   ActivityIndicatorIOS,
+  AlertIOS,
   Animated,
   AsyncStorage,
   Image,
@@ -84,6 +85,7 @@ var User = React.createClass({
     currentUserLocationCoords: React.PropTypes.array,
     currentUserData: React.PropTypes.object,
     data: React.PropTypes.object,
+    firstSession: React.PropTypes.object,
     isCurrentUser: React.PropTypes.bool,
     navigator: React.PropTypes.object,
     rowID: React.PropTypes.string,
@@ -121,6 +123,36 @@ var User = React.createClass({
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+        // @hmm: onboarding tutorial logic
+        if(this.props.firstSession) {
+          if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probably for componentDidMount
+            // @hmm: account for case in which user already has received requests before first nav to users list
+            AlertIOS.alert(
+              'Blue: The Received Activity Request',
+              'You\'ve received your first activity request from another Venturer. Let them know you\'re in ' +
+              'by tapping the smiley face icon.'
+            );
+            this.props.firebaseRef
+              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+          }
+          else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+            AlertIOS.alert(
+              'Green: The Match',
+              'Congrats on your first activity match. You can tap the icon to start a timed chat and begin your venture!'
+            );
+            this.props.firebaseRef
+              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+          }
+          else if(this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
+            AlertIOS.alert(
+              'Yellow: The Sent Activity Request',
+              'You just sent your first activity request! That user\'s bar will turn green once they accept it.'
+            );
+            this.props.firebaseRef
+              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
+          }
+        }
       });
   },
 
@@ -147,12 +179,44 @@ var User = React.createClass({
       .child(nextProps.data.ventureId)
     && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`)
       .child(nextProps.data.ventureId).on('value', snapshot => {
+          let status = this.state.status;
+
         _this.setState({
           chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
           distance,
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+        // @hmm: onboarding tutorial logic
+        if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
+          if(this.state.status === 'sent' && !nextProps.firstSession.hasSentFirstRequest) {
+            AlertIOS.alert(
+              'Yellow: The Sent Activity Request',
+              'You just sent your first activity request! That user\'s bar will turn green once they accept it.'
+            );
+            this.props.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
+          }
+          else if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) { // @hmm: most probably for componentDidMount
+            // @hmm: account for case in which user already has received requests before first nav to users list
+            AlertIOS.alert(
+              'Blue: The Received Activity Request',
+              'You\'ve received your first activity request from another Venturer. Let them know you\'re in ' +
+              'by tapping the smiley face icon.'
+            );
+            nextProps.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+          }
+          else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
+            AlertIOS.alert(
+              'Green: The Match',
+              'Congrats on your first activity match. You can tap the icon to start a timed chat and begin your venture!'
+            );
+            nextProps.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+          }
+        }
       });
   },
 
@@ -716,6 +780,7 @@ var UsersListPage = React.createClass({
                  currentUserLocationCoords={this.props.currentUserLocationCoords}
                  data={user}
                  firebaseRef={this.state.firebaseRef}
+                 firstSession={this.props.firstSession} // @hmm: will update as remote firstSession prop updates
                  navigator={this.props.navigator}
                  rowID={rowID}
       />;
@@ -738,7 +803,7 @@ var UsersListPage = React.createClass({
           pageSize={PAGE_SIZE}
           minPulldownDistance={15} // 15 px
           minBetweenTime={500} // 500 ms
-          minDisplayTime={100} // 100 ms
+          minDisplayTime={10} // 10 ms
           automaticallyAdjustContentInsets={false}
           loadData={this.shuffleUsers}
           onChangeVisibleRows={(visibleRows, changedRows) => {

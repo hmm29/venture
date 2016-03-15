@@ -11,6 +11,7 @@
 #import "AppDelegate.h"
 #import "RCTRootView.h"
 #import "RCTPushNotificationManager.h"
+#import "RNGoogleSignin.h"
 
 #import <FBSDKCoreKit/FBSDKCoreKit.h>
 #import <FBSDKLoginKit/FBSDKLoginKit.h>
@@ -84,16 +85,29 @@
                                     didFinishLaunchingWithOptions:launchOptions];
 }
 
-// Facebook SDK
+// Facebook App Events
 - (void)applicationDidBecomeActive:(UIApplication *)application {
     [FBSDKAppEvents activateApp];
 }
 
-- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
-    return [[FBSDKApplicationDelegate sharedInstance] application:application
-                                                          openURL:url
-                                                sourceApplication:sourceApplication
-                                                       annotation:annotation];
+// Facebook and Google SDKs
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+  sourceApplication:(NSString *)sourceApplication
+         annotation:(id)annotation
+{
+    if([[FBSDKApplicationDelegate sharedInstance] application:application
+                                                      openURL:url
+                                            sourceApplication:sourceApplication
+                                                   annotation:annotation])
+    {
+        return YES;
+    }
+
+    return [RNGoogleSignin application:application
+                               openURL:url
+                     sourceApplication:sourceApplication
+                            annotation:annotation];
 }
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo

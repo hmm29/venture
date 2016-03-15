@@ -37,6 +37,7 @@ var _ = require('lodash');
 var Animatable = require('react-native-animatable');
 var BrandLogo = require('../Partials/BrandLogo');
 var Dimensions = require('Dimensions');
+var dismissKeyboard = require('dismissKeyboard');
 var Firebase = require('firebase');
 var {Icon, } = require('react-native-icons');
 var LoginPage = require('../Pages/LoginPage');
@@ -81,6 +82,7 @@ var HomePage = React.createClass({
       date: new Date(),
       events: [],
       firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
+      firstSession: null,
       hasIshSelected: false,
       hasKeyboardSpace: false,
       hasSpecifiedTime: false,
@@ -108,6 +110,8 @@ var HomePage = React.createClass({
 
   mixins: [TimerMixin],
 
+  _handle: null,
+
   componentWillMount(){
     AsyncStorage.getItem('@AsyncStorage:Venture:account')
       .then((account:string) => {
@@ -118,16 +122,40 @@ var HomePage = React.createClass({
           return;
         }
 
+        if(account.isFirstSession) {
+          this.setState({
+            firstSession: {
+              hasSeenAddInfoButtonTutorial: false,
+              hasSentFirstRequest: false,
+              hasReceivedFirstRequest: false,
+              hasMatched: false,
+              hasStartedFirstChat: false,
+              hasVisitedChatsListPage: false,
+              hasVisitedEventsPage: false,
+              hasVisitedHotPage: false,
+              hasEditProfilePage: false
+            }
+          })
+        }
+
         this.setState({isLoggedIn: true, showTextInput: true});
 
         let firebaseRef = this.state.firebaseRef || new Firebase('https://ventureappinitial.firebaseio.com/'),
           usersListRef = firebaseRef && firebaseRef.child('users'),
           currentUserRef = usersListRef.child(account.ventureId),
+          firstSessionRef = currentUserRef.child('firstSession'),
           trendingItemsRef = firebaseRef && firebaseRef.child('trending'),
           chatRoomsRef = firebaseRef && firebaseRef.child('chat_rooms'),
           _this = this;
 
-        currentUserRef.child(`chatCount`).set(0);
+        // @hmm: fetch first session object if it exists
+        firstSessionRef.on('value', snapshot => {
+            _this.setState({firstSession: snapshot.val() || {}}) // @hmm: must have blank obj if firebase prop is null
+        });
+
+        this.setState({firstSessionRef});
+
+        currentUserRef.child('chatCount').set(0);
 
         trendingItemsRef.once('value', snapshot => {
             _this.setState({
@@ -351,10 +379,17 @@ var HomePage = React.createClass({
 
     return (
       <TouchableOpacity key={i} onPress={() => {
-                    this.props.navigator.push({title: 'Events', component: TabBarLayout,
-                    passProps: {currentUserFriends: this.state.currentUserFriends, currentUserLocationCoords:
-                    this.state.currentUserLocationCoords, firebaseRef: this.state.firebaseRef, selectedTab: 'events',
-                    ventureId: this.state.ventureId}});
+                    this.props.navigator.push({
+                    title: 'Events',
+                    component: TabBarLayout,
+                    passProps: {
+                      currentUserFriends: this.state.currentUserFriends,
+                      currentUserLocationCoords: this.state.currentUserLocationCoords,
+                      firebaseRef: this.state.firebaseRef,
+                      firstSession: this.state.firstSession,
+                      selectedTab: 'events',
+                      ventureId: this.state.ventureId
+                    }});
             }} style={styles.trendingItem}>
         <Image style={styles.trendingEventImg} source={{uri}}/>
       </TouchableOpacity>
@@ -476,6 +511,7 @@ var HomePage = React.createClass({
         currentUserFriends: this.state.currentUserFriends,
         currentUserLocationCoords: this.state.currentUserLocationCoords,
         firebaseRef: this.state.firebaseRef,
+        firstSession: this.state.firstSession,
         selectedTab: 'users',
         ventureId: this.state.ventureId
       }
@@ -510,7 +546,7 @@ var HomePage = React.createClass({
                         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                         this.animateViewLayout(text);
 
-                        // applies for emojis too, dont use maxLength prop just check manually
+                        // @hmm: applies for emojis too, dont use maxLength prop just check manually
                         if(text.length > MAX_TEXT_INPUT_VAL_LENGTH) return;
                         if(!text) this.setState({showTimeSpecificationOptions: false});
                         this.setState({activityTitleInput: text.toUpperCase(), showNextButton: !!text});
@@ -524,16 +560,41 @@ var HomePage = React.createClass({
     );
 
     addInfoButton = (
-      <View
+      <Animatable.View
+        ref="addInfoButton"
+        onLayout={() => {
+          if(this.state.firstSession && !this.state.firstSession.hasSeenAddInfoButtonTutorial) {
+            this._handle = this.setInterval(() => this.refs.addInfoButton && this.refs.addInfoButton.tada(1000), 2000);
+          }
+        }}
         style={[styles.addInfoButtonContainer, {bottom: (this.state.showNextButton
                 && this.state.showAddInfoBox ? height/18 : height/32 )}]}>
         <TouchableOpacity
           activeOpacity={0.4}
           onPress={() => {
                             this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
-                            LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                            this.setState({activeTimeOption: 'now', date: new Date(),
-                            showAddInfoBox: !this.state.showAddInfoBox, tagInput: '', tags: []})
+
+                            InteractionManager.runAfterInteractions(() => {
+                              LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+                              this.setState({activeTimeOption: 'now', date: new Date(),
+                              showAddInfoBox: !this.state.showAddInfoBox, tagInput: '', tags: []});
+
+
+                              // @hmm: disable add info button tutorial
+                              if(this.state.firstSession && !this.state.firstSession.hasSeenAddInfoButtonTutorial) {
+
+                                AlertIOS.alert(
+                                  'The Add Info Button',
+                                  'You can add details such as time and descriptive tags to your activity post.'
+                                );
+
+                                if(this._handle) this.clearInterval(this._handle);
+
+                                this.setState({firstSession:{hasSeenAddInfoButtonTutorial: true}});
+                                // @hmm: update remote Firebase obj prop
+                                this.state.currentUserRef.child('firstSession/hasSeenAddInfoButtonTutorial').set(true);
+                              }
+                            });
                         }}>
           <Icon
             name={"ion|" + (this.state.showAddInfoBox ? 'chevron-up' : 'ios-plus')}
@@ -542,7 +603,7 @@ var HomePage = React.createClass({
             style={{width: ADD_INFO_BUTTON_SIZE, height: ADD_INFO_BUTTON_SIZE}}
             />
         </TouchableOpacity>
-      </View>
+      </Animatable.View>
     );
 
     if (this.state.showTimeSpecificationOptions)
@@ -726,20 +787,27 @@ var HomePage = React.createClass({
                   style={{bottom: height/20}}
                   onPress={() => {
                                     this.props.navigator.push({title: 'Profile', component: TabBarLayout,
-                                    passProps: {currentUserFriends: this.state.currentUserFriends,
+                                    passProps: {
+                                    currentUserFriends: this.state.currentUserFriends,
                                     currentUserLocationCoords: this.state.currentUserLocationCoords,
-                                    firebaseRef: this.state.firebaseRef, selectedTab: 'profile',
+                                    firebaseRef: this.state.firebaseRef,
+                                    firstSession: this.state.firstSession,
+                                    selectedTab: 'profile',
                                     ventureId: this.state.ventureId}});
                                  }}/>
                 <ChatsListPageIcon
                   style={{bottom: height/20}}
                   onPress={() => {
-                                            this.props.navigator.push({title: 'Chats', component: TabBarLayout,
-                                            passProps: {currentUserFriends: this.state.currentUserFriends,
-                                            currentUserLocationCoords: this.state.currentUserLocationCoords,
-                                            firebaseRef: this.state.firebaseRef, selectedTab: 'chats',
-                                            ventureId: this.state.ventureId}});
-                                           }}/>
+                                    this.props.navigator.push({title: 'Chats', component: TabBarLayout,
+                                    passProps: {
+                                      currentUserFriends: this.state.currentUserFriends,
+                                      currentUserLocationCoords: this.state.currentUserLocationCoords,
+                                      firebaseRef: this.state.firebaseRef,
+                                      firstSession: this.state.firstSession,
+                                      selectedTab: 'chats',
+                                      ventureId: this.state.ventureId
+                                    }});
+                                   }}/>
               </Header>
               <BrandLogo
                 onLayout={() => {

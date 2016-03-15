@@ -56,9 +56,25 @@ class TabBarLayout extends Component {
     this.state = {
       chatCount: 0,
       firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
+      firstSession: this.props.firstSession, // @hmm: NOTE: get as prop first time, then subsequent times get updated version from firebase
       selectedTab: props.selectedTab
     }
   };
+
+  componentWillMount() {
+    let firebaseRef = this.props.firebaseRef;
+
+    if (!this.props.firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
+    let firstSessionRef = firebaseRef.child(`users/${this.props.ventureId}/firstSession`);
+
+    // @hmm: fetch first session object if it exists
+    firstSessionRef.on('value', snapshot => {
+      if(snapshot.val()) {
+        this.setState({firstSession: snapshot.val()});
+      }
+    });
+
+  }
 
   componentDidMount() {
     let firebaseRef = this.props.firebaseRef;
@@ -66,6 +82,7 @@ class TabBarLayout extends Component {
     if (!this.props.firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
     let chatCountRef = firebaseRef.child(`users/${this.props.ventureId}/chatCount`);
 
+    // @hmm: update chat count badge value
     chatCountRef.on('value', snapshot => {
       this.setState({chatCount: snapshot.val(), chatCountRef});
     });
@@ -79,11 +96,12 @@ class TabBarLayout extends Component {
         }
       })
       .catch(error => console.log(error))
-      .done()
+      .done();
   };
 
   componentWillUnmount() {
     this.state.chatCountRef && this.state.chatCountRef.off();
+    this.state.firstSessionRef && this.state.firstSessionRef.off();
 
     AsyncStorage.setItem('@AsyncStorage:Venture:currentUserFriends', 'null')
       .catch(error => console.log(error.message))
@@ -100,7 +118,6 @@ class TabBarLayout extends Component {
       return <HotPage currentUserFriends={this.props.currentUserFriends}
                       currentUserLocationCoords={this.props.currentUserLocationCoords}
                       firebaseRef={this.props.firebaseRef || this.state.firebaseRef}
-                      // change tab to events when event on hot page is pressed
                       handleSelectedTabChange={(selectedTab) => {this.setState({selectedTab})}}
                       navigator={this.props.navigator}
                       ventureId={this.props.ventureId}/>;
@@ -110,6 +127,7 @@ class TabBarLayout extends Component {
       return <EventsListPage currentUserFriends={this.props.currentUserFriends}
                              currentUserLocationCoords={this.props.currentUserLocationCoords}
                              firebaseRef={this.props.firebaseRef}
+                             firstSession={this.state.firstSession}
                              navigator={this.props.navigator}
                              ventureId={this.props.ventureId}/>;
     }
@@ -118,6 +136,7 @@ class TabBarLayout extends Component {
       return <UsersListPage currentUserFriends={this.props.currentUserFriends}
                             currentUserLocationCoords={this.props.currentUserLocationCoords}
                             firebaseRef={this.props.firebaseRef}
+                            firstSession={this.state.firstSession}
                             navigator={this.props.navigator}
                             ventureId={this.props.ventureId}/>;
     }

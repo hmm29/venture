@@ -23,7 +23,6 @@ import React, {
 import Animatable from 'react-native-animatable';
 
 type Props = {
-  onHomePage: React.PropTypes.bool,
   onLayout: React.PropTypes.func,
   onPress: React.PropTypes.func,
   logoContainerStyle: View.propTypes.style,
@@ -46,8 +45,9 @@ class BrandLogo extends Component {
 
   render() {
     return (
-      <View onLayout={this.props.onLayout} style={[styles.container, this.props.logoContainerStyle]}>
-        <Animatable.View ref="brandLogo">
+      <Animatable.View onLayout={this.props.onLayout}
+                       ref="brandLogo"
+                       style={[styles.container, this.props.logoContainerStyle]}>
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => {
@@ -57,8 +57,7 @@ class BrandLogo extends Component {
             <Image source={require('../../img/venture_brand_logo_white.png')}
                    style={styles.brandLogo}/>
           </TouchableOpacity>
-        </Animatable.View>
-      </View>
+      </Animatable.View>
     );
   };
 }

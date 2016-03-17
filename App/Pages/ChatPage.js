@@ -15,6 +15,7 @@
 var React = require('react-native');
 
 var {
+  AlertIOS,
   AppStateIOS,
   Image,
   InteractionManager,
@@ -116,6 +117,9 @@ var ChatPage = React.createClass({
       });
 
       this.setState({chatRoomMessagesRef});
+
+
+
     });
   },
 

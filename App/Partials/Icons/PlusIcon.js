@@ -6,7 +6,7 @@
  * Proprietary and confidential
  * Written by Harrison Miller <hmaxmiller@gmail.com>, September 2015
  *
- * @providesModule ChevronIcon
+ * @providesModule PlusIcon
  * @flow
  */
 
@@ -22,17 +22,16 @@ import React, {
 
 import {Icon, } from 'react-native-icons';
 
-const DIRECTIONS = ['up', 'down', 'right', 'left'], SIZE = 25;
+const SIZE = 30;
 
 type Props = {
   color: React.PropTypes.string,
-  direction: React.PropTypes.string.isRequired,
-  onPress: React.PropTypes.func,
+  onPress: React.PropTypes.func.isRequired,
   size: React.PropTypes.number,
   style: View.propTypes.style
 };
 
-class ChevronIcon extends Component {
+class PlusIcon extends Component {
   constructor(props:Props) {
     super(props);
     this.state = {};
@@ -44,10 +43,9 @@ class ChevronIcon extends Component {
         activeOpacity={0.3}
         onPress={this.props.onPress}
         style={[this.props.style, {width: (this.props.size || SIZE) * 1.18,
-                height: (this.props.size || SIZE) * 1.18, alignItems: 'center'}]}>
+                height: (this.props.size || SIZE) * 1.18, alignItems: 'flex-end'}]}>
         <Icon
-          name={"ion|ios-arrow-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ?
-                    this.props.direction : 'up')}
+          name="ion|plus"
           size={this.props.size || SIZE}
           color={this.props.color || '#ccc'}
           style={[styles.icon]}
@@ -64,4 +62,4 @@ const styles = StyleSheet.create({
   }
 });
 
-module.exports = ChevronIcon;
+module.exports = PlusIcon;

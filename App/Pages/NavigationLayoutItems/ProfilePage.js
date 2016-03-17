@@ -151,9 +151,12 @@ var ProfilePage = React.createClass({
         <EditProfilePageIcon
           onPress={() => {
                           this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,
-                          passProps: {defaultFacebookProfilePhoto:
+                          passProps: {
+                          defaultFacebookProfilePhoto:
                           this.state.user && `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.state.user.userId}.jpg`,
-                          firebaseRef: this.state.firebaseRef, ventureId: this.state.ventureId}});
+                          firebaseRef: this.state.firebaseRef,
+                          firstSession: this.props.firstSession,
+                          ventureId: this.state.ventureId}});
                     }}/>
       </Header>
     )

@@ -15,9 +15,8 @@
 var React = require('react-native');
 var {
   ActivityIndicatorIOS,
-  Animated,
+  AlertIOS,
   AppStateIOS,
-  AsyncStorage,
   Image,
   InteractionManager,
   LayoutAnimation,
@@ -261,6 +260,7 @@ var User = React.createClass({
       let targetUserIDHashed = this.props.data.ventureId,
         currentUserIDHashed = this.props.currentUserIDHashed,
         firebaseRef = this.props.firebaseRef,
+        firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
         targetUserEventInviteMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed
           + '/event_invite_match_requests'),
         currentUserEventInviteMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed
@@ -344,6 +344,15 @@ var User = React.createClass({
                 currentUserData: _this.props.currentUserData
               }
             });
+
+            if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
+              AlertIOS.alert(
+                'Timed Chats',
+                'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+              );
+              firstSessionRef.child('hasStartedFirstChat').set(true);
+            }
+
           })
         });
       }
@@ -353,14 +362,14 @@ var User = React.createClass({
       let targetUserIDHashed = this.props.data.ventureId,
         currentUserIDHashed = this.props.currentUserIDHashed,
         firebaseRef = this.props.firebaseRef,
+        firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
         targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
         currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
         _this = this;
 
       if (this.state.status === 'sent') {
 
-        // @hmm: delete the request
-
+        // @hmm: delete the request from both user's match objects
         targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
         currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
       }
@@ -435,6 +444,14 @@ var User = React.createClass({
                 currentUserData: _this.props.currentUserData
               }
             });
+
+            if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
+              AlertIOS.alert(
+                'Timed Chats',
+                'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+              );
+              firstSessionRef.child('hasStartedFirstChat').set(true);
+            }
           })
         });
       }
@@ -533,7 +550,7 @@ var User = React.createClass({
                   && _.parseInt((this._getTimerValue(this.state.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
                   {!_.isString(this._getTimerValue(this.state.currentTimeInMs))
                   && (this._getTimerValue(this.state.currentTimeInMs) >= 0)
-                  && _.parseInt(this._getTimerValue(this.state.currentTimeInMs) / 60) + 'm'}
+                  && _.parseInt(this._getTimerValue(this.state.currentTimeInMs) / 60) + 'm '}
                   {!_.isString(this._getTimerValue(this.state.currentTimeInMs))
                   && (this._getTimerValue(this.state.currentTimeInMs) >= 0)
                   && this._getTimerValue(this.state.currentTimeInMs) % 60 + 's'}
@@ -787,7 +804,19 @@ var ChatsListPage = React.createClass({
       this.setTimeout(() => {
         if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
       }, 5000); // @hmm: timeout for loading modal
-    }, 2000);
+
+      //@hmm: Tutorial modal
+      let firstSessionRef = this.props.firebaseRef && this.props.ventureId
+        && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
+
+      if(this.props.firstSession && !this.props.firstSession.hasVisitedChatsListPage) {
+        AlertIOS.alert(
+          'Your Connections',
+          'Here you\'ll find an overview of all your active interactions: matches (green), received requests (blue), and sent requests (yellow). Keep an eye on your chat timers too; once a chat with a user expires, the match will reset.'
+        );
+        firstSessionRef.child('hasVisitedChatsListPage').set(true);
+      }
+    }, 1000);
   },
 
   componentWillUnmount() {

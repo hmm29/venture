@@ -15,8 +15,7 @@
 var React = require('react-native');
 var {
   ActivityIndicatorIOS,
-  Animated,
-  AsyncStorage,
+  AlertIOS,
   Image,
   LayoutAnimation,
   ListView,
@@ -205,6 +204,7 @@ var User = React.createClass({
     let targetUserIDHashed = this.props.data.ventureId,
       currentUserIDHashed = this.props.currentUserIDHashed,
       firebaseRef = this.props.firebaseRef,
+      firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
       targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
       currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
       _this = this;
@@ -236,6 +236,7 @@ var User = React.createClass({
     else if (this.state.status === 'matched') {
       let chatRoomActivityPreferenceTitle,
         distance = this.state.distance + 'mi',
+
         _id;
 
       currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
@@ -284,6 +285,15 @@ var User = React.createClass({
               currentUserData: _this.props.currentUserData
             }
           });
+
+          if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
+            AlertIOS.alert(
+              'Timed Chats',
+              'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+            );
+            firstSessionRef.child('hasStartedFirstChat').set(true);
+          }
+
 
         });
       });
@@ -393,7 +403,7 @@ var User = React.createClass({
                                     {color: '#F12A00'} :{})]}>
                       {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
                       && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
-                      && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'}
+                      && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm '}
                       {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
                       && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
                       && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
@@ -761,7 +771,20 @@ var EventsListPage = React.createClass({
       this.setTimeout(() => {
         if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
       }, 5000); // @hmm: timeout for loading modal
-    }, 2000);
+
+      //@hmm: Tutorial modal
+      let firstSessionRef = this.props.firebaseRef && this.props.ventureId
+        && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
+
+        if(this.props.firstSession && !this.props.firstSession.hasVisitedEventsPage) {
+        AlertIOS.alert(
+          'The Events List',
+          'Welcome to the Events List. You can not only see trending events but also interact with people in the guest list. Tap on an event to see more info. You can match with people in an event\'s guest list and maybe pre-game the event!'
+        );
+        firstSessionRef.child('hasVisitedEventsPage').set(true);
+      }
+
+    }, 1000);
   },
 
   componentWillUnmount() {

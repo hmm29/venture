@@ -69,9 +69,13 @@ class TabBarLayout extends Component {
 
     // @hmm: fetch first session object if it exists
     firstSessionRef.on('value', snapshot => {
-      if(snapshot.val()) {
-        this.setState({firstSession: snapshot.val()});
+      // @hmm: if all 9 tutorial achievements have been completed, then delete first session object
+      if((_.values(snapshot.val())).length === 9 && _.every(_.values(snapshot.val()), v => v)) {
+        firstSessionRef.set(null);
+        // alert('finished tutorial ' + JSON.stringify(this.state.firstSession));
       }
+
+      this.setState({firstSession: snapshot.val()});
     });
 
   }
@@ -118,6 +122,7 @@ class TabBarLayout extends Component {
       return <HotPage currentUserFriends={this.props.currentUserFriends}
                       currentUserLocationCoords={this.props.currentUserLocationCoords}
                       firebaseRef={this.props.firebaseRef || this.state.firebaseRef}
+                      firstSession={this.state.firstSession}
                       handleSelectedTabChange={(selectedTab) => {this.setState({selectedTab})}}
                       navigator={this.props.navigator}
                       ventureId={this.props.ventureId}/>;
@@ -145,6 +150,7 @@ class TabBarLayout extends Component {
       return <ChatsListPage currentUserFriends={this.props.currentUserFriends}
                             currentUserLocationCoords={this.props.currentUserLocationCoords}
                             firebaseRef={this.props.firebaseRef}
+                            firstSession={this.state.firstSession}
                             navigator={this.props.navigator}
                             ventureId={this.props.ventureId}/>;
     }
@@ -153,6 +159,7 @@ class TabBarLayout extends Component {
       return <ProfilePage currentUserFriends={this.props.currentUserFriends}
                           currentUserLocationCoords={this.props.currentUserLocationCoords}
                           firebaseRef={this.props.firebaseRef}
+                          firstSession={this.state.firstSession}
                           navigator={this.props.navigator}/>;
     }
 

@@ -15,10 +15,9 @@
 var React = require('react-native');
 var {
   ActivityIndicatorIOS,
-  Animated,
+  AlertIOS,
   Component,
   Image,
-  LayoutAnimation,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,13 +32,15 @@ var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 var Icon = require('react-native-vector-icons/Ionicons');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
-var ReactFireMixin = require('reactfire');
+var Swiper = require('react-native-swiper');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
 
 var {height, width} = Dimensions.get('window');
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
+var TRENDING_ACTIVITIES_SCROLLVIEW = 'activitiesScrollView';
+var TRENDING_USERS_REF = 'trendingUsersRef';
 
 class Title extends Component {
   render() {
@@ -56,18 +57,15 @@ var HotPage = React.createClass({
     handleSelectedTabChange: React.PropTypes.func.isRequired
   },
 
-  mixins: [TimerMixin, ReactFireMixin],
+  mixins: [TimerMixin],
 
   getInitialState() {
     return {
-      contentOffsetXValue: 0,
-      events: [],
-      fadeAnim: new Animated.Value(0),
+      activities: [],
       firebaseRef: this.props.firebaseRef,
       showLoadingModal: false,
-      trendingUsers: 'YALIES',
-      trendingItems: {},
-      yalies: []
+      trendingContentTitle: 'YALIES',
+      users: []
     };
   },
 
@@ -77,108 +75,55 @@ var HotPage = React.createClass({
 
     trendingItemsRef.once('value', snapshot => {
         _this.setState({
-          events: snapshot.val() && snapshot.val().events,
-          yalies: snapshot.val() && snapshot.val().yalies,
+          activities: snapshot.val() && snapshot.val().activities,
+          users: snapshot.val() && snapshot.val().yalies,
           trendingItemsRef
         });
-        _this.startAnimation();
       }
     );
   },
 
   componentDidMount() {
     this.setTimeout(() => {
-      if (_.isEmpty(this.state.events.concat(this.state.yalies)))
+      if (_.isEmpty(this.state.activities.concat(this.state.users))) {
         this.setState({showLoadingModal: true});
-        this.setTimeout(() => {
-          if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
-        }, 5000); // @hmm: timeout for loading modal
-    }, 10);
+      }
+      this.setTimeout(() => {
+        if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
+      }, 5000); // @hmm: timeout for loading modal
+
+
+      //@hmm: Tutorial modal
+      let firstSessionRef = this.props.firebaseRef && this.props.ventureId
+        && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
+
+      if(this.props.firstSession && !this.props.firstSession.hastVisitedHotPage) {
+        AlertIOS.alert(
+          'What\'s Hot',
+          'The hot page tells you which of your friends are trending on the app and the popular activities everyone else is up to!'
+        );
+        firstSessionRef.child('hasVisitedHotPage').set(true);
+      }
+
+    }, 1000);
   },
 
   componentWillUnmount() {
     this.state.trendingItemsRef && this.state.trendingItemsRef.off();
   },
 
-  startAnimation() {
-    Animated.timing(this.state.fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-    }).start();
-
-    this.setTimeout(() => {
-      Animated.timing(this.state.fadeAnim, {
-        toValue: 0,
-        duration: 500,
-      }).start();
-
-      this.setTimeout(() => {
-        Animated.timing(this.state.fadeAnim, {
-          toValue: 1,
-          duration: 1000,
-        }).start();
-
-        this.setTimeout(() => {
-          Animated.timing(this.state.fadeAnim, {
-            toValue: 0,
-            duration: 500,
-          }).start();
-
-
-        }, 1000);
-
-      }, 1000);
-
-    }, 1000);
-
-  },
-
-  _createTrendingItem(type, uri, i) {
-    if (type === 'user') {
-
-      return (
-        <TouchableOpacity
-          key={i}
-          onPress={() => {
-                            this._handleTrendingUsersChange(' : '+uri.substring(uri.lastIndexOf("/")
-                            +1,uri.lastIndexOf("%")))
-                        }}
-          style={styles.trendingItem}>
-          <Image
-            onLoadStart={() => {
-                             // @hmm: reset trending content title to yalies when image loads
-                             this.setState({trendingUsers: 'YALIES'});
-
-                            if (i === this.state.yalies.length - 1) {
-                                 this.setState({showLoadingModal: false});
-                                this.setTimeout(() => {
-                                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                                    this.setState({contentOffsetXValue: width});
-                                    this.setTimeout(() => {
-                                        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                                        this.setState({contentOffsetXValue: 0});
-                                    }, 800);
-                                }, 800);
-
-                            }
-                            }}
-
-            style={styles.trendingUserImg} source={{uri}}/>
-        </TouchableOpacity>
-      )
-    }
-
+  _createTrendingUserThumbnail(uri, i) {
     return (
-      <TouchableOpacity key={i} onPress={() => this.props.handleSelectedTabChange('events')}
-                        style={styles.trendingItem}>
-        <Image style={styles.trendingEventImg} source={{uri}}/>
-      </TouchableOpacity>
+      <View
+        key={i}
+        style={styles.trendingItem}>
+        <Image
+          style={styles.image}
+          source={{uri}}/>
+        <Text style={styles.captionStyle}>{uri && uri.substring(uri.lastIndexOf("/")
+          +1,uri.lastIndexOf("%"))}</Text>
+      </View>
     )
-
-  },
-
-  _handleTrendingUsersChange(trendingUsers) {
-    this.setState({trendingUsers})
   },
 
   _renderHeader() {
@@ -192,58 +137,70 @@ var HotPage = React.createClass({
   },
 
   render() {
+    let users = this.state.users,
+        len = users.length, slide1, slide2, slide3, slide4;
+
+    if(len >= 3) {
+      slide1 = (
+        <View style={styles.slide}>
+          {users && _.slice(users, 0, 3) && _.slice(users, 0, 3).map(this._createTrendingUserThumbnail)}
+        </View>
+      );
+    }
+
+    if(len >= 6) {
+      slide2 = (
+        <View style={styles.slide}>
+          {users && _.slice(users, 3, 6) && _.slice(users, 3, 6).map(this._createTrendingUserThumbnail)}
+        </View>
+      )
+    }
+
+    if(len >= 9) {
+      slide3 = (
+        <View style={styles.slide}>
+          {users && _.slice(users, 6, 9) && _.slice(users, 6, 9).map(this._createTrendingUserThumbnail)}
+        </View>
+      )
+    }
+
+    if(len >= 12) {
+      slide4 = (
+        <View style={styles.slide}>
+          {users && _.slice(users, 9, 12) && _.slice(users, 9, 12).map(this._createTrendingUserThumbnail)}
+        </View>
+      )
+    }
+
     return (
       <VentureAppPage backgroundColor='#000'>
         {this._renderHeader()}
-        <View style={[styles.tabContent, {flex: 1}]}>
-          <View style={[styles.trendingItemsCarousel, {height: height / 5}]}>
-            <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingUsers}</Text></Title>
-            <ScrollView
-              ref="trendingYaliesScrollView"
-              automaticallyAdjustContentInsets={false}
-              contentOffset={{x: this.state.contentOffsetXValue, y: 0}}
-              horizontal={true}
-              pagingEnabled={true}
-              directionalLockEnabled={true}
-              onLayout={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)}
-              onScroll={this.handleScroll}
-              snapToAlignment='center'
-              snapToInterval={64}
-              showsHorizontalScrollIndicator={true}
-              style={[styles.scrollView, styles.horizontalScrollView, {marginTop: 10}]}>
-              {this.state.yalies && this.state.yalies.map(this._createTrendingItem.bind(null, 'user'))}
-            </ScrollView>
-            <View
-              style={[styles.scrollbarArrow, {top: height / 10.6,
-              left: width / 1.20, backgroundColor: 'transparent'}]}>
-              <Animated.View style={{opacity: this.state.fadeAnim}}>
-                <ChevronIcon
-                  color='rgba(255,255,255,0.8)'
-                  size={20}
-                  direction={'right'}/>
-              </Animated.View>
-
-            </View>
-          </View>
-
-          <View style={styles.trendingItemsCarousel}>
-            <Title>TRENDING <Text style={{color: '#ee964b'}}>EVENTS</Text></Title>
-            <ScrollView
-              automaticallyAdjustContentInsets={false}
-              horizontal={true}
-              pagingEnabled={true}
-              directionalLockEnabled={true}
-              onScroll={this.handleScroll}
-              snapToAlignment='center'
-              snapToInterval={width / 1.3}
-              showsHorizontalScrollIndicator={true}
-              style={[styles.scrollView, styles.horizontalScrollView, {marginTop: 10}]}>
-              {this.state.events && this.state.events
-                .map(this._createTrendingItem.bind(null, 'event'))}
-            </ScrollView>
-          </View>
+        <View style={styles.container}>
+          <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContentTitle}</Text></Title>
+          <Swiper ref={TRENDING_USERS_REF}
+                  autoplay={true}
+                  buttonWrapperStyle={styles.buttonWrapperStyle}
+                  height={100}
+                  loop={true}
+                  // nextButton={<ChevronIcon direction="right" />}
+                  // prevButton={<ChevronIcon direction="left" />}
+                  showsButtons={true}
+                  showsPagination={false}
+                  style={styles.swiper}>
+            {slide1}
+            {slide2}
+          </Swiper>
+          <Title>TRENDING <Text style={{color: '#ee964b'}}>ACTIVITIES</Text></Title>
+          <ScrollView
+            ref={TRENDING_ACTIVITIES_SCROLLVIEW}
+            automaticallyAdjustContentInsets={false}
+            scrollEventThrottle={200}
+            style={styles.scrollView}>
+            {this.state.activities && this.state.activities.map((activity) => <Text
+              style={[styles.title, {fontSize: height/(this.state.activities.length * 4.5)}]}>{activity && activity.toUpperCase()}?</Text>)}
+          </ScrollView>
         </View>
-        <View style={{height: 48}}/>
+        <View style={{height: 48}}></View>
         <ModalBase
           modalStyle={styles.modalStyle}
           animated={true}
@@ -272,22 +229,36 @@ var HotPage = React.createClass({
 });
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#040A19',
-    paddingTop: 20,
-    paddingBottom: 5
-  },
-  headerTitle: {
+  buttonWrapperStyle: {
+    backgroundColor: 'transparent',
     color: '#fff',
-    fontSize: 22,
+    flexDirection: 'row',
+    position: 'absolute',
+    top: -10,
+    left: 0,
+    flex: 1,
+    paddingHorizontal: 10,
     paddingVertical: 10,
-    fontFamily: 'AvenirNextCondensed-Medium'
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  captionStyle: {
+    color: '#fff',
+    fontFamily: 'AvenirNextCondensed-Regular'
+  },
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   horizontalScrollView: {
     height: 125
+  },
+  image: {
+    height: 80,
+    width: 80,
+    borderRadius: 40,
   },
   loadingModalActivityIndicatorIOS: {
     height: 80,
@@ -325,56 +296,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  scrollbarArrow: {
-    position: 'absolute',
-  },
   scrollView: {
-    backgroundColor: 'rgba(0,0,0,0.008)',
+    height: 150,
+    width: width / 1.4,
+    borderWidth: 0,
+    borderColor: '#fff'
   },
-  tabContent: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
+  slide: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: 'transparent',
+    paddingHorizontal: width / 10
   },
-  tabText: {
-    color: 'white',
-    margin: 50
-  },
+  swiper: {},
   title: {
     color: '#fff',
     fontFamily: 'AvenirNextCondensed-Regular',
     fontSize: 20,
     textAlign: 'center',
-    paddingTop: 5
-  },
-  trendingItems: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center'
+    paddingVertical: 10
   },
   trendingItem: {
-    borderRadius: 3
-  },
-  trendingItemsCarousel: {
-    width: width / 1.2,
-    alignSelf: 'center',
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: (width - (width / 1.2)) / 2,
-    padding: 10,
-    margin: 20,
-    borderRadius: 10
   },
-  trendingUserImg: {
-    width: width / 5.2,
-    height: 64,
-    marginHorizontal: width / 30,
-    resizeMode: 'contain'
-  },
-  trendingEventImg: {
-    width: width / 1.3,
-    height: 110,
-    resizeMode: 'contain'
-  }
 });
 
 module.exports = HotPage;

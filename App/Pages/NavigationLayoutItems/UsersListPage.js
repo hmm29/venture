@@ -294,6 +294,7 @@ var User = React.createClass({
     let targetUserIDHashed = this.props.data.ventureId,
       currentUserIDHashed = this.props.currentUserIDHashed,
       firebaseRef = this.props.firebaseRef,
+      firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
       targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
       currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
       _this = this;
@@ -374,6 +375,14 @@ var User = React.createClass({
               currentUserData: _this.props.currentUserData
             }
           });
+
+            if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
+              AlertIOS.alert(
+                'Timed Chats',
+                'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+              );
+              firstSessionRef.child('hasStartedFirstChat').set(true);
+            }
 
         });
       });
@@ -504,7 +513,7 @@ var User = React.createClass({
                                              ? {color: '#F12A00'} :{})]}>
                       {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
                       && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
-                      && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm'}
+                      && _.parseInt(this._getTimerValue(this.props.currentTimeInMs) / 60) + 'm '}
                       {!_.isString(this._getTimerValue(this.props.currentTimeInMs))
                       && (this._getTimerValue(this.props.currentTimeInMs) >= 0)
                       && this._getTimerValue(this.props.currentTimeInMs) % 60 + 's'}
@@ -557,7 +566,6 @@ var UsersListPage = React.createClass({
 
   getInitialState() {
     return {
-      animating: false,
       contentOffsetYValue: 0,
       dataSource: new ListView.DataSource({
         rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
@@ -593,8 +601,6 @@ var UsersListPage = React.createClass({
         firebaseRef = this.state.firebaseRef,
         usersListRef = firebaseRef.child('users'),
         _this = this;
-
-      this.setState({animating: true});
 
       currentUserRef && currentUserRef.child('matchingPreferences').on('value', snapshot => {
 
@@ -770,6 +776,7 @@ var UsersListPage = React.createClass({
   _renderUser(user:Object, sectionID:number, rowID:number) {
     if (user.ventureId === this.state.currentUserVentureId) return <View />;
 
+    // @hmm: get rid of this when SGListView package updates pls
     if (this.state.visibleRows && this.state.visibleRows[sectionID] && !this.state.visibleRows[sectionID][rowID]) {
       return <View style={[styles.userRow, {height: THUMBNAIL_SIZE+14}]} />;
     }
@@ -833,7 +840,7 @@ var UsersListPage = React.createClass({
               logoContainerStyle={styles.logoContainerStyle}
               logoStyle={styles.logoStyle}/>
             <ActivityIndicatorIOS
-              animating={this.state.animating}
+              animating={true}
               color='#fff'
               style={styles.loadingModalActivityIndicatorIOS}
               size='small'/>

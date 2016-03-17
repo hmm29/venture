@@ -14,6 +14,7 @@
 
 var React = require('react-native');
 var {
+  AlertIOS,
   Image,
   LayoutAnimation,
   StyleSheet,
@@ -81,6 +82,20 @@ var EditProfilePage = React.createClass({
       });
 
     });
+  },
+
+  componentDidMount() {
+    //@hmm: Tutorial modal
+    let firstSessionRef = this.props.firebaseRef && this.props.ventureId
+      && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
+
+    if(this.props.firstSession && !this.props.firstSession.hasVisitedEditProfilePage) {
+      AlertIOS.alert(
+        'Customize Your Profile',
+        'On this page you can change your profile picture and public info. Once it looks how you want, tap the save button and see the updated changes.'
+      );
+      firstSessionRef.child('hasVisitedEditProfilePage').set(true);
+    }
   },
 
   _onBlurBio() {

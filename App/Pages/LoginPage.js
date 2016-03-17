@@ -228,7 +228,7 @@ var LoginPage = React.createClass({
             hasVisitedChatsListPage: false,
             hasVisitedEventsPage: false,
             hasVisitedHotPage: false,
-            hasEditProfilePage: false
+            hasVisitedEditProfilePage: false
           }
         };
 
@@ -261,21 +261,21 @@ var LoginPage = React.createClass({
     });
   },
 
-  _signInWithGoogleAccount() {
-    GoogleSignin.configure({
-      iosClientId: '52968692525-a6nhs31vnm9itavou919j4jcm2hr9dtc.apps.googleusercontent.com', // only for iOS
-    });
-
-    GoogleSignin.signIn()
-      .then((user) => {
-        console.log(user);
-        this.setState({user: user});
-      })
-      .catch((err) => {
-        console.log('WRONG SIGNIN', err);
-      })
-      .done();
-  },
+  //_signInWithGoogleAccount() {
+  //  GoogleSignin.configure({
+  //    iosClientId: '52968692525-a6nhs31vnm9itavou919j4jcm2hr9dtc.apps.googleusercontent.com', // only for iOS
+  //  });
+  //
+  //  GoogleSignin.signIn()
+  //    .then((user) => {
+  //      console.log(user);
+  //      this.setState({user: user});
+  //    })
+  //    .catch((err) => {
+  //      console.log('WRONG SIGNIN', err);
+  //    })
+  //    .done();
+  //},
 
   _updateUserLoginStatus(isOnline:boolean) {
     let ventureId = this.state.ventureId,
@@ -308,6 +308,14 @@ var LoginPage = React.createClass({
 
   render() {
     let _this = this;
+
+    //let googleSigInButton = (
+    //  <GoogleSigninButton
+    //    style={{width: 185, height: 48, top: height/2.5}}
+    //    size={GoogleSigninButton.Size.Wide}
+    //    color={GoogleSigninButton.Color.Dark}
+    //    onPress={this._signInWithGoogleAccount}/>
+    //)
 
     return (
       <VentureAppPage>
@@ -351,11 +359,6 @@ var LoginPage = React.createClass({
                                             .done();
                                         }}
                   />
-                <GoogleSigninButton
-                  style={{width: 185, height: 48, top: height/2.5}}
-                  size={GoogleSigninButton.Size.Wide}
-                  color={GoogleSigninButton.Color.Dark}
-                  onPress={this._signInWithGoogleAccount}/>
               </Image>
             </View>
             <View style={styles.slide}>

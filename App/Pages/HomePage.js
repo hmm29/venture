@@ -122,7 +122,7 @@ var HomePage = React.createClass({
           return;
         }
 
-        if(account.isFirstSession) {
+        if (account.isFirstSession) {
           this.setState({
             firstSession: {
               hasSeenAddInfoButtonTutorial: false,
@@ -150,7 +150,8 @@ var HomePage = React.createClass({
 
         // @hmm: fetch first session object if it exists
         firstSessionRef.on('value', snapshot => {
-            _this.setState({firstSession: snapshot.val() || {}}) // @hmm: must have blank obj if firebase prop is null
+          _this.setState({firstSession: snapshot.val()});
+          // alert(JSON.stringify(this.state.firstSession));
         });
 
         this.setState({firstSessionRef});

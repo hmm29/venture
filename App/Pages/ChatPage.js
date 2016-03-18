@@ -218,8 +218,8 @@ var ChatPage = React.createClass({
     // @hmm: listHeight > 10 make sure info content is not down and compressing list
     if (this.listHeight && this.footerY && (this.footerY > this.listHeight) && (this.listHeight > 10)) {
       var scrollDistance = this.listHeight - this.footerY;
-      this.scrollResponder.scrollTo(-scrollDistance + RECIPIENT_INFO_BAR_HEIGHT + HEADER_CONTAINER_HEIGHT +
-        TIMER_BAR_HEIGHT + MESSAGE_TEXT_INPUT_HEIGHT * 3); // @hmm: leave some space so user tempted to add message
+      this.scrollResponder.scrollTo({y: -scrollDistance + RECIPIENT_INFO_BAR_HEIGHT + HEADER_CONTAINER_HEIGHT +
+        TIMER_BAR_HEIGHT + MESSAGE_TEXT_INPUT_HEIGHT * 3}); // @hmm: leave some space so user tempted to add message
     }
   },
 

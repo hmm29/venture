@@ -113,7 +113,29 @@ var User = React.createClass({
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+          // @hmm: onboarding tutorial logic
+          if(this.props.firstSession) {
+            if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
+              // @hmm: account for case in which user already has received requests before first nav to chats list
+              AlertIOS.alert(
+                'Someone Is Interested In Your Activity!',
+                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+              );
+              this.props.firebaseRef
+                .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+            }
+            else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+              AlertIOS.alert(
+                'You Matched With Someone!',
+                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+              );
+              this.props.firebaseRef
+                .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+            }
+          }
       });
+
     } else {
 
       this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
@@ -127,6 +149,26 @@ var User = React.createClass({
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+          // @hmm: onboarding tutorial logic
+          if(this.props.firstSession) {
+            if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) {
+              AlertIOS.alert(
+                'Someone Is Interested In Your Activity!',
+                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+              );
+              this.props.firebaseRef
+                .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+            }
+            else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+              AlertIOS.alert(
+                'You Matched With Someone!',
+                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+              );
+              this.props.firebaseRef
+                .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+            }
+          }
       });
     }
   },
@@ -169,6 +211,26 @@ var User = React.createClass({
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+          // @hmm: onboarding tutorial logic
+          if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
+            if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
+              AlertIOS.alert(
+                'Someone Is Interested In Your Activity!',
+                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+              );
+              nextProps.firebaseRef
+                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+            }
+            else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
+              AlertIOS.alert(
+                'You Matched With Someone!',
+                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+              );
+              nextProps.firebaseRef
+                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+            }
+          }
       });
     } else {
 
@@ -184,10 +246,29 @@ var User = React.createClass({
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+          // @hmm: onboarding tutorial logic
+          if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
+            if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
+              AlertIOS.alert(
+                'Someone Is Interested In Your Activity!',
+                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+              );
+              nextProps.firebaseRef
+                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+            }
+            else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
+              AlertIOS.alert(
+                'You Matched With Someone!',
+                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+              );
+              nextProps.firebaseRef
+                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+            }
+          }
       });
     }
   },
-
 
   componentWillUnmount() {
     let currentUserIDHashed = this.props.currentUserIDHashed,
@@ -347,8 +428,8 @@ var User = React.createClass({
 
             if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
               AlertIOS.alert(
-                'Timed Chats',
-                'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+                'Countdown Timer!',
+                'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
               );
               firstSessionRef.child('hasStartedFirstChat').set(true);
             }
@@ -447,8 +528,8 @@ var User = React.createClass({
 
             if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
               AlertIOS.alert(
-                'Timed Chats',
-                'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+                'Countdown Timer!',
+                'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
               );
               firstSessionRef.child('hasStartedFirstChat').set(true);
             }
@@ -730,8 +811,8 @@ var ChatsListPage = React.createClass({
                 && matchingPreferences.privacy.indexOf('friends+') > -1) {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                  /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -744,8 +825,8 @@ var ChatsListPage = React.createClass({
                   && _.findIndex(this.props.currentUserFriends, {name: user.name}) > -1) {
                   if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                     && user.location.coordinates.latitude && user.location.coordinates.longitude
-                    && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                    /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                         .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -756,8 +837,8 @@ var ChatsListPage = React.createClass({
               } else {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                  /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -857,8 +938,10 @@ var ChatsListPage = React.createClass({
   _renderUser(user:Object, sectionID:number, rowID:number) {
     if (user.ventureId === this.state.currentUserVentureId || (user.status && !user.status.isOnline)) return <View />;
 
-    if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID]
-      && !this.state.visibleRows[sectionID][rowID]) return <View />;
+    // @hmm: get rid of this when SGListView package updates pls
+    if (this.state.visibleRows && this.state.visibleRows[sectionID] && !this.state.visibleRows[sectionID][rowID]) {
+      return <View style={[styles.userRow, {backgroundColor: '#040A19', height: THUMBNAIL_SIZE+14}]} />;
+    }
 
     return <User chatsListHandle={this._handle}
                  currentTimeInMs={this.state.currentTimeInMs}

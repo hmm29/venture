@@ -14,6 +14,7 @@ import React, {
   AsyncStorage,
   Component,
   Dimensions,
+  LayoutAnimation,
   StyleSheet,
   Text,
   View,
@@ -21,6 +22,7 @@ import React, {
 
 import ChatsListPage from '../Pages/NavigationLayoutItems/ChatsListPage';
 import EventsListPage from '../Pages/NavigationLayoutItems/EventsListPage';
+var FBLoginManager = require('NativeModules').FBLoginManager;
 import Firebase from 'firebase';
 import HotPage from '../Pages/NavigationLayoutItems/HotPage';
 import LoginPage from '../Pages/LoginPage.js'
@@ -69,8 +71,8 @@ class TabBarLayout extends Component {
 
     // @hmm: fetch first session object if it exists
     firstSessionRef.on('value', snapshot => {
-      // @hmm: if all 9 tutorial achievements have been completed, then delete first session object
-      if((_.values(snapshot.val())).length === 9 && _.every(_.values(snapshot.val()), v => v)) {
+      // @hmm: if all 10 tutorial achievements have been completed, then delete first session object
+      if((_.values(snapshot.val())).length === 10 && _.every(_.values(snapshot.val()), v => v)) {
         firstSessionRef.set(null);
         // alert('finished tutorial ' + JSON.stringify(this.state.firstSession));
       }
@@ -91,7 +93,16 @@ class TabBarLayout extends Component {
       this.setState({chatCount: snapshot.val(), chatCountRef});
     });
 
-    // @hmm: login check
+    // @hmm: remote login check
+    let isOnlineRef = firebaseRef.child(`users/${this.props.ventureId}/status/isOnline`);
+    isOnlineRef.once('value', (snapshot) => {
+      if(!snapshot.val()) {
+        this.navigateToLoginPage();
+        return;
+      }
+    });
+
+    // @hmm: local login check
     AsyncStorage.getItem('@AsyncStorage:Venture:account')
       .then((account:string) => {
         if (!JSON.parse(account)) {
@@ -113,6 +124,7 @@ class TabBarLayout extends Component {
   };
 
   navigateToLoginPage() {
+    FBLoginManager.logout(() => {})
     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
     this.props.navigator.replace({title: 'Login', component: LoginPage});
   };

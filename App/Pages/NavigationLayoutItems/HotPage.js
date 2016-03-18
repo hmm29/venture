@@ -97,15 +97,15 @@ var HotPage = React.createClass({
       let firstSessionRef = this.props.firebaseRef && this.props.ventureId
         && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
 
-      if(this.props.firstSession && !this.props.firstSession.hastVisitedHotPage) {
+
+      if(this.props.firstSession && !this.props.firstSession.hasVisitedHotPage) {
         AlertIOS.alert(
           'What\'s Hot',
-          'The hot page tells you which of your friends are trending on the app and the popular activities everyone else is up to!'
+          'See what activities are popular near you! Frequent Venturers will appear as trending in your area.'
         );
         firstSessionRef.child('hasVisitedHotPage').set(true);
       }
-
-    }, 1000);
+    }, 400);
   },
 
   componentWillUnmount() {
@@ -197,7 +197,8 @@ var HotPage = React.createClass({
             scrollEventThrottle={200}
             style={styles.scrollView}>
             {this.state.activities && this.state.activities.map((activity) => <Text
-              style={[styles.title, {fontSize: height/(this.state.activities.length * 4.5)}]}>{activity && activity.toUpperCase()}?</Text>)}
+              style={[styles.title, {fontSize: height/(this.state.activities.length * 4.5)}]}>
+              {activity && activity.toUpperCase()}?</Text>)}
           </ScrollView>
         </View>
         <View style={{height: 48}}></View>

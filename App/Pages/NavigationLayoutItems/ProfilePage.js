@@ -33,6 +33,12 @@ var Dimensions = require('Dimensions');
 var EditProfilePageIcon = require('../../Partials/Icons/NavigationButtons/EditProfilePageIcon');
 var EditProfilePage = require('../EditProfilePage');
 var FBLogin = require('react-native-facebook-login');
+var FBSDKShare = require('react-native-fbsdkshare');
+var {
+  FBSDKAppInviteContent,
+  FBSDKAppInviteDialog
+  } = FBSDKShare;
+
 var Firebase = require('firebase');
 var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
@@ -138,7 +144,26 @@ var ProfilePage = React.createClass({
   },
 
   _openAppInviteDialog() {
+    // @hmm: Build up an app invite link.
+    var linkContent = new FBSDKAppInviteContent('https://fb.me/595538540605551',
+      'http://res.cloudinary.com/dwnyawluh/image/upload/c_scale,w_1200/v1455585747/Venture_Signature_180x180_hwbaqu.png');
 
+    FBSDKAppInviteDialog.canShow((result) => {
+      if(result) {
+        FBSDKAppInviteDialog.setContent(linkContent);
+        FBSDKAppInviteDialog.show((error, result) => {
+          if (!error) {
+            if (result && result.isCancelled) {
+
+            }
+          } else {
+            alert('Error sharing.');
+          }
+        });
+      } else {
+        alert('Cannot show App Invite Dialog at this time.')
+      }
+    })
   },
 
   renderHeader() {
@@ -177,51 +202,55 @@ var ProfilePage = React.createClass({
           <View style={styles.loginContainer}>
             <View>
               { user &&
-              <Photo firebaseRef={this.state.firebaseRef} onPress={this._openAppInviteDialog} user={user}
+              <Photo firebaseRef={this.state.firebaseRef}
+                     user={user}
                      ventureId={ventureId}/> }
               { user && ventureId &&
               <Info firebaseRef={this.state.firebaseRef} user={user} ventureId={ventureId}/>}
             </View>
 
             <View style={{flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', top: height/16}}>
-            <FBLogin style={this.state.user ? styles.FBLoginButton : {}}
-                     permissions={['email', 'user_friends']}
-                     onLogout={function(){
+              <FBLogin style={this.state.user ? styles.FBLoginButton : {}}
+                       permissions={['email', 'user_friends']}
+                       onLogout={function(){
                                     if(user && ventureId) _this._updateUserLoginStatus(false);
                                     _this.setState({user : null, ventureId: null});
                                     _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
 
                                      // @hmm: clean up async storage cache
-                                     AsyncStorage.multiRemove(['@AsyncStorage:Venture:account',
+                                     AsyncStorage.multiRemove(['@AsyncStorage:Venture:account', '@AsyncStorage:Venture:authToken',
                                      '@AsyncStorage:Venture:currentUser:friendsAPICallURL',
                                      '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'])
                                         .catch(error => console.log(error.message))
                                         .done();
                                 }}
 
-                     onLoginFound={function(data){
+                       onLoginFound={function(data){
                                     _this.setState({ user : data.credentials, ventureId: hash(data.credentials.userId)});
                                     console.log("Existing login found.");
                                 }}
 
-                     onLoginNotFound={function(){
+                       onLoginNotFound={function(){
                                     _this.setState({ user : null, ventureId: null });
                                     console.log("No user logged in.");
                                 }}
 
-                     onError={function(data){
+                       onError={function(data){
                                     console.error("Error in fetching facebook data: ", data);
                                 }}
 
-                     onCancel={function(){
+                       onCancel={function(){
                                     console.log("User cancelled.");
                                 }}
 
-                     onPermissionsMissing={function(data){
+                       onPermissionsMissing={function(data){
                                     console.error("Check permissions!");
                                 }}
-              />
-              <InviteUserIcon color="#fff" />
+                />
+              <InviteUserIcon
+                color="#fff"
+                onPress={this._openAppInviteDialog}
+                />
             </View>
           </View>
         </Image>
@@ -262,7 +291,7 @@ var Photo = React.createClass({
         <Animatable.View ref="currentUserPhoto" style={styles.photoContent}>
           <TouchableOpacity onPress={() => {
                         this.refs.currentUserPhoto.pulse(800);
-                        this.props.onPress();
+                        this.props.onPress && this.props.onPress();
                     }}>
             <Image
               style={
@@ -383,7 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   FBLoginButton: {
-    marginHorizontal: width/40
+    marginHorizontal: width / 40
   },
   infoContent: {
     paddingLeft: 20,

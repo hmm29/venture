@@ -1,6 +1,13 @@
 package com.ventureapp;
 
 import com.facebook.react.ReactActivity;
+import com.oblador.vectoricons.VectorIconsPackage;
+import com.github.yamill.orientation.OrientationPackage;
+import com.BV.LinearGradient.LinearGradientPackage;
+import com.imagepicker.ImagePickerPackage;
+import com.smixx.reactnativeicons.ReactNativeIcons;
+import co.apptailor.googlesignin.RNGoogleSigninPackage;
+import com.magus.fblogin.FacebookLoginPackage;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.shell.MainReactPackage;
 
@@ -34,7 +41,14 @@ public class MainActivity extends ReactActivity {
     @Override
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
-        new MainReactPackage()
+        new MainReactPackage(),
+            new VectorIconsPackage(),
+            new OrientationPackage(),
+            new LinearGradientPackage(),
+            new ImagePickerPackage(),
+            new ReactNativeIcons(),
+            new RNGoogleSigninPackage(),
+            new FacebookLoginPackage()
       );
     }
 }

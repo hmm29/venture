@@ -38,6 +38,7 @@ var Animatable = require('react-native-animatable');
 var BrandLogo = require('../Partials/BrandLogo');
 var Dimensions = require('Dimensions');
 var dismissKeyboard = require('dismissKeyboard');
+var FBLoginManager = require('NativeModules').FBLoginManager;
 var Firebase = require('firebase');
 var {Icon, } = require('react-native-icons');
 var LoginPage = require('../Pages/LoginPage');
@@ -129,6 +130,7 @@ var HomePage = React.createClass({
               hasSentFirstRequest: false,
               hasReceivedFirstRequest: false,
               hasMatched: false,
+              hasSeenSearchPreferencesIcon: false,
               hasStartedFirstChat: false,
               hasVisitedChatsListPage: false,
               hasVisitedEventsPage: false,
@@ -452,6 +454,25 @@ var HomePage = React.createClass({
         },
         {enableHighAccuracy: true, timeout: 40000, maximumAge: 1000}
       );
+
+      // @hmm: log user back into firebase if they're not already logged in
+      // should apply to entire app bc home page never unmounts
+      let authData, ref = new Firebase('https://ventureappinitial.firebaseio.com/');
+      authData = ref.getAuth();
+      if(!authData) {
+        AsyncStorage.getItem('@AsyncStorage:Venture:authToken')
+          .then((authToken) => {
+            ref.authWithOAuthToken("facebook", authToken, function(error, authData) {
+              if (error) {
+                console.log("Login Failed!", error);
+              } else {
+                console.log("Authenticated successfully with payload: "+JSON.stringify(authData));
+              }
+            });
+          })
+          .catch((error) => console.log(error.message))
+          .done();
+      }
     }
   },
 
@@ -460,6 +481,7 @@ var HomePage = React.createClass({
   },
 
   navigateToLoginPage() {
+    FBLoginManager.logout(() => {});
     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
     this.props.navigator.replace({title: 'Login', component: LoginPage});
   },
@@ -585,8 +607,8 @@ var HomePage = React.createClass({
                               if(this.state.firstSession && !this.state.firstSession.hasSeenAddInfoButtonTutorial) {
 
                                 AlertIOS.alert(
-                                  'The Add Info Button',
-                                  'You can add details such as time and descriptive tags to your activity post.'
+                                  'Add More Info!',
+                                  'Click on the (+) button to add more information about your activity. Set a time, and add a tag that users can search.'
                                 );
 
                                 if(this._handle) this.clearInterval(this._handle);

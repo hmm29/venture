@@ -16,6 +16,7 @@ var React = require('react-native');
 var {
   AlertIOS,
   Image,
+  InteractionManager,
   LayoutAnimation,
   StyleSheet,
   Text,
@@ -85,17 +86,19 @@ var EditProfilePage = React.createClass({
   },
 
   componentDidMount() {
-    //@hmm: Tutorial modal
-    let firstSessionRef = this.props.firebaseRef && this.props.ventureId
-      && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
+    InteractionManager.runAfterInteractions(() => {
+      //@hmm: Tutorial modal
+      let firstSessionRef = this.props.firebaseRef && this.props.ventureId
+        && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
 
-    if(this.props.firstSession && !this.props.firstSession.hasVisitedEditProfilePage) {
-      AlertIOS.alert(
-        'Customize Your Profile',
-        'On this page you can change your profile picture and public info. Once it looks how you want, tap the save button and see the updated changes.'
-      );
-      firstSessionRef.child('hasVisitedEditProfilePage').set(true);
-    }
+      if (this.props.firstSession && !this.props.firstSession.hasVisitedEditProfilePage) {
+        AlertIOS.alert(
+          'Customize Your Profile',
+          'Edit your profile picture and public info. Once you are satisfied, tap the save button to see the updated changes!'
+        );
+        firstSessionRef.child('hasVisitedEditProfilePage').set(true);
+      }
+    });
   },
 
   _onBlurBio() {
@@ -174,7 +177,7 @@ var EditProfilePage = React.createClass({
       takePhotoButtonTitle: 'Take Photo...', // specify null or empty string to remove this button
       chooseFromLibraryButtonTitle: 'Choose from Library...', // specify null or empty string to remove this button
       customButtons: {
-            'Use My Facebook Profile Photo': 'fb', // [Button Text] : [String returned upon selection]
+        'Use My Facebook Profile Photo': 'fb', // [Button Text] : [String returned upon selection]
       },
       cameraType: 'front', // 'front' or 'back'
       mediaType: 'photo', // 'photo' or 'video'

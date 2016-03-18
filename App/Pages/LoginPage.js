@@ -19,6 +19,7 @@ var {
   AsyncStorage,
   Image,
   LayoutAnimation,
+  NativeModules,
   PixelRatio,
   StyleSheet,
   Text,
@@ -224,6 +225,7 @@ var LoginPage = React.createClass({
             hasSentFirstRequest: false,
             hasReceivedFirstRequest: false,
             hasMatched: false,
+            hasSeenSearchPreferencesIcon: false,
             hasStartedFirstChat: false,
             hasVisitedChatsListPage: false,
             hasVisitedEventsPage: false,
@@ -330,18 +332,36 @@ var LoginPage = React.createClass({
             <View style={styles.slide}>
               <Image
                 resizeMode={Image.resizeMode.stretch}
-                defaultSource={require('../../img/onboarding_find_activity_partners.png')}
+                defaultSource={require('../../img/onboarding_log_in_with_facebook.png')}
                 style={styles.backdrop}>
 
-                <FBLogin style={{ top: height/2.7 }}
+                <FBLogin style={{ top: height/2.4 }}
                          permissions={['email','user_friends']}
                          onLogin={function(data){
                                             let friendsAPICallURL = `https://graph.facebook.com/v2.3/${data.credentials
                                             && data.credentials.userId}/friends?access_token=${data.credentials
-                                            && data.credentials.token}`;
+                                            && data.credentials.token}`,
+                                            ref = new Firebase('https://ventureappinitial.firebaseio.com/');
 
                                             _this.setState({user: data.credentials,
                                             ventureId: hash(data.credentials.userId)});
+
+                                             ref.authWithOAuthToken("facebook", data.credentials.token, function(error, authData) {
+                                              if (error) {
+                                                alert("Login Failed!", error);
+                                              } else {
+                                                console.log("Authenticated successfully with payload: "+JSON.stringify(authData));
+                                                // @hmm: pass to Batch transactional REST API for push notifications
+                                                authData && authData.uid && NativeModules.CustomBatchFirebaseIntegration.passAuthDataToBatch(authData);
+                                              }
+                                            });
+
+                                           AsyncStorage.setItem('@AsyncStorage:Venture:authToken', data.credentials.token)
+                                            .then(() => {
+                                              console.log('Set auth token.')
+                                            })
+                                            .catch(error => console.log(error.message))
+                                            .done();
 
                                            AsyncStorage.setItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL',
                                            friendsAPICallURL)
@@ -358,6 +378,30 @@ var LoginPage = React.createClass({
                                             .catch((error) => console.log(error.message))
                                             .done();
                                         }}
+
+                         onLoginFound={function(data){
+                                    _this.setState({ user : data.credentials, ventureId: hash(data.credentials.userId)});
+                                    console.log("Existing login found.");
+                                }}
+
+                         onLoginNotFound={function(){
+                                    _this.setState({ user : null, ventureId: null });
+                                    console.log("No user logged in.");
+                                }}
+
+                         onError={function(data){
+                                    console.error("Error in fetching facebook data: ", data);
+                                }}
+
+                         onCancel={function(){
+                                    console.log("User cancelled.");
+                                }}
+
+                         onPermissionsMissing={function(data){
+                                    console.error("Check permissions!");
+                                }}
+
+
                   />
               </Image>
             </View>

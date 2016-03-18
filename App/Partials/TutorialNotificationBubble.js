@@ -37,6 +37,7 @@ class TutorialNotificationBubble extends Component {
       <View style={styles.tutorialNotificationBubble}>
         <View style={styles.tutorialNotificationBubbleSquare}>
           {this.props.children}
+          <CloseIcon />
         </View>
         <View style={styles.tutorialNotificationBubbleTriangle}/>
       </View>
@@ -49,6 +50,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   tutorialNotificationBubbleSquare: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     width: 120,
     height: 80,
     backgroundColor: 'indigo',

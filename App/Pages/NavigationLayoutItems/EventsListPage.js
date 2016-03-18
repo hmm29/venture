@@ -111,6 +111,35 @@ var User = React.createClass({
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+        // @hmm: onboarding tutorial logic
+        if(this.props.firstSession) {
+          if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probably for componentDidMount
+            // @hmm: account for case in which user already has received requests before first nav to events list
+            AlertIOS.alert(
+              'Someone Is Interested In Your Activity!',
+              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+            );
+            this.props.firebaseRef
+              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+          }
+          else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+            AlertIOS.alert(
+              'You Matched With Someone!',
+              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+            );
+            this.props.firebaseRef
+              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+          }
+          else if(this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
+            AlertIOS.alert(
+              'Activity Request Sent!',
+              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
+            );
+            this.props.firebaseRef
+              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
+          }
+        }
       });
   },
 
@@ -135,6 +164,34 @@ var User = React.createClass({
           status: snapshot.val() && snapshot.val().status,
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
+
+        // @hmm: onboarding tutorial logic
+        if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
+          if(this.state.status === 'sent' && !nextProps.firstSession.hasSentFirstRequest) {
+            AlertIOS.alert(
+              'Activity Request Sent!',
+              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
+            );
+            this.props.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
+          }
+          else if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
+            AlertIOS.alert(
+              'Someone Is Interested In Your Activity!',
+              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+            );
+            nextProps.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+          }
+          else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
+            AlertIOS.alert(
+              'You Matched With Someone!',
+              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+            );
+            nextProps.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+          }
+        }
       });
   },
 
@@ -288,12 +345,11 @@ var User = React.createClass({
 
           if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
             AlertIOS.alert(
-              'Timed Chats',
-              'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+              'Countdown Timer!',
+              'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
             );
             firstSessionRef.child('hasStartedFirstChat').set(true);
           }
-
 
         });
       });
@@ -485,6 +541,11 @@ var AttendeeList = React.createClass({
   _renderUser(user:Object, sectionID:number, rowID:number) {
     if (user.ventureId === this.props.ventureId) return <View />;
 
+    // @hmm: get rid of this when SGListView package updates pls
+    if (this.state.visibleRows && this.state.visibleRows[sectionID] && !this.state.visibleRows[sectionID][rowID]) {
+      return <View style={[styles.userRow, {backgroundColor: '#040A19', height: THUMBNAIL_SIZE+14}]} />;
+    }
+
     return <User currentTimeInMs={this.state.currentTimeInMs}
                  currentUserData={this.props.currentUserData}
                  currentUserIDHashed={this.props.ventureId}
@@ -508,6 +569,7 @@ var AttendeeList = React.createClass({
           dataSource={this.state.dataSource}
           renderRow={this._renderUser}
           initialListSize={INITIAL_LIST_SIZE}
+          onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
           pageSize={PAGE_SIZE}
           automaticallyAdjustContentInsets={false}
           scrollRenderAheadDistance={600}/>
@@ -766,7 +828,7 @@ var EventsListPage = React.createClass({
 
   componentDidMount() {
     this.setTimeout(() => {
-      // @hmm: show laoding modal if eventsRows still empty after 2 seconds
+      // @hmm: show loading modal if eventsRows still empty after 2 seconds
       if (_.isEmpty(this.state.eventsRows)) this.setState({showLoadingModal: true});
       this.setTimeout(() => {
         if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
@@ -776,10 +838,10 @@ var EventsListPage = React.createClass({
       let firstSessionRef = this.props.firebaseRef && this.props.ventureId
         && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
 
-        if(this.props.firstSession && !this.props.firstSession.hasVisitedEventsPage) {
+      if(this.props.firstSession && !this.props.firstSession.hasVisitedEventsPage) {
         AlertIOS.alert(
-          'The Events List',
-          'Welcome to the Events List. You can not only see trending events but also interact with people in the guest list. Tap on an event to see more info. You can match with people in an event\'s guest list and maybe pre-game the event!'
+          'Follow Events',
+          'What events are happening in your area? Tap on an event to learn more details and interact with other people who are going. Use the arrow to RSVP!'
         );
         firstSessionRef.child('hasVisitedEventsPage').set(true);
       }
@@ -1050,7 +1112,8 @@ var styles = StyleSheet.create({
   },
   userRow: {
     flex: 1,
-    backgroundColor: '#fefefb'
+    backgroundColor: '#fefefb',
+    overflow: 'hidden'
   },
   eventTitle: {
     width: 154,

@@ -126,28 +126,27 @@ var User = React.createClass({
 
         // @hmm: onboarding tutorial logic
         if(this.props.firstSession) {
-          if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probably for componentDidMount
+          if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
             // @hmm: account for case in which user already has received requests before first nav to users list
             AlertIOS.alert(
-              'Blue: The Received Activity Request',
-              'You\'ve received your first activity request from another Venturer. Let them know you\'re in ' +
-              'by tapping the smiley face icon.'
+              'Someone Is Interested In Your Activity!',
+              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
             );
             this.props.firebaseRef
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
           }
           else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
             AlertIOS.alert(
-              'Green: The Match',
-              'Congrats on your first activity match. You can tap the icon to start a timed chat and begin your venture!'
+              'You Matched With Someone!',
+              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
             );
             this.props.firebaseRef
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
           }
           else if(this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
             AlertIOS.alert(
-              'Yellow: The Sent Activity Request',
-              'You just sent your first activity request! That user\'s bar will turn green once they accept it.'
+              'Activity Request Sent!',
+              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
             );
             this.props.firebaseRef
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
@@ -157,7 +156,7 @@ var User = React.createClass({
   },
 
   componentDidMount() {
-    // if (!this.props.isCurrentUser)
+    if (!this.props.isCurrentUser) this.refs.user.fadeIn(300);
     //  this.refs.user.fadeIn(700 + this.props.rowID * 300); // @hmm: fade in consecutively
   },
 
@@ -192,26 +191,24 @@ var User = React.createClass({
         if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
           if(this.state.status === 'sent' && !nextProps.firstSession.hasSentFirstRequest) {
             AlertIOS.alert(
-              'Yellow: The Sent Activity Request',
-              'You just sent your first activity request! That user\'s bar will turn green once they accept it.'
+              'Activity Request Sent!',
+              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
             );
             this.props.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
           }
-          else if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) { // @hmm: most probably for componentDidMount
-            // @hmm: account for case in which user already has received requests before first nav to users list
+          else if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
             AlertIOS.alert(
-              'Blue: The Received Activity Request',
-              'You\'ve received your first activity request from another Venturer. Let them know you\'re in ' +
-              'by tapping the smiley face icon.'
+              'Someone Is Interested In Your Activity!',
+              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
             );
             nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
           }
           else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
             AlertIOS.alert(
-              'Green: The Match',
-              'Congrats on your first activity match. You can tap the icon to start a timed chat and begin your venture!'
+              'You Matched With Someone!',
+              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
             );
             nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
@@ -378,8 +375,8 @@ var User = React.createClass({
 
             if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
               AlertIOS.alert(
-                'Timed Chats',
-                'Welcome to your first chat! Chats in Venture expire after 5 minutes. Enough time to exchange logistics and then get on your way. Happy venturing!'
+                'Countdown Timer!',
+                'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
               );
               firstSessionRef.child('hasStartedFirstChat').set(true);
             }
@@ -744,6 +741,8 @@ var UsersListPage = React.createClass({
   },
 
   _renderHeader() {
+    let firstSessionRef = this.state.firebaseRef && this.state.firebaseRef.child('users/' + this.state.currentUserVentureId + '/firstSession');
+
     return (
       <View onLayout={(event) => {
                     var {x, y, width, height} = event.nativeEvent.layout;
@@ -762,6 +761,8 @@ var UsersListPage = React.createClass({
             returnKeyType='done'
             style={styles.searchTextInput}/>
           <FiltersModalIcon
+            firstSession={this.props.firstSession}
+            firstSessionRef={firstSessionRef}
             onPress={() => {
                         this.setState({showFiltersModal: true});
                     }}
@@ -778,7 +779,7 @@ var UsersListPage = React.createClass({
 
     // @hmm: get rid of this when SGListView package updates pls
     if (this.state.visibleRows && this.state.visibleRows[sectionID] && !this.state.visibleRows[sectionID][rowID]) {
-      return <View style={[styles.userRow, {height: THUMBNAIL_SIZE+14}]} />;
+      return <View style={[styles.userRow, {backgroundColor: '#040A19', height: THUMBNAIL_SIZE+14}]} />;
     }
 
     return <User currentTimeInMs={this.state.currentTimeInMs}

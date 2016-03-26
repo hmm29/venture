@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302AC1ABCB8CE00DB3ED1 /* libRCTActionSheet.a */; };
 		00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302BA1ABCB90400DB3ED1 /* libRCTGeolocation.a */; };
@@ -51,8 +50,8 @@
 		42EE2F911C97FCDD001A2541 /* RNGoogleSignin.m in Sources */ = {isa = PBXBuildFile; fileRef = 42EE2F8D1C97FCDC001A2541 /* RNGoogleSignin.m */; };
 		42EE2F921C97FCDD001A2541 /* RNGoogleSigninButtonManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 42EE2F8E1C97FCDC001A2541 /* RNGoogleSigninButtonManager.m */; };
 		42EE2FA81C97FCFF001A2541 /* AddressBook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42EE2FA71C97FCFF001A2541 /* AddressBook.framework */; };
-		42EE2FAA1C97FD06001A2541 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42EE2FA91C97FD06001A2541 /* StoreKit.framework */; };
 		42F160181C8DF35E006F965E /* libRNImagePicker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42F160171C8DF34C006F965E /* libRNImagePicker.a */; };
+		42F309A21C9E9536006F0926 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42F309A11C9E9536006F0926 /* StoreKit.framework */; };
 		832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 832341B51AAA6A8300B99B32 /* libRCTText.a */; };
 		DCF5F13905BF42FB84BD8BC2 /* libRCTFBSDKCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6DD2FCC86424DE8812DBBB9 /* libRCTFBSDKCore.a */; };
 /* End PBXBuildFile section */
@@ -269,8 +268,8 @@
 		42EE2F8D1C97FCDC001A2541 /* RNGoogleSignin.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNGoogleSignin.m; sourceTree = "<group>"; };
 		42EE2F8E1C97FCDC001A2541 /* RNGoogleSigninButtonManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNGoogleSigninButtonManager.m; sourceTree = "<group>"; };
 		42EE2FA71C97FCFF001A2541 /* AddressBook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AddressBook.framework; path = System/Library/Frameworks/AddressBook.framework; sourceTree = SDKROOT; };
-		42EE2FA91C97FD06001A2541 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		42F160121C8DF34C006F965E /* RNImagePicker.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RNImagePicker.xcodeproj; path = "../node_modules/react-native-image-picker/ios/RNImagePicker.xcodeproj"; sourceTree = "<group>"; };
+		42F309A11C9E9536006F0926 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		522395951A384EDF974775F2 /* Foundation.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Foundation.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Foundation.ttf"; sourceTree = "<group>"; };
 		538CAFBFCF194F8F99364A99 /* EvilIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = EvilIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/EvilIcons.ttf"; sourceTree = "<group>"; };
 		78C398B01ACF4ADC00677621 /* RCTLinking.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTLinking.xcodeproj; path = "../node_modules/react-native/Libraries/LinkingIOS/RCTLinking.xcodeproj"; sourceTree = "<group>"; };
@@ -299,7 +298,6 @@
 				421118261C9B8B6D006826B1 /* FBSDKShareKit.framework in Frameworks */,
 				421118201C9B791D006826B1 /* Bolts.framework in Frameworks */,
 				421118251C9B8B6D006826B1 /* FBSDKLoginKit.framework in Frameworks */,
-				42EE2FAA1C97FD06001A2541 /* StoreKit.framework in Frameworks */,
 				42EE2FA81C97FCFF001A2541 /* AddressBook.framework in Frameworks */,
 				42F160181C8DF35E006F965E /* libRNImagePicker.a in Frameworks */,
 				42646CF71C7BA16E004FB7F8 /* Security.framework in Frameworks */,
@@ -315,6 +313,7 @@
 				42E728E21C69BE4200FF970D /* libRCTFBLogin.a in Frameworks */,
 				42E728DB1C69BDB700FF970D /* libRCTAutoComplete.a in Frameworks */,
 				42E728D41C69BB8F00FF970D /* libz.tbd in Frameworks */,
+				42F309A21C9E9536006F0926 /* StoreKit.framework in Frameworks */,
 				42E728D01C69BB7400FF970D /* libAppHub.a in Frameworks */,
 				146834051AC3E58100842450 /* libReact.a in Frameworks */,
 				00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */,
@@ -547,6 +546,7 @@
 		42F849D11C9B6CCE007F83A6 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				42F309A11C9E9536006F0926 /* StoreKit.framework */,
 				421118211C9B8B6D006826B1 /* FBSDKCoreKit.framework */,
 				421118221C9B8B6D006826B1 /* FBSDKLoginKit.framework */,
 				421118231C9B8B6D006826B1 /* FBSDKShareKit.framework */,
@@ -602,7 +602,6 @@
 			isa = PBXGroup;
 			children = (
 				42F849D11C9B6CCE007F83A6 /* Frameworks */,
-				42EE2FA91C97FD06001A2541 /* StoreKit.framework */,
 				42EE2FA71C97FCFF001A2541 /* AddressBook.framework */,
 				42EE2F891C97FCDC001A2541 /* RNGoogleSignin */,
 				42646CF61C7BA16E004FB7F8 /* Security.framework */,
@@ -710,8 +709,11 @@
 							com.apple.BackgroundModes = {
 								enabled = 0;
 							};
+							com.apple.InAppPurchase = {
+								enabled = 1;
+							};
 							com.apple.Push = {
-								enabled = 0;
+								enabled = 1;
 							};
 						};
 					};

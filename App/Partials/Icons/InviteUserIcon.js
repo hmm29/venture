@@ -49,7 +49,7 @@ class InviteUserIcon extends Component {
 
   _animate() {
     InteractionManager.runAfterInteractions(() => {
-      this.refs.inviteUserIcon.pulse(1000);
+      this.refs.inviteUserIcon && this.refs.inviteUserIcon.pulse(1000, 2000);
     });
   };
 

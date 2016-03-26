@@ -41,6 +41,7 @@ var GeoFire = require('geofire');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var LinearGradient = require('react-native-linear-gradient');
 var ReactFireMixin = require('reactfire');
+var SGListView = require('react-native-sglistview');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
 
@@ -79,6 +80,7 @@ var User = React.createClass({
     currentUserLocationCoords: React.PropTypes.array,
     currentUserData: React.PropTypes.object,
     data: React.PropTypes.object,
+    firstSession: React.PropTypes.object,
     navigator: React.PropTypes.object
   },
 
@@ -195,51 +197,22 @@ var User = React.createClass({
     let distance = nextProps.data && nextProps.data.location && nextProps.data.location.coordinates
         && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude,
           nextProps.data.location.coordinates.longitude]),
+      matchRequestsRef,
       _this = this;
 
     if (nextProps.data && nextProps.data.isEventInvite) {
-
-      nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
-      && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-        .child(nextProps.data.ventureId)
-      && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-        .child(nextProps.data.ventureId).on('value', snapshot => {
-        _this.setState({status: ''}); // @hmm: clear status before setting again
-        _this.setState({
-          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-          distance,
-          status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
-        });
-
-          // @hmm: onboarding tutorial logic
-          if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
-            if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
-              AlertIOS.alert(
-                'Someone Is Interested In Your Activity!',
-                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
-              );
-              nextProps.firebaseRef
-                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
-            }
-            else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
-              AlertIOS.alert(
-                'You Matched With Someone!',
-                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
-              );
-              nextProps.firebaseRef
-                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
-            }
-          }
-      });
+      matchRequestsRef = `users/${nextProps.currentUserIDHashed}/event_invite_match_requests`;
     } else {
+      matchRequestsRef = `users/${nextProps.currentUserIDHashed}/match_requests`;
+    }
 
       nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
-      && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`)
+      && nextProps.firebaseRef.child(matchRequestsRef)
         .child(nextProps.data.ventureId)
-      && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`)
+      && (nextProps.firebaseRef).child(matchRequestsRef)
         .child(nextProps.data.ventureId).on('value', snapshot => {
-        _this.setState({status: ''});
+          let status = this.state.status;
+
         _this.setState({
           chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
           distance,
@@ -267,18 +240,18 @@ var User = React.createClass({
             }
           }
       });
-    }
+
   },
 
   componentWillUnmount() {
-    let currentUserIDHashed = this.props.currentUserIDHashed,
-      firebaseRef = this.props.firebaseRef,
-      currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/'+currentUserIDHashed+'/match_requests');
-
-    if (this.props.data && this.props.data.isEventData) currentUserMatchRequestsRef = firebaseRef
-      && firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
-
-    currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
+    //let currentUserIDHashed = this.props.currentUserIDHashed,
+    //  firebaseRef = this.props.firebaseRef,
+    //  currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/'+currentUserIDHashed+'/match_requests');
+    //
+    //if (this.props.data && this.props.data.isEventData) currentUserMatchRequestsRef = firebaseRef
+    //  && firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
+    //
+    //currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
   },
 
@@ -341,11 +314,12 @@ var User = React.createClass({
       let targetUserIDHashed = this.props.data.ventureId,
         currentUserIDHashed = this.props.currentUserIDHashed,
         firebaseRef = this.props.firebaseRef,
-        firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
-        targetUserEventInviteMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed
-          + '/event_invite_match_requests'),
-        currentUserEventInviteMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed
-          + '/event_invite_match_requests'),
+        usersListRef = firebaseRef.child('users'),
+        currentUserRef = usersListRef.child(currentUserIDHashed),
+        targetUserRef = usersListRef.child(targetUserIDHashed),
+        firstSessionRef = currentUserRef.child('firstSession'),
+        targetUserEventInviteMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
+        currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests'),
         _this = this;
 
       if (this.state.status === 'sent') {
@@ -390,9 +364,6 @@ var User = React.createClass({
           currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
           targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
 
-          let targetUserMatchRequestObjectInCurrentUserMatchRequests = currentUserMatchRequestsRef
-            .child(targetUserIDHashed);
-
           firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
             let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
@@ -401,12 +372,10 @@ var User = React.createClass({
               // TODO: in the future should be able to account for timezone differences?
               // probably not because if youre going to match with someone youll be in same timezone
 
-              let currentTime = new Date().getTime(),
-                expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+              let currentTime = new Date().getTime();
 
               chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
               chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
-              chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
               chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed).set(chatRoomEventTitle);
               chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed).set(chatRoomEventTitle);
 
@@ -417,12 +386,13 @@ var User = React.createClass({
               component: ChatPage,
               passProps: {
                 _id,
-                targetUserMatchRequestObjectInCurrentUserMatchRequests,
                 recipient: _this.props.data,
                 distance,
                 chatRoomEventTitle,
                 chatRoomRef,
-                currentUserData: _this.props.currentUserData
+                currentUserData: _this.props.currentUserData,
+                currentUserRef,
+                targetUserRef
               }
             });
 
@@ -443,9 +413,12 @@ var User = React.createClass({
       let targetUserIDHashed = this.props.data.ventureId,
         currentUserIDHashed = this.props.currentUserIDHashed,
         firebaseRef = this.props.firebaseRef,
-        firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
-        targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
-        currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
+        usersListRef = firebaseRef.child('users'),
+        currentUserRef = usersListRef.child(currentUserIDHashed),
+        targetUserRef = usersListRef.child(targetUserIDHashed),
+        firstSessionRef = currentUserRef.child('firstSession'),
+        targetUserMatchRequestsRef = targetUserRef.child('match_requests'),
+        currentUserMatchRequestsRef = currentUserRef.child('match_requests'),
         _this = this;
 
       if (this.state.status === 'sent') {
@@ -500,12 +473,10 @@ var User = React.createClass({
               // TODO: in the future should be able to account for timezone differences?
               // probably not because if youre going to match with someone youll be in same timezone
 
-              let currentTime = new Date().getTime(),
-                expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+              let currentTime = new Date().getTime();
 
               chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
               chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
-              chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
               chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
                 .set(this.props.currentUserData.activityPreference.title);
               chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed)
@@ -522,7 +493,9 @@ var User = React.createClass({
                 distance,
                 chatRoomActivityPreferenceTitle,
                 chatRoomRef,
-                currentUserData: _this.props.currentUserData
+                currentUserData: _this.props.currentUserData,
+                currentUserRef,
+                targetUserRef
               }
             });
 
@@ -600,13 +573,13 @@ var User = React.createClass({
               style={styles.profileModalUserPicture}/>
             <Text
               style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
-              {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
+              {this.props.data && this.props.data.age && this.props.data.age.value} {' \t'}
               | {'\t'}
               <Text style={styles.profileModalActivityInfo}>
                 <Text
-                  style={styles.profileModalActivityPreference}>{this.props.data && this.props.data.eventTitle}</Text>
-                {'\t'} {this.props.data && this.props.data.activityPreference
-              && (this.props.data.activityPreference.start.time || this.props.data.activityPreference.status)} {'\n'}
+                  style={styles.profileModalActivityPreference}>{this.props.data && this.props.data.activityPreference.title}</Text>
+                {'\n'} {this.props.data && this.props.data.activityPreference
+              && (this.props.data.activityPreference.start.time || this.props.data.activityPreference.status)}
               </Text>
             </Text>
             <Text
@@ -640,8 +613,8 @@ var User = React.createClass({
           </Image>
           <Text
             style={styles.distance}>{this.state.distance ? this.state.distance + ' mi' : ''}</Text>
-          <Text style={styles.eventTitle}>
-            {this.props.data && this.props.data.eventTitle} ?
+          <Text style={styles.activityPreference}>
+            {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title} ?
           </Text>
           <View style={{top: 10,  right: width/25}}>{this._renderStatusIcon()}</View>
         </View>
@@ -657,7 +630,7 @@ var User = React.createClass({
             <Text
               style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
               {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
-              | {'\t'}
+              | {' \t'}
               <Text style={styles.profileModalActivityInfo}>
                 <Text
                   style={styles.profileModalActivityPreference}>{this.props.data && this.props.data.activityPreference
@@ -703,7 +676,7 @@ var User = React.createClass({
                   && _.parseInt((this._getTimerValue(this.state.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
                   {!_.isString(this._getTimerValue(this.state.currentTimeInMs))
                   && (this._getTimerValue(this.state.currentTimeInMs) >= 0)
-                  && _.parseInt(this._getTimerValue(this.state.currentTimeInMs) / 60) + 'm'}
+                  && _.parseInt(this._getTimerValue(this.state.currentTimeInMs) / 60) + 'm '}
                   {!_.isString(this._getTimerValue(this.state.currentTimeInMs))
                   && (this._getTimerValue(this.state.currentTimeInMs) >= 0)
                   && this._getTimerValue(this.state.currentTimeInMs) % 60 + 's'}
@@ -762,6 +735,7 @@ var ChatsListPage = React.createClass({
         rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
       }),
       firebaseRef,
+      funFact: '1 in every 16 Yale students\nis a section asshole.',
       userRows: [],
       showFiltersModal: false,
       showFunFact: true,
@@ -805,6 +779,7 @@ var ChatsListPage = React.createClass({
               maxSearchDistance = matchingPreferences && matchingPreferences.maxSearchDistance;
 
             compositeUsersList && _.each(compositeUsersList, (user) => {
+              if(!user) return;
 
               // @hmm: because of cumulative privacy selection, only have to check for friends+ for both 'friends+' and 'all'
               if (matchingPreferences && matchingPreferences.privacy
@@ -893,7 +868,7 @@ var ChatsListPage = React.createClass({
       if(this.props.firstSession && !this.props.firstSession.hasVisitedChatsListPage) {
         AlertIOS.alert(
           'Your Connections',
-          'Here you\'ll find an overview of all your active interactions: matches (green), received requests (blue), and sent requests (yellow). Keep an eye on your chat timers too; once a chat with a user expires, the match will reset.'
+          'Here you\'ll find an overview of all your active interactions: matches (green), received requests (blue), and sent requests (yellow). Keep an eye on your chat timers too; once a chat expires, the match will reset.'
         );
         firstSessionRef.child('hasVisitedChatsListPage').set(true);
       }
@@ -902,6 +877,7 @@ var ChatsListPage = React.createClass({
 
   componentWillUnmount() {
     this.state.usersListRef && this.state.usersListRef.off();
+    this.state.firebaseRef.child('chat_rooms') && this.state.firebaseRef.child('chat_rooms').off();
     this.state.firebaseRef.off();
   },
 
@@ -919,7 +895,7 @@ var ChatsListPage = React.createClass({
     userRows = _.orderBy(userRows, [`match_requests.${this.props.ventureId}.status`], ['asc']);
 
     this.setState({dataSource: this.state.dataSource.cloneWithRows(userRows)});
-    if (userRows.length) this.setState({showLoadingModal: false})
+    if (userRows.length) this.setState({showFunFact: false, showLoadingModal: false})
   },
   _renderHeader() {
     return (
@@ -938,11 +914,6 @@ var ChatsListPage = React.createClass({
   _renderUser(user:Object, sectionID:number, rowID:number) {
     if (user.ventureId === this.state.currentUserVentureId || (user.status && !user.status.isOnline)) return <View />;
 
-    // @hmm: get rid of this when SGListView package updates pls
-    if (this.state.visibleRows && this.state.visibleRows[sectionID] && !this.state.visibleRows[sectionID][rowID]) {
-      return <View style={[styles.userRow, {backgroundColor: '#040A19', height: THUMBNAIL_SIZE+14}]} />;
-    }
-
     return <User chatsListHandle={this._handle}
                  currentTimeInMs={this.state.currentTimeInMs}
                  currentUserData={this.state.currentUserData}
@@ -950,6 +921,7 @@ var ChatsListPage = React.createClass({
                  currentUserLocationCoords={this.props.currentUserLocationCoords}
                  data={user}
                  firebaseRef={this.state.firebaseRef}
+                 firstSession={this.props.firstSession} // @hmm: will update as remote firstSession prop updates
                  navigator={this.props.navigator}/>;
   },
 
@@ -960,9 +932,7 @@ var ChatsListPage = React.createClass({
           <Animatable.View ref="funFact">
             <Text
               style={{color: '#fff', fontFamily: 'AvenirNextCondensed-Medium', textAlign: 'center', fontSize: 18}}>
-              <Text style={{fontSize: height/30, top: 15}}>Did You Know ?</Text> {'\n\n'} 1 in every 16 Yale
-              students {'\n'}
-              is a section asshole.</Text>
+              <Text style={{fontSize: height/30, top: 15}}>Did You Know ?</Text> {'\n\n'} {this.state.funFact}</Text>
           </Animatable.View>
         </TouchableOpacity>
       </View>
@@ -976,11 +946,15 @@ var ChatsListPage = React.createClass({
         <ListView
           dataSource={this.state.dataSource}
           renderRow={this._renderUser}
+          // renderScrollComponent={props => <SGListView {...props} premptiveLoading={5}/>}
           initialListSize={INITIAL_LIST_SIZE}
-          onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
+          onChangeVisibleRows={(visibleRows, changedRows) => {
+            this.setState({visibleRows, changedRows})
+          }}
           pageSize={PAGE_SIZE}
           automaticallyAdjustContentInsets={false}
-          scrollRenderAheadDistance={200}/>
+          scrollRenderAheadDistance={600}
+          />
         {this.state.showFunFact ? funFact : <View />}
         <View style={{height: 48}}></View>
         <ModalBase
@@ -1004,12 +978,13 @@ var ChatsListPage = React.createClass({
             </TouchableOpacity>
           </View>
         </ModalBase>
+        {this.state.showFiltersModal ?
         <FiltersModal
           firebaseRef={this.state.firebaseRef}
           handleShowFiltersModal={this._handleShowFiltersModal}
           modalVisible={this.state.showFiltersModal}
           ventureId={this.props.ventureId} // @hmm: important to pass this.props.ventureId bc its available immediately
-          />
+          /> : <View/>}
       </VentureAppPage>
     )
   }
@@ -1202,7 +1177,7 @@ var styles = StyleSheet.create({
   userRow: {
     flex: 1,
     backgroundColor: '#fefefb',
-    overflow: 'hidden'
+    overflow: 'hidden',
   }
 });
 

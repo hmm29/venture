@@ -177,19 +177,51 @@ var HotPage = React.createClass({
         {this._renderHeader()}
         <View style={styles.container}>
           <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContentTitle}</Text></Title>
-          <Swiper ref={TRENDING_USERS_REF}
-                  autoplay={true}
-                  buttonWrapperStyle={styles.buttonWrapperStyle}
-                  height={100}
-                  loop={true}
-                  // nextButton={<ChevronIcon direction="right" />}
-                  // prevButton={<ChevronIcon direction="left" />}
-                  showsButtons={true}
-                  showsPagination={false}
-                  style={styles.swiper}>
-            {slide1}
-            {slide2}
-          </Swiper>
+          {len <= 6  ?
+            <Swiper ref={TRENDING_USERS_REF}
+                     autoplay={true}
+                     buttonWrapperStyle={styles.buttonWrapperStyle}
+                     height={100}
+                     loop={true}
+                     showsButtons={true}
+                     showsPagination={false}
+                     style={styles.swiper}>
+                    {slide1}
+                    {slide2}
+                  </Swiper>
+
+            :
+
+            (
+                len >= 12 ?
+                <Swiper ref={TRENDING_USERS_REF}
+                        autoplay={true}
+                        buttonWrapperStyle={styles.buttonWrapperStyle}
+                        height={100}
+                        loop={true}
+                        showsButtons={true}
+                        showsPagination={false}
+                        style={styles.swiper}>
+                        {slide1}
+                        {slide2}
+                        {slide3}
+                        {slide4}
+                      </Swiper>
+                :
+                <Swiper ref={TRENDING_USERS_REF}
+                        autoplay={true}
+                        buttonWrapperStyle={styles.buttonWrapperStyle}
+                        height={100}
+                        loop={true}
+                        showsButtons={true}
+                        showsPagination={false}
+                        style={styles.swiper}>
+                        {slide1}
+                        {slide2}
+                        {slide3}
+                      </Swiper>
+            )
+          }
           <Title>TRENDING <Text style={{color: '#ee964b'}}>ACTIVITIES</Text></Title>
           <ScrollView
             ref={TRENDING_ACTIVITIES_SCROLLVIEW}

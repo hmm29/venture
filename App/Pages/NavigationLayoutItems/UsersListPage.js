@@ -17,7 +17,6 @@ var {
   ActivityIndicatorIOS,
   AlertIOS,
   Animated,
-  AsyncStorage,
   Image,
   InteractionManager,
   LayoutAnimation,
@@ -163,8 +162,7 @@ var User = React.createClass({
   componentWillReceiveProps(nextProps) {
     let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location
         && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords,
-          [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
-      _this = this;
+          [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]);
 
     // @hmm: must have this to clean up old match subscriptions
     nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
@@ -180,7 +178,7 @@ var User = React.createClass({
       .child(nextProps.data.ventureId).on('value', snapshot => {
           let status = this.state.status;
 
-        _this.setState({
+        this.setState({
           chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
           distance,
           status: snapshot.val() && snapshot.val().status,
@@ -194,7 +192,7 @@ var User = React.createClass({
               'Activity Request Sent!',
               'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
             );
-            this.props.firebaseRef
+            nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
           }
           else if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
@@ -291,9 +289,12 @@ var User = React.createClass({
     let targetUserIDHashed = this.props.data.ventureId,
       currentUserIDHashed = this.props.currentUserIDHashed,
       firebaseRef = this.props.firebaseRef,
-      firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
-      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
-      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
+      usersListRef = firebaseRef.child('users'),
+      currentUserRef = usersListRef.child(currentUserIDHashed),
+      targetUserRef = usersListRef.child(targetUserIDHashed),
+      firstSessionRef = currentUserRef.child('firstSession'),
+      targetUserMatchRequestsRef = targetUserRef.child('match_requests'),
+      currentUserMatchRequestsRef = currentUserRef.child('match_requests'),
       _this = this;
 
     if (this.state.status === 'sent') {
@@ -345,13 +346,11 @@ var User = React.createClass({
           if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
             // TODO: in the future should be able to account for timezone differences?
             // good for now because in nearly all cases your match will be in same timezone
-
             let currentTime = new Date().getTime(),
               expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
 
             chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
             chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
-            chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
             chatRoomRef.child('user_activity_preference_titles') // @hmm: set activity preference titles for chat
               .child(currentUserIDHashed)
               .set(this.props.currentUserData.activityPreference.title);
@@ -369,7 +368,9 @@ var User = React.createClass({
               distance,
               chatRoomActivityPreferenceTitle,
               chatRoomRef,
-              currentUserData: _this.props.currentUserData
+              currentUserData: _this.props.currentUserData,
+              currentUserRef,
+              targetUserRef
             }
           });
 
@@ -408,14 +409,12 @@ var User = React.createClass({
         return <SentRequestIcon
           color='rgba(0,0,0,0.2)'
           onPress={this.handleMatchInteraction}
-          style={{left: 10, bottom: 6}}
-          />;
+          style={{left: 10, bottom: 6}} />;
       case 'received':
         return <ReceivedRequestIcon
           color='rgba(0,0,0,0.2)'
           onPress={this.handleMatchInteraction}
-          style={{left: 10,  bottom: 6}}
-          />;
+          style={{left: 10,  bottom: 6}} />;
       case 'matched':
         return <MatchSuccessIcon
           chatRoomRef={this.props.firebaseRef && this.props.firebaseRef
@@ -423,13 +422,11 @@ var User = React.createClass({
           color='rgba(0,0,0,0.2)'
           onPress={this.handleMatchInteraction}
           style={{left: 10,  bottom: 6}}
-          currentUserIDHashed={this.props.currentUserIDHashed}
-          />;
+          currentUserIDHashed={this.props.currentUserIDHashed} />;
       default:
         return <DefaultMatchStatusIcon
           onPress={this.handleMatchInteraction}
-          style={{left: 10, bottom: 6}}
-          />
+          style={{left: 10, bottom: 6}} />
     }
   },
 
@@ -443,15 +440,14 @@ var User = React.createClass({
             style={[styles.profileModalUserPicture, (this.state.isFacebookFriend ?
                         {borderWidth: 3, borderColor: '#4E598C'} : {})]}/>
           <Text
-            style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
-            {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
+            style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName}, {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
             | {'\t'}
             <Text style={styles.profileModalActivityInfo}>
               <Text
                 style={styles.profileModalActivityPreference}>{this.props.data
               && this.props.data.activityPreference && this.props.data.activityPreference.title
               && this.props.data.activityPreference.title.slice(0, -1)} </Text>:
-              {'\t'} {this.props.data && this.props.data.activityPreference
+              {' '} {this.props.data && this.props.data.activityPreference
             && (this.props.data.activityPreference.start.time
             || this.props.data.activityPreference.status)} {'\n'}
             </Text>
@@ -461,6 +457,7 @@ var User = React.createClass({
               style={styles.profileModalSectionTitle}>TAGS: </Text>
             <ScrollView
               automaticallyAdjustContentInsets={false}
+              contentContainerStyle={{flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}} //@hmm: scrollview styles go here
               horizontal={true}
               directionalLockEnabled={true}
               showsHorizontalScrollIndicator={true}
@@ -519,7 +516,7 @@ var User = React.createClass({
                 </Image>
                 <Text
                   style={[styles.distance]}>{this.state.distance ? this.state.distance + ' mi' : '      '}</Text>
-                <Text style={[styles.activityPreference]}>
+                <Text style={[styles.activityPreference, {right: (this.props.isCurrentUser ? width/150 : 0)}]}>
                   {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title}
                 </Text>
                 <View>
@@ -606,7 +603,7 @@ var UsersListPage = React.createClass({
           filteredUsersArray = [];
 
         InteractionManager.runAfterInteractions(() => {
-
+          // @hmm: use usersListRef.once and not usersListRef.on, to prevent over-updating and repeated user rows
           usersListRef.once('value', snapshot => {
             // @hmm: clear and re-render rows
             _this.updateRows([]);
@@ -718,6 +715,8 @@ var UsersListPage = React.createClass({
       return (activity.indexOf(lowText) > -1 || name.indexOf(lowText) > -1);
     };
 
+    // @hmm: refresh list to prevent freezing of timers once filtering over
+    if(_.size(_.cloneDeep(_.values(_.filter(this.state.rows, checkFilter)))) === this.state.rows.length) this.updateRows([]);
     this.updateRows(_.cloneDeep(_.values(_.filter(this.state.rows, checkFilter))));
   },
 
@@ -777,11 +776,6 @@ var UsersListPage = React.createClass({
   _renderUser(user:Object, sectionID:number, rowID:number) {
     if (user.ventureId === this.state.currentUserVentureId) return <View />;
 
-    // @hmm: get rid of this when SGListView package updates pls
-    if (this.state.visibleRows && this.state.visibleRows[sectionID] && !this.state.visibleRows[sectionID][rowID]) {
-      return <View style={[styles.userRow, {backgroundColor: '#040A19', height: THUMBNAIL_SIZE+14}]} />;
-    }
-
     return <User currentTimeInMs={this.state.currentTimeInMs}
                  currentUserData={this.state.currentUserData}
                  currentUserIDHashed={this.state.currentUserVentureId}
@@ -790,8 +784,7 @@ var UsersListPage = React.createClass({
                  firebaseRef={this.state.firebaseRef}
                  firstSession={this.props.firstSession} // @hmm: will update as remote firstSession prop updates
                  navigator={this.props.navigator}
-                 rowID={rowID}
-      />;
+                 rowID={rowID} />;
   },
 
   render() {
@@ -806,7 +799,7 @@ var UsersListPage = React.createClass({
           contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
           dataSource={this.state.dataSource}
           renderRow={this._renderUser}
-          // renderScrollComponent={props => <SGListView {...props} />}
+          // renderScrollComponent={props => <SGListView {...props} premptiveLoading={10}/>}
           initialListSize={INITIAL_LIST_SIZE}
           pageSize={PAGE_SIZE}
           minPulldownDistance={15} // 15 px
@@ -828,8 +821,7 @@ var UsersListPage = React.createClass({
                           return <View onLayout={(e)=> {
                             this.footerY = e.nativeEvent.layout.y;
                           }}/>
-                    }}
-          />
+                    }}/>
         <View style={{height: 48}}></View>
         <ModalBase
           animated={true}
@@ -853,12 +845,13 @@ var UsersListPage = React.createClass({
             </TouchableOpacity>
           </View>
         </ModalBase>
+        {this.state.showFiltersModal ?
         <FiltersModal
           firebaseRef={this.state.firebaseRef}
           handleShowFiltersModal={this._handleShowFiltersModal}
-          modalVisible={this.state.showFiltersModal}
+          modalVisible={this.state.showFiltersModal}  // @hmm: btw important to dismount component so that it updates between being called to keep users list and chats list filters modals synced
           ventureId={this.props.ventureId} // @hmm: !! pass this.props.ventureId bc its available immediately
-          />
+          /> : <View /> }
       </VentureAppPage>
     )
   }
@@ -995,7 +988,7 @@ var styles = StyleSheet.create({
     paddingHorizontal: width / 10
   },
   scrollView: {
-    width: width / 1.3
+    width: width / 1.3,
   },
   searchTextInput: {
     color: '#222',

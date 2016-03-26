@@ -51,7 +51,6 @@ var EditProfilePage = React.createClass({
 
   getInitialState() {
     return {
-      // cameraType: Camera.constants.Type.back,
       firebaseRef: this.props.firebaseRef,
       hasKeyboardSpace: false,
       imgSource: null,
@@ -154,7 +153,6 @@ var EditProfilePage = React.createClass({
 
     if (this.state.currentPic !== this.state.originalPic || this.state.imgSource) {
       if (this.state.imgSource) {
-        //alert(JSON.stringify(this.state.imgSource.uri));
         this.state.firebaseRef.child(`users/${ventureId}/picture`).set(this.state.imgSource.uri)
       } else {
         this.state.firebaseRef.child(`users/${ventureId}/picture`).set(this.state.currentPic);
@@ -270,7 +268,7 @@ var EditProfilePage = React.createClass({
             color="rgba(255,255,255,0.7)"
             name="ion|edit"
             size={EDIT_GENDER_ICON_SIZE}
-            style={{width: EDIT_GENDER_ICON_SIZE * 1.4, height: EDIT_GENDER_ICON_SIZE * 1.4, left: 10}}
+            style={{width: EDIT_GENDER_ICON_SIZE * 1.4, height: EDIT_GENDER_ICON_SIZE * 1.4, left: width/30}}
             />
         </TouchableOpacity>
       </View>
@@ -300,13 +298,13 @@ var EditProfilePage = React.createClass({
           onTyping={this._onTyping}
           suggestions={this.state.genderMatches}
           textAlign='center'
-          style={[styles.autocomplete, {height: 40, marginRight: (this.state.showBioField ? 0 : width / 4)}]}
+          style={[styles.autocomplete, {height: 40, marginBottom: height/80, marginRight: (this.state.showBioField ? 0 : width / 4)}]}
           />
       </View>
     );
 
     return (
-      <VentureAppPage pageStyle={{}}>
+      <View>
         <View>
           {this._renderHeader()}
         </View>
@@ -315,7 +313,7 @@ var EditProfilePage = React.createClass({
 
             {editPhoto}
             <Text
-              style={[styles.label, {fontSize: 27, marginBottom: width/40}]}>{this.state.currentFirstName} {this.state.currentFirstName ? ',' : ''} {this.state.currentAge}</Text>
+              style={[styles.label, {fontSize: 27, marginBottom: width/40}]}>{this.state.currentFirstName && this.state.currentFirstName + ','} {this.state.currentAge}</Text>
 
             <View style={styles.editableTextFields}>
               {this.state.isEditingGenderField && this.state.showAutocomplete ? genderAutocomplete : genderField}
@@ -325,13 +323,13 @@ var EditProfilePage = React.createClass({
             </View>
 
             <TouchableOpacity onPress={this.saveData}
-                              style={[styles.saveButton, {top: (this.state.showBioField ? 10 : 115)}]}>
+                              style={[styles.saveButton, {top: (this.state.showBioField ? -(height/60) : height/6)}]}>
               <Text style={styles.saveButtonText}>S A V E</Text>
             </TouchableOpacity>
 
           </Image>
         </View>
-      </VentureAppPage> );
+      </View> );
   },
 
   _renderHeader() {
@@ -353,7 +351,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     width: width / 2,
     borderRadius: 10,
-    top: 10,
+    top: height/30,
     alignSelf: 'stretch'
   },
   backdrop: {
@@ -368,7 +366,7 @@ const styles = StyleSheet.create({
   bio: {
     backgroundColor: 'rgba(9, 24, 58,0.2)',
     width: width / 2,
-    height: width / 8,
+    height: width / 10,
     borderRadius: 10,
     paddingLeft: width / 25,
     alignSelf: 'center',
@@ -395,7 +393,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'flex-start',
     right: 10,
-    bottom: 4
+    bottom: height/30
   },
   editBio: {
     flexDirection: 'row',
@@ -409,6 +407,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row'
   },
   genderField: {
+    width: width/1.43,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -428,7 +427,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   saveButtonText: {
     color: '#fff',

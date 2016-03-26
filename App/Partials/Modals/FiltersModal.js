@@ -77,6 +77,7 @@ var FiltersModal = React.createClass({
         privacy: (_this.state.privacy.length && _this.state.privacy) || defaultPrivacy
       };
 
+    this.setState(filtersChanges);
     this.state.firebaseUserMatchingPreferencesRef.set(filtersChanges);
 
     this.props.handleShowFiltersModal(false);

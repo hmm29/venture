@@ -39,6 +39,7 @@ var GeoFire = require('geofire');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
+var SGListView = require('react-native-sglistview');
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
@@ -76,13 +77,16 @@ String.prototype.capitalize = function () {
 var hash = (msg:string) => sha256(msg);
 
 var User = React.createClass({
+  mixins: [TimerMixin],
 
   propTypes: {
     currentTime: React.PropTypes.number,
     currentUserLocationCoords: React.PropTypes.array,
     currentUserData: React.PropTypes.object,
+    currentUserIDHashed: React.PropTypes.string,
     data: React.PropTypes.object,
     isCurrentUser: React.PropTypes.func,
+    firstSession: React.PropTypes.object,
     navigator: React.PropTypes.object
   },
 
@@ -114,8 +118,8 @@ var User = React.createClass({
 
         // @hmm: onboarding tutorial logic
         if(this.props.firstSession) {
-          if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probably for componentDidMount
-            // @hmm: account for case in which user already has received requests before first nav to events list
+          if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
+            // @hmm: account for case in which user already has received requests before first nav to users list
             AlertIOS.alert(
               'Someone Is Interested In Your Activity!',
               'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
@@ -131,20 +135,13 @@ var User = React.createClass({
             this.props.firebaseRef
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
           }
-          else if(this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
-            AlertIOS.alert(
-              'Activity Request Sent!',
-              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
-            );
-            this.props.firebaseRef
-              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
-          }
         }
+
       });
   },
 
   componentDidMount() {
-    this.refs.attendee.fadeInUp(600);
+    this.refs.attendee.fadeIn(600);
   },
 
   componentWillReceiveProps(nextProps) {
@@ -158,6 +155,8 @@ var User = React.createClass({
       .child(nextProps.data.ventureId)
     && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
       .child(nextProps.data.ventureId).on('value', snapshot => {
+        let status = this.state.status;
+
         _this.setState({
           chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
           distance,
@@ -193,15 +192,6 @@ var User = React.createClass({
           }
         }
       });
-  },
-
-  componentWillUnmount() {
-    let currentUserIDHashed = this.props.currentUserIDHashed,
-      firebaseRef = this.props.firebaseRef,
-      currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
-          + '/event_invite_match_requests');
-
-    currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
   },
 
   calculateDistance(location1:Array, location2:Array) {
@@ -244,8 +234,8 @@ var User = React.createClass({
     let targetUserIDHashed = this.props.data.ventureId,
       currentUserIDHashed = this.props.currentUserIDHashed,
       firebaseRef = this.props.firebaseRef,
-      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
-      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests');
+      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests'),
+      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
 
     // end match interactions
     targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
@@ -261,9 +251,12 @@ var User = React.createClass({
     let targetUserIDHashed = this.props.data.ventureId,
       currentUserIDHashed = this.props.currentUserIDHashed,
       firebaseRef = this.props.firebaseRef,
-      firstSessionRef = firebaseRef.child('users/' + currentUserIDHashed + '/firstSession'),
-      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests'),
-      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
+      usersListRef = firebaseRef.child('users'),
+      currentUserRef = usersListRef.child(currentUserIDHashed),
+      targetUserRef = usersListRef.child(targetUserIDHashed),
+      firstSessionRef = currentUserRef.child('firstSession'),
+      targetUserMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
+      currentUserMatchRequestsRef = currentUserRef.child('event_invite_match_requests'),
       _this = this;
 
     if (this.state.status === 'sent') {
@@ -277,23 +270,22 @@ var User = React.createClass({
 
       // @hmm: accept the request
       // chatroom reference uses id of the user who accepts the received matchInteraction
-      targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
+      targetUserMatchRequestsRef.child(currentUserIDHashed).update({
         _id: currentUserIDHashed,
         status: 'matched',
         role: 'recipient'
-      }, 100);
+      }, () => {});
 
-      currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
+      currentUserMatchRequestsRef.child(targetUserIDHashed).update({
         _id: targetUserIDHashed,
         status: 'matched',
         role: 'sender'
-      }, 100);
+      }, () => {});
     }
 
     else if (this.state.status === 'matched') {
       let chatRoomActivityPreferenceTitle,
         distance = this.state.distance + 'mi',
-
         _id;
 
       currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
@@ -306,7 +298,7 @@ var User = React.createClass({
           chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
         }
 
-        // @hmm put chat ids in match request object so overlays know which chat to destroy
+        // @hmm: put chat ids in match request object so overlays know which chat to destroy
         currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
         targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
 
@@ -318,16 +310,14 @@ var User = React.createClass({
             // TODO: in the future should be able to account for timezone differences?
             // probably not because if youre going to match with someone youll be in same timezone
 
-            let currentTime = new Date().getTime(),
-              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+            let currentTime = new Date().getTime();
 
             chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
             chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
-            chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
             chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
-              .set(this.props.currentUserData.activityPreference.title);
+              .set(this.props.eventTitle);
             chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed)
-              .set(this.props.data.activityPreference.title);
+              .set(this.props.eventTitle);
           }
 
           _this.props.navigator.push({
@@ -339,7 +329,9 @@ var User = React.createClass({
               distance,
               chatRoomActivityPreferenceTitle,
               chatRoomRef,
-              currentUserData: _this.props.currentUserData
+              currentUserData: _this.props.currentUserData,
+              currentUserRef,
+              targetUserRef
             }
           });
 
@@ -357,13 +349,36 @@ var User = React.createClass({
 
     else {
       targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
+        eventTitle: this.props.eventTitle,
         status: 'received',
         _id: currentUserIDHashed
       }, 200);
       currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
+        eventTitle: this.props.eventTitle,
         status: 'sent',
         _id: targetUserIDHashed
       }, 300);
+
+      this.setTimeout(() => {
+        usersListRef.child(currentUserIDHashed).once('value', snapshot => {
+          let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
+            'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
+
+          targetUserMatchRequestsRef.child(currentUserIDHashed).update({
+            account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
+          });
+        });
+
+        usersListRef.child(targetUserIDHashed).once('value', snapshot => {
+          let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
+            'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
+
+          currentUserMatchRequestsRef.child(targetUserIDHashed).update({
+            account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
+          });
+
+        });
+      }, 0);
     }
   },
 
@@ -378,28 +393,24 @@ var User = React.createClass({
         return <SentRequestIcon
           color='rgba(0,0,0,0.2)'
           onPress={this.handleMatchInteraction}
-          style={{left: 10, bottom: 6}}
-          />;
+          style={{left: 10, bottom: 6}} />;
       case 'received':
         return <ReceivedRequestIcon
           color='rgba(0,0,0,0.2)'
           onPress={this.handleMatchInteraction}
-          style={{left: 10, bottom: 6}}
-          />;
+          style={{left: 10, bottom: 6}} />;
       case 'matched':
         return <MatchSuccessIcon
           chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
           color='rgba(0,0,0,0.2)'
           onPress={this.handleMatchInteraction}
           style={{left: 10,  bottom: 6}}
-          currentUserIDHashed={this.props.currentUserIDHashed}
-          />;
+          currentUserIDHashed={this.props.currentUserIDHashed} />;
       default:
         return <DefaultMatchStatusIcon
           color='rgba(0,0,0,0.2)'
           onPress={this.handleMatchInteraction}
-          style={{left: 10, bottom: 6}}
-          />
+          style={{left: 10, bottom: 6}} />
     }
   },
 
@@ -412,15 +423,11 @@ var User = React.createClass({
             source={{uri: this.props.data && this.props.data.picture}}
             style={styles.profileModalUserPicture}/>
           <Text
-            style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
-            {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
+            style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName}, {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
             | {'\t'}
             <Text style={styles.profileModalActivityInfo}>
               <Text
                 style={styles.profileModalActivityPreference}>{this.props.eventTitle}</Text>
-              {'\t'} {this.props.data && this.props.data.activityPreference
-            && (this.props.data.activityPreference.start.time
-            || this.props.data.activityPreference.status)} {'\n'}
             </Text>
           </Text>
           <Text
@@ -451,7 +458,7 @@ var User = React.createClass({
                 <Image
                   onPress={this._onPressItem}
                   source={{uri: this.props.data && this.props.data.picture}}
-                  style={[styles.thumbnail]}>
+                  style={[styles.thumbnail, {left: width/20}]}>
                   <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                     <Text
                       style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs))
@@ -471,7 +478,7 @@ var User = React.createClass({
                 <Text style={styles.eventTitle}>
                   {this.props.eventTitle} ?
                 </Text>
-                <View style={{top: 10, right: width/25}}>{this._renderStatusIcon()}</View>
+                <View style={{top: 10, right: width/6.4}}>{this._renderStatusIcon()}</View>
               </View>
             </LinearGradient>
             {this.state.dir === 'column' ? profileModal : <View />}
@@ -516,8 +523,8 @@ var AttendeeList = React.createClass({
   },
 
   componentWillUnmount() {
-    this.state.currentUserRef && this.state.currentUserRef.off();
-    this.state.usersListRef && this.state.usersListRef.off();
+    //this.state.currentUserRef && this.state.currentUserRef.off();
+    //this.state.usersListRef && this.state.usersListRef.off();
   },
 
   updateRows(rows) {
@@ -525,13 +532,14 @@ var AttendeeList = React.createClass({
   },
 
   _renderHeader() {
-    // make sure to have three children in Header with text in center
+    // @hmm: make sure to have three children in Header with text in center
     return (
       <Header>
         <View />
-        <Text>WHO'S GOING TO : <Text style={{color: '#F06449'}}>{this.props.eventData
+        <Text>{"WHO'S GOING TO : "} 
+        <Text style={{color: '#F06449'}}>{this.props.eventData
         && this.props.eventData.title}</Text></Text>
-        <CloseIcon style={{bottom: height / 15, left: width / 18}}
+        <CloseIcon style={{bottom: height / 15}}
                    onPress={this.props.closeAttendeeListModal}/>
       </Header>
     )
@@ -541,11 +549,6 @@ var AttendeeList = React.createClass({
   _renderUser(user:Object, sectionID:number, rowID:number) {
     if (user.ventureId === this.props.ventureId) return <View />;
 
-    // @hmm: get rid of this when SGListView package updates pls
-    if (this.state.visibleRows && this.state.visibleRows[sectionID] && !this.state.visibleRows[sectionID][rowID]) {
-      return <View style={[styles.userRow, {backgroundColor: '#040A19', height: THUMBNAIL_SIZE+14}]} />;
-    }
-
     return <User currentTimeInMs={this.state.currentTimeInMs}
                  currentUserData={this.props.currentUserData}
                  currentUserIDHashed={this.props.ventureId}
@@ -554,18 +557,22 @@ var AttendeeList = React.createClass({
                  eventId={this.props.eventData && this.props.eventData.id}
                  eventLogistics={`${this.props.eventData && this.props.eventData.start
                      && this.props.eventData.start.date}, ${this.props.eventData
-                     && this.props.eventData.start && this.props.eventData.start.dateTime}\t
-                     | \t${this.props.eventData && this.props.eventData.location}`}
+                     && this.props.eventData.start && this.props.eventData.start.dateTime}   @   ${this.props.eventData
+                     && this.props.eventData.location}`}
                  eventTitle={this.props.eventData && this.props.eventData.title}
                  firebaseRef={this.props.firebaseRef}
+                 firstSession={this.props.firstSession}
                  navigator={this.props.navigator}/>;
   },
 
   render() {
     return (
       <View style={styles.attendeeListBaseContainer}>
+        <View>
         {this._renderHeader()}
+        </View>
         <ListView
+          style={{height: height/1.4}}
           dataSource={this.state.dataSource}
           renderRow={this._renderUser}
           initialListSize={INITIAL_LIST_SIZE}
@@ -600,7 +607,7 @@ var Event = React.createClass({
   },
 
   componentDidMount() {
-    this.refs.event.fadeInUp(600);
+      this.refs.event.fadeIn(300);
   },
 
   componentWillReceiveProps(nextProps) {
@@ -617,14 +624,14 @@ var Event = React.createClass({
 
   },
 
-  componentWillUnmount() {
-    let currentUserIDHashed = this.props.currentUserIDHashed,
-      firebaseRef = this.props.firebaseRef,
-      currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
-          + '/event_invite_match_requests');
-
-    currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
-  },
+  //componentWillUnmount() {
+  //  let currentUserIDHashed = this.props.currentUserIDHashed,
+  //    firebaseRef = this.props.firebaseRef,
+  //    currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
+  //        + '/event_invite_match_requests');
+  //
+  //  currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
+  //},
 
   _getSecondaryStatusColor() {
     switch (this.state.status) {
@@ -722,7 +729,7 @@ var Event = React.createClass({
                      this.props.openAttendeeListModal();
                      }} style={{backgroundColor: 'rgba(0,0,0,0.001)'}}><Text style={{color: '#3F7CFF',
                      fontFamily: 'AvenirNextCondensed-Medium', fontSize: 20, paddingHorizontal: 40, paddingBottom: 10}}>
-            WHO'S GOING?</Text></TouchableOpacity>
+            {"WHO\'S GOING?"}</Text></TouchableOpacity>
         </View>
       </View>
     );
@@ -730,10 +737,9 @@ var Event = React.createClass({
     return (
       <Animatable.View ref="event">
         <TouchableHighlight
-          underlayColor={WHITE_HEX_CODE}
           activeOpacity={0.9}
           onPress={this._onPressItem}
-          style={[styles.userRow, {height: THUMBNAIL_SIZE * 2}]}>
+          style={[{height: THUMBNAIL_SIZE * 2}]}>
           <View
             style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
             <LinearGradient
@@ -742,13 +748,14 @@ var Event = React.createClass({
               start={[0,1]}
               end={[1,1]}
               locations={[0.3,0.99,1.0]}
+              onLayout={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)}
               style={styles.container}>
               <Image
                 onLoad={() => {this.props.handleShowLoadingModal(false);
                             }}
                 source={{uri: this.props.data && this.props.data.event_img}}
                 style={{resizeMode: 'cover', height: THUMBNAIL_SIZE * 2, flex: 1, flexDirection: 'row',
-                            backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'space-between', alignItems: 'center'}}>
+                            backgroundColor: '#040A19', justifyContent: 'space-between', alignItems: 'center'}}>
                 <View
                   onPress={this._onPressItem}
                   style={[styles.eventThumbnail, {backgroundColor: 'rgba(0,0,0,0.9)', justifyContent:
@@ -854,7 +861,7 @@ var EventsListPage = React.createClass({
       usersListRef = this.state.usersListRef;
 
     eventsListRef && eventsListRef.off();
-    eventsListRef && usersListRef.off();
+    usersListRef && usersListRef.off();
   },
 
   _openAttendeeListModal() {
@@ -892,9 +899,9 @@ var EventsListPage = React.createClass({
 
 
   _renderEvent(event:Object, sectionID:number, rowID:number) {
-    // dont render if not visible :), little optimization
-    if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID]
-      && !this.state.visibleRows[sectionID][rowID]) return <View />;
+    // @hmm: not needed thanks to sglistview
+    // if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID]
+    //  && !this.state.visibleRows[sectionID][rowID]) return <View />;
 
     return <Event currentUserData={this.state.currentUserData}
                   currentUserIDHashed={this.state.currentUserVentureId}
@@ -905,8 +912,7 @@ var EventsListPage = React.createClass({
                   handleShowLoadingModal={this._handleShowLoadingModal}
                   openAttendeeListModal={this._openAttendeeListModal}
                   navigator={this.props.navigator}
-                  usersListRef={this.state.usersListRef}
-      />;
+                  usersListRef={this.state.usersListRef}/>;
   },
 
   render() {
@@ -918,12 +924,13 @@ var EventsListPage = React.createClass({
         <ListView
           dataSource={this.state.dataSource}
           renderRow={this._renderEvent}
-          // renderScrollComponent={props => <SGListView {...props} />}
+          // renderScrollComponent={props => <SGListView {...props} premptiveLoading={5} />}
           initialListSize={INITIAL_LIST_SIZE}
           pageSize={PAGE_SIZE}
           onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
           automaticallyAdjustContentInsets={false}
-          scrollRenderAheadDistance={200}/>
+          scrollRenderAheadDistance={600}
+          />
         <View style={{height: 48}}></View>
         <ModalBase
           modalStyle={styles.modalStyle}
@@ -960,6 +967,7 @@ var EventsListPage = React.createClass({
                 eventData={this.state.selectedEvent}
                 eventsListRef={this.state.eventsListRef}
                 firebaseRef={this.state.firebaseRef}
+                firstSession={this.props.firstSession}
                 navigator={this.props.navigator}
                 ventureId={this.props.ventureId}/> : <View/> }
           </View>
@@ -986,7 +994,6 @@ var styles = StyleSheet.create({
     borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
-    top: 1,
     left: width / 15
   },
   eventThumbnail: {
@@ -1051,6 +1058,7 @@ var styles = StyleSheet.create({
   },
   profileModalContainer: {
     backgroundColor: WHITE_HEX_CODE,
+    width
   },
   profileModalActivityInfo: {
     fontFamily: 'AvenirNextCondensed-Medium'
@@ -1113,15 +1121,14 @@ var styles = StyleSheet.create({
   userRow: {
     flex: 1,
     backgroundColor: '#fefefb',
-    overflow: 'hidden'
+    width
   },
   eventTitle: {
-    width: 154,
-    right: 20,
-    fontSize: 17,
-    top: 2,
-    fontFamily: 'AvenirNextCondensed-Regular',
-    fontWeight: '400'
+    width: width / 2.2,
+    fontSize: 18,
+    fontFamily: 'AvenirNextCondensed-UltraLight',
+    fontWeight: '400',
+    textAlign: 'left'
   },
   backdrop: {
     paddingTop: 30,
@@ -1140,13 +1147,13 @@ var styles = StyleSheet.create({
     borderWidth: 1
   },
   distance: {
-    width: 75,
-    right: 10,
+    width: width / 4,
+    left: 10,
     textAlign: 'center',
     fontSize: 16,
     marginHorizontal: 25,
     fontFamily: 'AvenirNext-UltraLight',
-    fontWeight: '300'
+    fontWeight: '300',
   },
   filterPageButton: {
     width: 30,

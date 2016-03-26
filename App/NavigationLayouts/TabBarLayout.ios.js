@@ -11,10 +11,12 @@
  */
 
 import React, {
+  AlertIOS,
   AsyncStorage,
   Component,
   Dimensions,
   LayoutAnimation,
+  PushNotificationIOS,
   StyleSheet,
   Text,
   View,
@@ -22,7 +24,6 @@ import React, {
 
 import ChatsListPage from '../Pages/NavigationLayoutItems/ChatsListPage';
 import EventsListPage from '../Pages/NavigationLayoutItems/EventsListPage';
-var FBLoginManager = require('NativeModules').FBLoginManager;
 import Firebase from 'firebase';
 import HotPage from '../Pages/NavigationLayoutItems/HotPage';
 import LoginPage from '../Pages/LoginPage.js'
@@ -30,8 +31,9 @@ import ProfilePage from '../Pages/NavigationLayoutItems/ProfilePage';
 import UsersListPage from '../Pages/NavigationLayoutItems/UsersListPage';
 import { TabBarIOS, } from 'react-native-icons';
 
-let TabBarItemIOS = TabBarIOS.Item;
-var {height} = Dimensions.get('window');
+const Parse = require('parse/react-native');
+const TabBarItemIOS = TabBarIOS.Item;
+const {height} = Dimensions.get('window');
 const TAB_BAR_ICON_SIZE = height / 24;
 const TARGET_USERS = "Yalies";
 
@@ -57,6 +59,8 @@ class TabBarLayout extends Component {
     super(props);
     this.state = {
       chatCount: 0,
+      eventInviteRequestsCount: 0,
+      matchRequestsCount: 0,
       firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
       firstSession: this.props.firstSession, // @hmm: NOTE: get as prop first time, then subsequent times get updated version from firebase
       selectedTab: props.selectedTab
@@ -64,7 +68,9 @@ class TabBarLayout extends Component {
   };
 
   componentWillMount() {
-    let firebaseRef = this.props.firebaseRef;
+    let firebaseRef = this.props.firebaseRef,
+      ventureId = this.props.ventureId,
+      currentUserChatCount = firebaseRef.child(`users/${ventureId}/chatCount`);
 
     if (!this.props.firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
     let firstSessionRef = firebaseRef.child(`users/${this.props.ventureId}/firstSession`);
@@ -74,57 +80,118 @@ class TabBarLayout extends Component {
       // @hmm: if all 10 tutorial achievements have been completed, then delete first session object
       if((_.values(snapshot.val())).length === 10 && _.every(_.values(snapshot.val()), v => v)) {
         firstSessionRef.set(null);
-        // alert('finished tutorial ' + JSON.stringify(this.state.firstSession));
       }
-
       this.setState({firstSession: snapshot.val()});
     });
+
+    currentUserChatCount.once('value', snapshot => {
+      snapshot.val() && this.setState({chatCount: snapshot.val()});
+    })
 
   }
 
   componentDidMount() {
-    let firebaseRef = this.props.firebaseRef;
+    let firebaseRef = this.props.firebaseRef,
+        ventureId = this.props.ventureId,
+        currentUserRef = firebaseRef.child(`users/${ventureId}`),
+        currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests'),
+        currentUserMatchRequestsRef = currentUserRef.child('match_requests');
 
     if (!this.props.firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
-    let chatCountRef = firebaseRef.child(`users/${this.props.ventureId}/chatCount`);
 
-    // @hmm: update chat count badge value
-    chatCountRef.on('value', snapshot => {
-      this.setState({chatCount: snapshot.val(), chatCountRef});
+    currentUserMatchRequestsRef.on('value', snapshot => {
+      let len;
+
+      if(!snapshot.val()) len = 0;
+      else len = _.size(snapshot.val());
+
+      this.setState({chatCount: len + this.state.eventInviteRequestsCount, matchRequestsCount: len, currentUserMatchRequestsRef});
+      currentUserRef.child('chatCount').set(this.state.chatCount);
+      PushNotificationIOS.setApplicationIconBadgeNumber(this.state.chatCount)
     });
 
-    // @hmm: remote login check
-    let isOnlineRef = firebaseRef.child(`users/${this.props.ventureId}/status/isOnline`);
+    // @hmm: literally count chats with current user's id in it to ensure accuracy
+    currentUserEventInviteMatchRequestsRef.on('value', snapshot => {
+      let len;
+
+      if(!snapshot.val()) len = 0;
+      else len = _.size(snapshot.val());
+
+      this.setState({chatCount: len + this.state.matchRequestsCount, eventInviteRequestsCount: len, currentUserEventInviteMatchRequestsRef});
+      currentUserRef.child('chatCount').set(this.state.chatCount);
+      PushNotificationIOS.setApplicationIconBadgeNumber(this.state.chatCount)
+    });
+
+    // @hmm: ensure login markers synced
+    let isOnlineRef = firebaseRef.child(`users/${ventureId}/status/isOnline`);
     isOnlineRef.once('value', (snapshot) => {
       if(!snapshot.val()) {
-        this.navigateToLoginPage();
-        return;
+        isOnlineRef.set(true);
       }
     });
 
-    // @hmm: local login check
+    // @hmm: backup - local login check
     AsyncStorage.getItem('@AsyncStorage:Venture:account')
       .then((account:string) => {
         if (!JSON.parse(account)) {
           this.navigateToLoginPage();
+          AlertIOS.alert('Oops!', 'It looks like you\'re not logged in. Please sign out and then sign back in to continue.');
           return;
         }
       })
       .catch(error => console.log(error))
       .done();
+
+    // @hmm: Parse Push Notification Handlers
+    var GameScore = Parse.Object.extend('GameScore');
+    var GameScore = Parse.Object.extend("GameScore");
+    var gameScore = new GameScore();
+
+    gameScore.set("score", 1337);
+    gameScore.set("playerName", "Sean Plott");
+    gameScore.set("cheatMode", false);
+
+    gameScore.save(null, {
+      success: function(gameScore) {
+        alert('hey')
+        // Execute any logic that should take place after the object is saved.
+        alert('New object created with objectId: ' + gameScore.id);
+      },
+      error: function(gameScore, error) {
+        // Execute any logic that should take place if the save fails.
+        // error is a Parse.Error with an error code and message.
+        alert('Failed to create new object, with error code: ' + error.message);
+      }
+    });
+    //Parse.Cloud.afterSave("SendRequest", request => {
+    //
+    //});
+    //
+    //Parse.Cloud.afterSave("MatchRequest", request => {
+    //
+    //});
+    //
+    //Parse.Cloud.afterSave("EventInviteMatchRequest", request => {
+    //
+    //});
   };
 
   componentWillUnmount() {
-    this.state.chatCountRef && this.state.chatCountRef.off();
+    this.state.chatRoomRef && this.state.chatRoomRef.off();
     this.state.firstSessionRef && this.state.firstSessionRef.off();
+    this.state.currentUserMatchRequestsRef && this.state.currentUserMatchRequestsRef.off();
+    this.state.currentUserEventInviteMatchRequestsRef && this.state.currentUserEventInviteMatchRequestsRef.off();
 
     AsyncStorage.setItem('@AsyncStorage:Venture:currentUserFriends', 'null')
       .catch(error => console.log(error.message))
       .done();
+
+    // @hmm: deactivate Parse Push Notification Handlers here
+
+
   };
 
   navigateToLoginPage() {
-    FBLoginManager.logout(() => {})
     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
     this.props.navigator.replace({title: 'Login', component: LoginPage});
   };
@@ -257,5 +324,4 @@ class TabBarLayout extends Component {
 }
 
 const styles = StyleSheet.create({});
-
 module.exports = TabBarLayout;

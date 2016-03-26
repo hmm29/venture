@@ -29,7 +29,7 @@ type Props = {
   color: React.PropTypes.string,
   onPress: React.PropTypes.func.isRequired,
   size: React.PropTypes.number,
-  style: View.propTypes.style
+  style: View.propTypes.style,
 };
 
 class MatchSuccessIcon extends Component {
@@ -42,27 +42,35 @@ class MatchSuccessIcon extends Component {
 
   componentWillMount() {
     this.props.chatRoomRef.on('value', snapshot => {
-      let messageList, messageListCount, seenMessageCount;
+      let badgeValue, messageList, messageListCount, seenMessageCount, seenMessagesId;
+
       if (snapshot.val() && snapshot.val().messages === null) {
         messageListCount = 0;
-        this.props.targetUserMatchRequestObjectInCurrentUserMatchRequests && this.props.targetUserMatchRequestObjectInCurrentUserMatchRequests.child('seenMessages').set(0); // no seen messages in empty chat
       }
       else {
         messageList = _.cloneDeep(_.values(snapshot.val() && snapshot.val().messages));
         messageListCount = messageList && messageList.length;
       }
-      var seenMessagesId = `seenMessages_${this.props.currentUserIDHashed}`;
+
+      seenMessagesId = `seenMessages_${this.props.currentUserIDHashed}`;
+
       if (snapshot.val() && snapshot.val()[seenMessagesId]) {
         seenMessageCount = snapshot.val() && snapshot.val()[seenMessagesId];
-      } else seenMessageCount = 0;
-      this.setState({badgeValue: messageListCount - seenMessageCount})
+      }
+      else {
+        seenMessageCount = 0;
+      }
+
+      badgeValue = messageListCount - seenMessageCount;
+
+      this.setState({badgeValue, messageListCount})
     });
   };
 
   componentWillUnmount() {
     this.setState({badgeValue: 0});
 
-    // pay attention to when you turn off refs.
+    // @hmm: NOTE: pay attention to when you turn off refs.
     // like, you cant call chatRoomMessagesRef.off() or chatRoomRef.off() because will turn off other functionality
   };
 
@@ -77,7 +85,15 @@ class MatchSuccessIcon extends Component {
     return (
       <TouchableOpacity
         activeOpacity={0.3}
-        onPress={this.props.onPress}
+        onPress={() => {
+         if(this.state.messageListCount && this.state.badgeValue && this.state.messageListCount === this.state.badgeValue) {
+            let currentTime = new Date().getTime(),
+              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+
+            this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
+          }
+          this.props.onPress();
+        }}
         style={[this.props.style,{width: (this.props.size || SIZE) * 1.18,
                 height: (this.props.size || SIZE) * 1.18}]}>
         {this.state.badgeValue > 0 ? badge : undefined}

@@ -28,10 +28,11 @@
 
   // Start Batch.
   [BatchPush setupPush];
-  [Batch startWithAPIKey:@"DEV56C2C100A41752AF9F239B5CCE0"];
-
-  // Register for push notifications
-  [BatchPush registerForRemoteNotifications];
+  [Batch startWithAPIKey:@"56C2C100A314EF8388012E36138054"];
+  
+  UILocalNotification *localNotification = [launchOptions objectForKey:UIApplicationLaunchOptionsLocalNotificationKey];
+  if (localNotification)
+    [self handleNotification:localNotification application:application];
 
   NSURL *jsCodeLocation;
 
@@ -101,18 +102,59 @@
                                             sourceApplication:sourceApplication
                                                    annotation:annotation])
     {
-        return YES;
+        return [[FBSDKApplicationDelegate sharedInstance] application:application
+                                                                     openURL:url
+                                                           sourceApplication:sourceApplication
+                                                                  annotation:annotation];
     }
 
+    else if([RNGoogleSignin application:application
+                                            openURL:url
+                                  sourceApplication:sourceApplication
+                                         annotation:annotation])
+    {
     return [RNGoogleSignin application:application
                                openURL:url
                      sourceApplication:sourceApplication
                             annotation:annotation];
+    }
+    else
+    {
+      return YES;
+    }
 }
 
-- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
+// Required for the notification event.
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)notification
 {
-    [BatchPush dismissNotifications];
+  [BatchPush dismissNotifications];
+  [RCTPushNotificationManager didReceiveRemoteNotification:notification];
 }
+
+// Required to register for notifications
+- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings
+{
+[RCTPushNotificationManager didRegisterUserNotificationSettings:notificationSettings];
+}
+// Required for the register event.
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
+{
+[RCTPushNotificationManager didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+}
+// The localNotification event is not supported in RN0.19.0
+
+
+- (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification
+{
+  [self handleNotification:notification application:application];
+}
+
+
+-(void)handleNotification: (UILocalNotification *)notification application:(UIApplication *)application
+{
+  NSString *title = [notification.userInfo objectForKey:@"Title"];
+  [[[UIAlertView alloc]initWithTitle:@"Smart Alarm" message:title delegate:self cancelButtonTitle:@"Answer the Teaser" otherButtonTitles: nil] show];
+}
+
 
 @end

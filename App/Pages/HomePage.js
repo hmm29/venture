@@ -25,6 +25,7 @@ var {
   LayoutAnimation,
   PixelRatio,
   Platform,
+  PushNotificationIOS,
   Text,
   TextInput,
   TouchableOpacity,
@@ -38,7 +39,6 @@ var Animatable = require('react-native-animatable');
 var BrandLogo = require('../Partials/BrandLogo');
 var Dimensions = require('Dimensions');
 var dismissKeyboard = require('dismissKeyboard');
-var FBLoginManager = require('NativeModules').FBLoginManager;
 var Firebase = require('firebase');
 var {Icon, } = require('react-native-icons');
 var LoginPage = require('../Pages/LoginPage');
@@ -70,6 +70,15 @@ var NEXT_BUTTON_SIZE = 28;
 var TAG_SELECTION_INPUT_REF = 'tagSelectionInput';
 var TAG_TEXT_INPUT_PADDING = 3;
 
+class Title extends Component {
+  render() {
+    return (
+      <Text
+        style={[styles.title, {fontSize: this.props.fontSize},
+                this.props.titleStyle]}>{this.props.children}</Text>
+    );
+  }
+}
 
 var HomePage = React.createClass({
   getInitialState() {
@@ -91,7 +100,7 @@ var HomePage = React.createClass({
       ready: false,
       showAddInfoBox: false,
       showAddInfoButton: true,
-      showNextButton: false,
+      showSubmitActivityIcon: false,
       showTextInput: false,
       showTimeSpecificationOptions: false,
       showTrendingItems: false,
@@ -100,7 +109,7 @@ var HomePage = React.createClass({
       timeZoneOffsetInHours: (-1) * (new Date()).getTimezoneOffset() / 60,
       trendingContent: 'YALIES',
       trendingContentOffsetXVal: 0,
-      ventureId: '',
+      ventureId: null,
       viewStyle: {
         marginHorizontal: 0,
         borderRadius: 0
@@ -135,30 +144,34 @@ var HomePage = React.createClass({
               hasVisitedChatsListPage: false,
               hasVisitedEventsPage: false,
               hasVisitedHotPage: false,
-              hasEditProfilePage: false
+              hasVisitedEditProfilePage: false
             }
           })
         }
 
-        this.setState({isLoggedIn: true, showTextInput: true});
+        this.setState({isLoggedIn: true, showTextInput: true, ventureId: account.ventureId});
+        PushNotificationIOS.requestPermissions();
 
-        let firebaseRef = this.state.firebaseRef || new Firebase('https://ventureappinitial.firebaseio.com/'),
+        let firebaseRef = this.state.firebaseRef,
           usersListRef = firebaseRef && firebaseRef.child('users'),
-          currentUserRef = usersListRef.child(account.ventureId),
+          currentUserRef = usersListRef.child(this.state.ventureId || account.ventureId),
           firstSessionRef = currentUserRef.child('firstSession'),
           trendingItemsRef = firebaseRef && firebaseRef.child('trending'),
           chatRoomsRef = firebaseRef && firebaseRef.child('chat_rooms'),
           _this = this;
 
-        // @hmm: fetch first session object if it exists
+        // @hmm: ensure remote and local isOnline markers synced
+        currentUserRef.child('status/isOnline').once('value', snapshot => {
+          if(!snapshot.val()) {
+            currentUserRef.child('status/isOnline').set(true);
+          }
+        })
+
+        // @hmm: fetch first session object to update as tutorial gets completed
         firstSessionRef.on('value', snapshot => {
           _this.setState({firstSession: snapshot.val()});
           // alert(JSON.stringify(this.state.firstSession));
         });
-
-        this.setState({firstSessionRef});
-
-        currentUserRef.child('chatCount').set(0);
 
         trendingItemsRef.once('value', snapshot => {
             _this.setState({
@@ -171,35 +184,39 @@ var HomePage = React.createClass({
           }
         );
 
+        chatRoomsRef.set(null); //@hmm: reset chats
+        PushNotificationIOS.setApplicationIconBadgeNumber(0);
+
         // @hmm: get current user location & save to firebase object
         // and make sure this fires before navigating away!
-        navigator.geolocation.getCurrentPosition(
-          (currentPosition) => {
-            currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
-            this.setState({
-              currentUserLocationCoords: [currentPosition.coords.latitude,
-                currentPosition.coords.longitude]
-            });
-          },
-          (error) => {
-            AlertIOS.alert('Please Enable Location', 'Venture uses location to figure out who\'s near you. ' +
-              'You can enable Location Services in Settings > Venture Yale > Location');
-            currentUserRef.child(`location/coordinates`).set(DEFAULT_CITY_COORDINATES);
-            this.setState({
-              currentUserLocationCoords: [DEFAULT_CITY_COORDINATES.latitude,
-                DEFAULT_CITY_COORDINATES.longitude]
-            });
-          },
-          {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
-        );
+        if(this.state.ventureId) {
+          navigator.geolocation.getCurrentPosition(
+            (currentPosition) => {
+              currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
+              this.setState({
+                currentUserLocationCoords: [currentPosition.coords.latitude,
+                  currentPosition.coords.longitude]
+              });
+            },
+            (error) => {
+              AlertIOS.alert('Please Enable Location', 'Venture uses location to figure out who\'s near you. ' +
+                'You can enable Location Services in Settings > Venture Yale > Location');
+              currentUserRef.child(`location/coordinates`).set(DEFAULT_CITY_COORDINATES);
+              this.setState({
+                currentUserLocationCoords: [DEFAULT_CITY_COORDINATES.latitude,
+                  DEFAULT_CITY_COORDINATES.longitude]
+              });
+            },
+            {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
+          );
+        }
 
-        this.setState({ventureId: account.ventureId});
         AppStateIOS.addEventListener('change', this._handleAppStateChange);
 
-        // @hmm: modified clean up procedure (in case of reload): remove old match requests based on expireTime
+        // @hmm: modified clean up procedure (in case of reload): remove old chats and match requests
         currentUserRef.child('match_requests').once('value', snapshot => {
           snapshot.val() && _.each(snapshot.val(), (match) => {
-            if (match && match.expireTime) {
+            if (match && match._id && match.expireTime) {
               currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
               usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
             }
@@ -212,7 +229,7 @@ var HomePage = React.createClass({
         // @hmm: remove old event invite matches
         currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
           snapshot.val() && _.each(snapshot.val(), (match) => {
-            if (match && match.expireTime) {
+            if (match && match._id && match.expireTime) {
               currentUserRef.child(`event_invite_match_requests/${match._id}/expireTime`).set(null);
               usersListRef
                 .child(`${match._id}/event_invite_match_requests/${account.ventureId}/expireTime`)
@@ -229,67 +246,70 @@ var HomePage = React.createClass({
           childSnapshot.val() && childSnapshot.val()._id && firebaseRef
             .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
               if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
-                // snapshot.val() && childSnapshot.val() && this._sendNotification(snapshot.val(),
-                //    childSnapshot.val().status);
+                // send local notification that message has been received
+                if(this.state.currentAppState === 'background') {
+                  this._sendNotification({alertBody: `You just received an activity request from ${snapshot.val()}!`})
+                }
               }
             })
         });
 
-        // listener: for notifications when user receives a new request
+        // listener: for notifications when user receives a new event invite request
         currentUserRef.child('event_invite_match_requests').on('child_added', childSnapshot => {
           childSnapshot.val() && childSnapshot.val()._id && firebaseRef
             .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
               if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
-
+                // send local notification that event message has been received
+                if(this.state.currentAppState === 'background') {
+                  this._sendNotification({alertBody: `You just received an activity request from ${snapshot.val()}!`})
+                }
               }
             })
         });
 
-        // listener: for notifications when match
+        // listener: for notifications when match occurs
+        currentUserRef.child('match_requests').on('child_changed', childSnapshot => {
+          childSnapshot.val() && childSnapshot.val()._id && firebaseRef
+            .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
+              if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
+                // send local notification that user has received request
+               // if(this.state.currentAppState === 'background') {
+                  this._sendNotification({alertBody: `You just matched with ${snapshot.val()}!`})
+               // }
+              }
+            })
+        });
+
+        // listener: for notifications when match occurs
         currentUserRef.child('match_requests').on('child_changed', childSnapshot => {
           childSnapshot.val() && childSnapshot.val()._id && firebaseRef
             .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
               if (childSnapshot.val() && (childSnapshot.val().status === 'matched')) {
-
+                // send local notification that user has matched
+                if(this.state.currentAppState === 'background') {
+                  this._sendNotification({alertBody: `You just matched with ${snapshot.val()}!`})
+                }
               }
             })
         });
 
+        // listener: for notifications when event invite match occurs
         currentUserRef.child('event_invite_match_requests').on('child_changed', childSnapshot => {
           childSnapshot.val() && childSnapshot.val()._id && firebaseRef
             .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
               if (childSnapshot.val() && (childSnapshot.val().status === 'matched')) {
-
+                // send local notification that user has matched over an event
+                if(this.state.currentAppState === 'background') {
+                  this._sendNotification({alertBody: `You just matched with ${snapshot.val()}!`})
+                }
               }
             })
         });
-
-        // listener: currentUser chat count decrement
-        chatRoomsRef.on('child_removed', function (oldChildSnapshot) {
-          // if old snapshot has current users id in it, then subtract one from current user chat count
-          if (oldChildSnapshot && oldChildSnapshot.val() && oldChildSnapshot.val()._id
-            && (oldChildSnapshot.val()._id).indexOf(account.ventureId) > -1) {
-            firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
-              firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() - 1);
-            });
-          }
-        });
-
-        // listener: currentUser chat count increment
-        chatRoomsRef.on('child_added', function (childSnapshot) {
-          if (childSnapshot && childSnapshot.val() && childSnapshot.val()._id
-            && (childSnapshot.val()._id).indexOf(account.ventureId) > -1) {
-            firebaseRef.child(`users/${account.ventureId}/chatCount`).once('value', snapshot => {
-              firebaseRef.child(`users/${account.ventureId}/chatCount`).set(snapshot.val() + 1);
-            });
-          }
-        });
-
       })
       .catch((error) => console.log(error.message))
       .done();
 
-    if (this.state.currentUserLocationCoords === null) {
+    if (this.state.ventureId && this.state.currentUserLocationCoords === null) {
       navigator.geolocation.getCurrentPosition(
         (currentPosition) => {
           this.setState({
@@ -298,7 +318,7 @@ var HomePage = React.createClass({
           });
         },
         (error) => {
-          // no need to call Alert.IOS again since it was called before
+          // @hmm: no need to call Alert.IOS again since it was called before
           this.setState({
             currentUserLocationCoords: [DEFAULT_CITY_COORDINATES.latitude,
               DEFAULT_CITY_COORDINATES.longitude]
@@ -307,9 +327,6 @@ var HomePage = React.createClass({
         {enableHighAccuracy: true, timeout: 20000, maximumAge: 1000}
       );
     }
-
-    if (!this.state.firebaseRef)
-      this.setState({firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/')});
 
     AsyncStorage.getItem('@AsyncStorage:Venture:currentUser:friendsAPICallURL')
       .then((friendsAPICallURL) => friendsAPICallURL)
@@ -349,11 +366,14 @@ var HomePage = React.createClass({
       })
       .catch(error => console.log(error.message))
       .done();
+
+    PushNotificationIOS.addEventListener('notification', this._onNotification);
   },
 
   componentWillUnmount() {
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
     this.state.firebaseRef && this.state.firebaseRef.off();
+    PushNotificationIOS.removeEventListener('notification', this._onNotification);
   },
 
   animateViewLayout(text:string) {
@@ -368,7 +388,7 @@ var HomePage = React.createClass({
   _createTrendingItem(type, uri, i) {
     if (type === 'user') return (
       <TouchableOpacity key={i} onPress={() => {
-                this._handleTrendingContentChange(' : ' + uri.substring(uri.lastIndexOf("/")+1,uri.lastIndexOf("%")))
+                this._handleTrendingContentChange(': ' + uri.substring(uri.lastIndexOf("/")+1,uri.lastIndexOf("%")))
             }} style={styles.trendingItem}>
         <Image
           onLoadEnd={() => {
@@ -429,10 +449,12 @@ var HomePage = React.createClass({
     this.setState({currentAppState});
 
     if (currentAppState === 'background') {
-      this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
+      this.state.currentUserRef && this.state.currentUserRef.child('status/appState').set('background');
+      this.refs[ACTIVITY_TITLE_INPUT_REF] && this.refs[ACTIVITY_TITLE_INPUT_REF].blur();
     }
 
     if (currentAppState === 'active') {
+      this.state.currentUserRef && this.state.currentUserRef.child('status/appState').set('active');
       navigator.geolocation.getCurrentPosition(
         (currentPosition) => {
           this.state.currentUserRef && this.state.currentUserRef.child(`location/coordinates`)
@@ -471,7 +493,7 @@ var HomePage = React.createClass({
             });
           })
           .catch((error) => console.log(error.message))
-          .done();
+          .done(() => ref.off());
       }
     }
   },
@@ -481,7 +503,6 @@ var HomePage = React.createClass({
   },
 
   navigateToLoginPage() {
-    FBLoginManager.logout(() => {});
     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
     this.props.navigator.replace({title: 'Login', component: LoginPage});
   },
@@ -491,7 +512,7 @@ var HomePage = React.createClass({
     this.setState({
       hasKeyboardSpace: false,
       showAddInfoButton: true,
-      showNextButton: !!this.state.activityTitleInput,
+      showSubmitActivityIcon: !!this.state.activityTitleInput,
       showTextInput: true
     });
   },
@@ -502,11 +523,24 @@ var HomePage = React.createClass({
 
   _onFocus() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-    this.setState({hasKeyboardSpace: true, showAddInfoButton: false, showNextButton: false, showTextInput: false});
+    this.setState({hasKeyboardSpace: true, showAddInfoButton: false, showSubmitActivityIcon: false, showTextInput: false});
   },
 
   _onNotification(notification) {
+    PushNotificationIOS.presentLocalNotification({
+      alertBody: notification.getMessage()
+    })
+  },
 
+  _sendNotification(details) {
+      require('RCTDeviceEventEmitter').emit('remoteNotificationReceived', {
+        aps: {
+          alert: details.alertBody,
+          badge: '+1',
+          sound: 'default',
+          category: 'VENTURE'
+        }
+      });
   },
 
   onSubmitActivity() {
@@ -524,7 +558,10 @@ var HomePage = React.createClass({
         updatedAt: new Date()
       },
       firebaseRef = this.state.firebaseRef;
-    if (!firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
+    if (!firebaseRef) {
+      firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
+      this.setState({firebaseRef});
+    }
 
     firebaseRef.child(`users/${this.state.ventureId}/activityPreference`).set(activityPreferenceChange);
     this.props.navigator.push({
@@ -572,7 +609,7 @@ var HomePage = React.createClass({
                         // @hmm: applies for emojis too, dont use maxLength prop just check manually
                         if(text.length > MAX_TEXT_INPUT_VAL_LENGTH) return;
                         if(!text) this.setState({showTimeSpecificationOptions: false});
-                        this.setState({activityTitleInput: text.toUpperCase(), showNextButton: !!text});
+                        this.setState({activityTitleInput: text.toUpperCase(), showSubmitActivityIcon: !!text});
                     }}
           placeholder={'What do you want to do?'}
           placeholderTextColor={'rgba(255,255,255,1.0)'}
@@ -590,7 +627,7 @@ var HomePage = React.createClass({
             this._handle = this.setInterval(() => this.refs.addInfoButton && this.refs.addInfoButton.tada(1000), 2000);
           }
         }}
-        style={[styles.addInfoButtonContainer, {bottom: (this.state.showNextButton
+        style={[styles.addInfoButtonContainer, {bottom: (this.state.showSubmitActivityIcon
                 && this.state.showAddInfoBox ? height/18 : height/32 )}]}>
         <TouchableOpacity
           activeOpacity={0.4}
@@ -608,7 +645,7 @@ var HomePage = React.createClass({
 
                                 AlertIOS.alert(
                                   'Add More Info!',
-                                  'Click on the (+) button to add more information about your activity. Set a time, and add a tag that users can search.'
+                                  'Tap the (+) icon to add more information about your activity. Set a time, and add a tag that users can search.'
                                 );
 
                                 if(this._handle) this.clearInterval(this._handle);
@@ -651,7 +688,6 @@ var HomePage = React.createClass({
               captionStyle={styles.captionStyle}
               onPress={() => this.setState({hasIshSelected: !this.state.hasIshSelected})}/>
           </View>
-
         </View>
       );
     else
@@ -702,6 +738,7 @@ var HomePage = React.createClass({
         </View>
       );
 
+    //@hmm: platform differences will have this format
     if (Platform.OS === 'ios') {
       submitActivityIcon = (
         <View style={styles.submitActivityIconContainer}>
@@ -784,7 +821,7 @@ var HomePage = React.createClass({
       </Animatable.View>
     );
 
-    // @hmm keep addInfoBox down here, since we need to have previously assigned content and tagSelection
+    // @hmm: keep addInfoBox code down here, since we need to have previously assigned content and tagSelection children
     addInfoBox = (
       <View
         style={[styles.addInfoBox, {bottom: (this.state.hasKeyboardSpace ? height/3 : height / 35)}]}>
@@ -838,10 +875,9 @@ var HomePage = React.createClass({
                                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                                     }
                                     }
-                logoContainerStyle={styles.logoContainerStyle}
-                />
+                logoContainerStyle={styles.logoContainerStyle}/>
               {this.state.showTextInput && this.state.brandLogoVisible ? activityTitleInput : <View />}
-              {this.state.showNextButton ? submitActivityIcon : <View />}
+              {this.state.showSubmitActivityIcon ? submitActivityIcon : <View />}
               {this.state.showAddInfoButton && !this.state.showTimeSpecificationOptions
               && this.state.activityTitleInput ? addInfoButton :
                 <View />}
@@ -858,16 +894,6 @@ var HomePage = React.createClass({
     );
   }
 });
-
-class Title extends Component {
-  render() {
-    return (
-      <Text
-        style={[styles.title, {fontSize: this.props.fontSize},
-                this.props.titleStyle]}>{this.props.children}</Text>
-    );
-  }
-}
 
 const styles = StyleSheet.create({
   activityTitleInput: {
@@ -995,13 +1021,9 @@ const styles = StyleSheet.create({
   },
   trendingEventImg: {
     width: width / 1.34,
+    right: width / 134,
     height: 64,
     resizeMode: 'contain'
-  },
-  trendingItems: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center'
   },
   trendingItem: {
     borderRadius: 3,
@@ -1015,12 +1037,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: (width - (width / 1.2)) / 2,
     backgroundColor: 'rgba(0,0,0,0.8)',
-    padding: 10
+    padding: 10,
+    borderRadius: 5,
   },
   trendingUserImg: {
-    width: width / 5.3,
-    height: 64,
-    resizeMode: 'contain'
+    width: width / 5.30,
+    height: width / 5.30,
+    resizeMode: 'contain',
+    backgroundColor: '#040A19',
+    borderRadius: width / 10.60
   }
 });
 

@@ -33,6 +33,7 @@ var Dimensions = require('Dimensions');
 var EditProfilePageIcon = require('../../Partials/Icons/NavigationButtons/EditProfilePageIcon');
 var EditProfilePage = require('../EditProfilePage');
 var FBLogin = require('react-native-facebook-login');
+var FBLoginManager = require('NativeModules').FBLoginManager;
 var FBSDKShare = require('react-native-fbsdkshare');
 var {
   FBSDKAppInviteContent,
@@ -127,20 +128,6 @@ var ProfilePage = React.createClass({
 
       return;
     }
-
-    if (isOnline && loginStatusRef) loginStatusRef.set(isOnline);
-
-    currentUserRef.once('value', snapshot => {
-      let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName',
-        'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
-
-      // @hmm: slight defer to allow time for snapshot.val()
-      this.setTimeout(() => {
-        AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
-          .catch(error => console.log(error.message))
-          .done();
-      }, 0);
-    });
   },
 
   _openAppInviteDialog() {
@@ -178,7 +165,7 @@ var ProfilePage = React.createClass({
                           this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,
                           passProps: {
                           defaultFacebookProfilePhoto:
-                          this.state.user && `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.state.user.userId}.jpg`,
+                          this.state.user && `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.state.user.userId}.png`,
                           firebaseRef: this.state.firebaseRef,
                           firstSession: this.props.firstSession,
                           ventureId: this.state.ventureId}});
@@ -212,15 +199,17 @@ var ProfilePage = React.createClass({
             <View style={{flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', top: height/16}}>
               <FBLogin style={this.state.user ? styles.FBLoginButton : {}}
                        permissions={['email', 'user_friends']}
+                       loginBehavior={FBLoginManager.LoginBehaviors.Native}
                        onLogout={function(){
                                     if(user && ventureId) _this._updateUserLoginStatus(false);
                                     _this.setState({user : null, ventureId: null});
                                     _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
 
-                                     // @hmm: clean up async storage cache
+                                     // @hmm: clean up async storage cache, except isValidUser bool marker
                                      AsyncStorage.multiRemove(['@AsyncStorage:Venture:account', '@AsyncStorage:Venture:authToken',
                                      '@AsyncStorage:Venture:currentUser:friendsAPICallURL',
-                                     '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'])
+                                     '@AsyncStorage:Venture:currentUserFriends', '@AsyncStorage:Venture:isOnline'
+                                     ])
                                         .catch(error => console.log(error.message))
                                         .done();
                                 }}
@@ -262,7 +251,7 @@ var ProfilePage = React.createClass({
 var Photo = React.createClass({
   propTypes: {
     firebaseRef: React.PropTypes.object.isRequired,
-    onPress: React.PropTypes.func.isRequired,
+    onPress: React.PropTypes.func,
     user: React.PropTypes.object.isRequired,
     ventureId: React.PropTypes.string
   },
@@ -286,7 +275,6 @@ var Photo = React.createClass({
   },
 
   render() {
-    if (this.props.user.userId) {
       return (
         <Animatable.View ref="currentUserPhoto" style={styles.photoContent}>
           <TouchableOpacity onPress={() => {
@@ -303,12 +291,11 @@ var Photo = React.createClass({
                     }
                   }
               source={{uri: this.state.currentPic
-                            || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user.userId}.jpg`}}
+                            || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_80/${this.props.user && this.props.user.userId}.png`}}
               />
           </TouchableOpacity>
         </Animatable.View>
       );
-    }
   }
 });
 
@@ -332,11 +319,11 @@ var Info = React.createClass({
 
   componentWillMount() {
     let _this = this,
-      firebaseCurrentUserDataRef = this.state.firebaseRef.child(`users/${this.props.ventureId}`);
+      currentUserDataRef = this.state.firebaseRef.child(`users/${this.props.ventureId}`);
 
-    firebaseCurrentUserDataRef.on('value', snapshot =>
+    currentUserDataRef.on('value', snapshot =>
         _this.setState({
-          firebaseCurrentUserDataRef,
+          currentUserDataRef,
           showLoadingModal: false,
           info: {
             firstName: snapshot.val() && snapshot.val().firstName,
@@ -357,15 +344,15 @@ var Info = React.createClass({
     }, 2000);
   },
 
-  componentDidUnmount() {
-    this.state.firebaseCurrentUserDataRef && this.state.firebaseCurrentUserDataRef.off();
+  componentWillUnmount() {
+    this.state.currentUserDataRef && this.state.currentUserDataRef.off();
   },
 
   render() {
     let info = this.state.info;
 
     return (
-      <VentureAppPage>
+      <View>
         <View style={styles.infoContent}>
           <Text
             style={[styles.infoText, styles.infoTextNameAge]}>{ info && (info.firstName + ', ') }
@@ -393,11 +380,11 @@ var Info = React.createClass({
               <Text
                 style={styles.loadingModalFunFactText}>
                 <Text style={styles.loadingModalFunFactTextTitle}>Did You Know ?</Text>
-                {'\n\n'} GHeav makes almost three hundred Bacon, Egg, &amp; Cheeses every day.</Text>
+                {'\n\n'} GHeav makes almost three hundred Bacon, Egg, &amp; Cheeses everyday.</Text>
             </TouchableOpacity>
           </View>
         </ModalBase>
-      </VentureAppPage>
+      </View>
     );
   }
 });
@@ -415,8 +402,9 @@ const styles = StyleSheet.create({
     marginHorizontal: width / 40
   },
   infoContent: {
-    paddingLeft: 20,
-    paddingTop: 20
+    width: width/1.8,
+    paddingTop: 20,
+    paddingLeft: width/18.75
   },
   infoText: {
     color: 'white',
@@ -451,6 +439,17 @@ const styles = StyleSheet.create({
   loadingModalStyle: {
     backgroundColor: '#02030F'
   },
+  loginContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    padding: 20,
+    bottom: 40,
+    width,
+    height
+  },
   logoContainerStyle: {
     marginHorizontal: (width - LOGO_WIDTH) / 2
   },
@@ -465,16 +464,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center'
-  },
-  loginContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 20,
-    padding: 20,
-    bottom: 40,
-    width,
-    height
   },
   photoContent: {
     paddingTop: 20

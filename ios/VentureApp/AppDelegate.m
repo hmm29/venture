@@ -30,10 +30,6 @@
   [BatchPush setupPush];
   [Batch startWithAPIKey:@"56C2C100A314EF8388012E36138054"];
   
-  UILocalNotification *localNotification = [launchOptions objectForKey:UIApplicationLaunchOptionsLocalNotificationKey];
-  if (localNotification)
-    [self handleNotification:localNotification application:application];
-
   NSURL *jsCodeLocation;
 
   /**
@@ -50,7 +46,7 @@
    * on the same Wi-Fi network.
    */
 
-   jsCodeLocation = [NSURL URLWithString:@"http://192.168.1.131:8081/index.ios.bundle?platform=ios&dev=false"];
+   jsCodeLocation = [NSURL URLWithString:@"http://192.168.1.36:8081/index.ios.bundle?platform=ios&dev=false"];
 
   /**
    * OPTION 2
@@ -141,20 +137,5 @@
 {
 [RCTPushNotificationManager didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
 }
-// The localNotification event is not supported in RN0.19.0
-
-
-- (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification
-{
-  [self handleNotification:notification application:application];
-}
-
-
--(void)handleNotification: (UILocalNotification *)notification application:(UIApplication *)application
-{
-  NSString *title = [notification.userInfo objectForKey:@"Title"];
-  [[[UIAlertView alloc]initWithTitle:@"Smart Alarm" message:title delegate:self cancelButtonTitle:@"Answer the Teaser" otherButtonTitles: nil] show];
-}
-
 
 @end

@@ -179,7 +179,7 @@ var HotPage = React.createClass({
           <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContentTitle}</Text></Title>
           {len <= 6  ?
             <Swiper ref={TRENDING_USERS_REF}
-                     autoplay={true}
+                     autoplay={false}
                      buttonWrapperStyle={styles.buttonWrapperStyle}
                      height={100}
                      loop={true}
@@ -195,7 +195,7 @@ var HotPage = React.createClass({
             (
                 len >= 12 ?
                 <Swiper ref={TRENDING_USERS_REF}
-                        autoplay={true}
+                        autoplay={false}
                         buttonWrapperStyle={styles.buttonWrapperStyle}
                         height={100}
                         loop={true}
@@ -209,7 +209,7 @@ var HotPage = React.createClass({
                       </Swiper>
                 :
                 <Swiper ref={TRENDING_USERS_REF}
-                        autoplay={true}
+                        autoplay={false}
                         buttonWrapperStyle={styles.buttonWrapperStyle}
                         height={100}
                         loop={true}

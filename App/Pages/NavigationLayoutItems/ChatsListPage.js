@@ -42,6 +42,7 @@ var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var LinearGradient = require('react-native-linear-gradient');
 var ReactFireMixin = require('reactfire');
 var SGListView = require('react-native-sglistview');
+var Swipeout = require('react-native-swipeout')
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
 
@@ -81,7 +82,8 @@ var User = React.createClass({
     currentUserData: React.PropTypes.object,
     data: React.PropTypes.object,
     firstSession: React.PropTypes.object,
-    navigator: React.PropTypes.object
+    navigator: React.PropTypes.object,
+    updateRows: React.PropTypes.func
   },
 
   mixins: [TimerMixin],
@@ -109,16 +111,16 @@ var User = React.createClass({
         .child(this.props.data.ventureId)
       && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
         .child(this.props.data.ventureId).on('value', snapshot => {
-        _this.setState({
-          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-          distance,
-          status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
-        });
+          _this.setState({
+            chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+            distance,
+            status: snapshot.val() && snapshot.val().status,
+            expireTime: snapshot.val() && snapshot.val().expireTime
+          });
 
           // @hmm: onboarding tutorial logic
-          if(this.props.firstSession) {
-            if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
+          if (this.props.firstSession) {
+            if (this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
               // @hmm: account for case in which user already has received requests before first nav to chats list
               AlertIOS.alert(
                 'Someone Is Interested In Your Activity!',
@@ -127,7 +129,7 @@ var User = React.createClass({
               this.props.firebaseRef
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
             }
-            else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+            else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
               AlertIOS.alert(
                 'You Matched With Someone!',
                 'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
@@ -136,7 +138,7 @@ var User = React.createClass({
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
             }
           }
-      });
+        });
 
     } else {
 
@@ -145,16 +147,16 @@ var User = React.createClass({
         .child(this.props.data.ventureId)
       && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
         .child(this.props.data.ventureId).on('value', snapshot => {
-        _this.setState({
-          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-          distance,
-          status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
-        });
+          _this.setState({
+            chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+            distance,
+            status: snapshot.val() && snapshot.val().status,
+            expireTime: snapshot.val() && snapshot.val().expireTime
+          });
 
           // @hmm: onboarding tutorial logic
-          if(this.props.firstSession) {
-            if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) {
+          if (this.props.firstSession) {
+            if (this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) {
               AlertIOS.alert(
                 'Someone Is Interested In Your Activity!',
                 'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
@@ -162,7 +164,7 @@ var User = React.createClass({
               this.props.firebaseRef
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
             }
-            else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+            else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
               AlertIOS.alert(
                 'You Matched With Someone!',
                 'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
@@ -171,7 +173,7 @@ var User = React.createClass({
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
             }
           }
-      });
+        });
     }
   },
 
@@ -206,13 +208,12 @@ var User = React.createClass({
       matchRequestsRef = `users/${nextProps.currentUserIDHashed}/match_requests`;
     }
 
-      nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
-      && nextProps.firebaseRef.child(matchRequestsRef)
-        .child(nextProps.data.ventureId)
-      && (nextProps.firebaseRef).child(matchRequestsRef)
-        .child(nextProps.data.ventureId).on('value', snapshot => {
-          let status = this.state.status;
-
+    nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
+    && nextProps.firebaseRef.child(matchRequestsRef)
+      .child(nextProps.data.ventureId)
+    && (nextProps.firebaseRef).child(matchRequestsRef)
+      .child(nextProps.data.ventureId).on('value', snapshot => {
+        let status = this.state.status;
         _this.setState({
           chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
           distance,
@@ -220,25 +221,29 @@ var User = React.createClass({
           expireTime: snapshot.val() && snapshot.val().expireTime
         });
 
-          // @hmm: onboarding tutorial logic
-          if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
-            if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
-              AlertIOS.alert(
-                'Someone Is Interested In Your Activity!',
-                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
-              );
-              nextProps.firebaseRef
-                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
-            }
-            else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
-              AlertIOS.alert(
-                'You Matched With Someone!',
-                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
-              );
-              nextProps.firebaseRef
-                .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
-            }
+        if (status !== this.state.status) {
+          console.log('changed'); //@hmm: do something here, helps with live updates
+        }
+
+        // @hmm: onboarding tutorial logic
+        if (nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
+          if (this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
+            AlertIOS.alert(
+              'Someone Is Interested In Your Activity!',
+              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+            );
+            nextProps.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
           }
+          else if (this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
+            AlertIOS.alert(
+              'You Matched With Someone!',
+              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+            );
+            nextProps.firebaseRef
+              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+          }
+        }
       });
 
   },
@@ -252,6 +257,7 @@ var User = React.createClass({
     //  && firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
     //
     //currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
+
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
   },
 
@@ -375,6 +381,8 @@ var User = React.createClass({
               let currentTime = new Date().getTime();
 
               chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
+              chatRoomRef.child(`seenMessages_${currentUserIDHashed}`).set(0); // @hmm: set current user seen messages count
+              chatRoomRef.child(`seenMessages_${targetUserIDHashed}`).set(0); // @hmm: set target user seen messages count
               chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
               chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed).set(chatRoomEventTitle);
               chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed).set(chatRoomEventTitle);
@@ -396,7 +404,7 @@ var User = React.createClass({
               }
             });
 
-            if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
+            if (this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
               AlertIOS.alert(
                 'Countdown Timer!',
                 'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
@@ -476,6 +484,8 @@ var User = React.createClass({
               let currentTime = new Date().getTime();
 
               chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
+              chatRoomRef.child(`seenMessages_${currentUserIDHashed}`).set(0); // @hmm: set current user seen messages count
+              chatRoomRef.child(`seenMessages_${targetUserIDHashed}`).set(0); // @hmm: set target user seen messages count
               chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
               chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
                 .set(this.props.currentUserData.activityPreference.title);
@@ -499,7 +509,7 @@ var User = React.createClass({
               }
             });
 
-            if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
+            if (this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
               AlertIOS.alert(
                 'Countdown Timer!',
                 'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
@@ -544,11 +554,13 @@ var User = React.createClass({
           />;
       case 'matched':
         return <MatchSuccessIcon
-          chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
+          chatRoomId={this.state.chatRoomId}
+          currentUserIDHashed={this.props.currentUserIDHashed}
           color='rgba(0,0,0,0.2)'
+          firebaseRef={this.props.firebaseRef}
           onPress={this.handleMatchInteraction}
           style={{left: 10,  bottom: 6}}
-          currentUserIDHashed={this.props.currentUserIDHashed}
+          targetUserIDHashed={this.props.data.ventureId}
           />;
       default:
         return <DefaultMatchStatusIcon
@@ -560,6 +572,42 @@ var User = React.createClass({
 
   render() {
     if (this.state.status === null) return <View />;
+
+    let swipeoutBtns = this.state.status === 'matched' ?
+      [{
+        text: 'Unmatch',
+        backgroundColor: '#000',
+        onPress: () => {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+
+          let targetUserIDHashed = this.props.data.ventureId,
+            currentUserIDHashed = this.props.currentUserIDHashed,
+            firebaseRef = this.props.firebaseRef,
+            usersListRef = firebaseRef.child('users'),
+            currentUserRef = usersListRef.child(currentUserIDHashed),
+            targetUserRef = usersListRef.child(targetUserIDHashed),
+            chatRoomRef = this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`);
+
+          if (currentUserRef && targetUserRef) {
+            currentUserRef.child(`match_requests/${targetUserIDHashed}`).set(null);
+            targetUserRef.child(`match_requests/${currentUserIDHashed}`).set(null);
+          }
+          if (chatRoomRef) {
+            chatRoomRef.set(null)
+          }
+        }
+      },
+      {
+        text: 'Block',
+        backgroundColor: '#af3349',
+        onPress: () => {}
+      }]
+      :
+      [{
+        text: 'Block',
+        backgroundColor: '#af3349',
+        onPress: () => {}
+      }];
 
     let profileModal, userRowContent;
 
@@ -573,7 +621,7 @@ var User = React.createClass({
               style={styles.profileModalUserPicture}/>
             <Text
               style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
-              {this.props.data && this.props.data.age && this.props.data.age.value} {' \t'}
+              {this.props.data && this.props.data.age && (' ' + this.props.data.age.value)} {' \t'}
               | {'\t'}
               <Text style={styles.profileModalActivityInfo}>
                 <Text
@@ -586,7 +634,7 @@ var User = React.createClass({
               style={[styles.profileModalSectionTitle, {textAlign: 'center'}]}>{this.props.data
             && this.props.data.eventLogistics}</Text>
             <Text
-              style={styles.profileModalBio}>{this.props.data && this.props.data.bio}</Text>
+              style={styles.profileModalBio}>Bio: {this.props.data && this.props.data.bio}</Text>
           </View>
         </View>
       );
@@ -626,30 +674,39 @@ var User = React.createClass({
             style={[styles.profileModal, {backgroundColor: this._getSecondaryStatusColor()}]}>
             <Image
               source={{uri: this.props.data && this.props.data.picture}}
-              style={styles.profileModalUserPicture}/>
+              style={[styles.profileModalUserPicture]}/>
             <Text
-              style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName},
-              {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
-              | {' \t'}
+              style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName}, {this.props.data && this.props.data.age && this.props.data.age.value}
+              {'\n'}
               <Text style={styles.profileModalActivityInfo}>
                 <Text
-                  style={styles.profileModalActivityPreference}>{this.props.data && this.props.data.activityPreference
-                && this.props.data.activityPreference.title
-                && this.props.data.activityPreference.title.slice(0, -1)} </Text>:
-                {'\t'} {this.props.data && this.props.data.activityPreference
-              && (this.props.data.activityPreference.start.time || this.props.data.activityPreference.status)} {'\n'}
+                  style={styles.profileModalActivityPreference}>{this.props.data
+                && this.props.data.activityPreference && this.props.data.activityPreference.title
+                && this.props.data.activityPreference.title.slice(0, -1)} {'\n\n'}</Text><Text
+                style={[styles.profileModalSectionTitle]}>When: {this.props.data && this.props.data.activityPreference
+              && (this.props.data.activityPreference.start.time
+              || this.props.data.activityPreference.status)}</Text>{'\n'}
               </Text>
             </Text>
-            <View style={[styles.tagBar, {bottom: 10}]}>
+            <View
+              style={[styles.tagBar, {bottom: 15, width: ((this.tagsTitleWidth || 30.5) * 2) + (((this.tagsScrollBarWidth || 0) + 10) || width/1.3), alignSelf: 'center'}]}>
               <Text
-                style={[styles.profileModalSectionTitle, {marginHorizontal: 20}]}>TAGS: </Text>
+                onLayout={(e)=>{
+                          this.tagsTitleWidth = parseFloat(e.nativeEvent.layout.width);
+                        }}
+                style={[styles.profileModalSectionTitle, {marginHorizontal: 0, alignSelf: 'center'}]}>Tags:</Text>
               <ScrollView
                 automaticallyAdjustContentInsets={false}
+                contentContainerStyle={{flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}} //@hmm: scrollview styles go here
                 horizontal={true}
                 directionalLockEnabled={true}
+                onContentSizeChange={(e)=>{
+                          this.tagsScrollBarWidth = parseFloat(e);
+                        }}
                 showsHorizontalScrollIndicator={true}
-                style={[styles.scrollView, {height: 30}]}>
-                {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.tags
+                style={[{height: 30}]}>
+                {this.props.data && this.props.data.activityPreference
+                && this.props.data.activityPreference.tags
                 && this.props.data.activityPreference.tags.map((tag, i) => (
                   <TouchableOpacity key={i} style={styles.tag}><Text
                     style={styles.tagText}>{tag}</Text></TouchableOpacity>
@@ -658,7 +715,7 @@ var User = React.createClass({
               </ScrollView>
             </View>
             <Text
-              style={styles.profileModalBio}>{this.props.data && this.props.data.bio}</Text>
+              style={styles.profileModalBio}>Bio: {this.props.data && this.props.data.bio}</Text>
           </View>
         </View>
       );
@@ -693,25 +750,27 @@ var User = React.createClass({
     }
 
     return (
-      <TouchableHighlight
-        underlayColor={WHITE_HEX_CODE}
-        activeOpacity={0.3}
-        onPress={this._onPressItem}
-        style={styles.userRow}>
-        <View
-          style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
-          <LinearGradient
-            colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor])
+      <Swipeout right={swipeoutBtns}>
+        <TouchableHighlight
+          underlayColor={WHITE_HEX_CODE}
+          activeOpacity={0.3}
+          onPress={this._onPressItem}
+          style={styles.userRow}>
+          <View
+            style={[styles.userContentWrapper, {flexDirection: this.state.dir}]}>
+            <LinearGradient
+              colors={(this.props.backgroundColor && [this.props.backgroundColor, this.props.backgroundColor])
             || [this.getStatusColor(), this._getSecondaryStatusColor(), WHITE_HEX_CODE, 'transparent']}
-            start={[0,1]}
-            end={[1,1]}
-            locations={[0.3,0.99,1.0]}
-            style={styles.container}>
-            {userRowContent}
-          </LinearGradient>
-          {this.state.dir === 'column' ? profileModal : <View />}
-        </View>
-      </TouchableHighlight>
+              start={[0,1]}
+              end={[1,1]}
+              locations={[0.3,0.99,1.0]}
+              style={styles.container}>
+              {userRowContent}
+            </LinearGradient>
+            {this.state.dir === 'column' ? profileModal : <View />}
+          </View>
+        </TouchableHighlight>
+      </Swipeout>
     );
   }
 });
@@ -765,7 +824,10 @@ var ChatsListPage = React.createClass({
 
         usersListRef.child(`${this.props.ventureId}/event_invite_match_requests`).once('value', snapshot => {
           _.each(snapshot.val(), (eventInviteMatchRequest) => {
-            eventInvites.push(eventInviteMatchRequest.account);
+            //@hmm: copy event_invite objects to match_requests object in user obj that will go in filteredUsersArray
+            let JSONMatchReqObj = `{"match_requests":{"${this.props.ventureId}" : {"status" : "${eventInviteMatchRequest.status}"}}}`;
+
+            eventInvites.push(_.assign(JSON.parse(JSONMatchReqObj), eventInviteMatchRequest.account));
           });
 
           // @hmm: add event invites into general activity interactions
@@ -779,15 +841,15 @@ var ChatsListPage = React.createClass({
               maxSearchDistance = matchingPreferences && matchingPreferences.maxSearchDistance;
 
             compositeUsersList && _.each(compositeUsersList, (user) => {
-              if(!user) return;
+              if (!user) return;
 
               // @hmm: because of cumulative privacy selection, only have to check for friends+ for both 'friends+' and 'all'
               if (matchingPreferences && matchingPreferences.privacy
                 && matchingPreferences.privacy.indexOf('friends+') > -1) {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
+                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -800,8 +862,8 @@ var ChatsListPage = React.createClass({
                   && _.findIndex(this.props.currentUserFriends, {name: user.name}) > -1) {
                   if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                     && user.location.coordinates.latitude && user.location.coordinates.longitude
-                    /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
+                    && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                         .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -812,8 +874,8 @@ var ChatsListPage = React.createClass({
               } else {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
+                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -865,7 +927,7 @@ var ChatsListPage = React.createClass({
       let firstSessionRef = this.props.firebaseRef && this.props.ventureId
         && this.props.firebaseRef.child('users/' + this.props.ventureId + '/firstSession');
 
-      if(this.props.firstSession && !this.props.firstSession.hasVisitedChatsListPage) {
+      if (this.props.firstSession && !this.props.firstSession.hasVisitedChatsListPage) {
         AlertIOS.alert(
           'Your Connections',
           'Here you\'ll find an overview of all your active interactions: matches (green), received requests (blue), and sent requests (yellow). Keep an eye on your chat timers too; once a chat expires, the match will reset.'
@@ -892,6 +954,7 @@ var ChatsListPage = React.createClass({
   updateRows(userRows:Array) {
     // @hmm: sorting logic goes here, sort by match status which
     // happens to be alphabetical => "matched" > "received" > "sent"
+
     userRows = _.orderBy(userRows, [`match_requests.${this.props.ventureId}.status`], ['asc']);
 
     this.setState({dataSource: this.state.dataSource.cloneWithRows(userRows)});
@@ -922,7 +985,8 @@ var ChatsListPage = React.createClass({
                  data={user}
                  firebaseRef={this.state.firebaseRef}
                  firstSession={this.props.firstSession} // @hmm: will update as remote firstSession prop updates
-                 navigator={this.props.navigator}/>;
+                 navigator={this.props.navigator}
+                 updateRows={() => this.updateRows(this.state.userRows)}/>;
   },
 
   render() {
@@ -979,12 +1043,12 @@ var ChatsListPage = React.createClass({
           </View>
         </ModalBase>
         {this.state.showFiltersModal ?
-        <FiltersModal
-          firebaseRef={this.state.firebaseRef}
-          handleShowFiltersModal={this._handleShowFiltersModal}
-          modalVisible={this.state.showFiltersModal}
-          ventureId={this.props.ventureId} // @hmm: important to pass this.props.ventureId bc its available immediately
-          /> : <View/>}
+          <FiltersModal
+            firebaseRef={this.state.firebaseRef}
+            handleShowFiltersModal={this._handleShowFiltersModal}
+            modalVisible={this.state.showFiltersModal}
+            ventureId={this.props.ventureId} // @hmm: important to pass this.props.ventureId bc its available immediately
+            /> : <View/>}
       </VentureAppPage>
     )
   }
@@ -1098,10 +1162,9 @@ var styles = StyleSheet.create({
   },
   profileModalBio: {
     color: '#222',
-    fontFamily: 'AvenirNextCondensed-Medium',
+    fontFamily: 'AvenirNextCondensed-Regular',
     textAlign: 'center',
     fontSize: 16,
-    marginTop: 15
   },
   profileModalNameAgeInfo: {
     color: '#222',

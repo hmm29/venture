@@ -25,12 +25,13 @@ import HomePage from './App/Pages/HomePage';
 import Orientation from 'react-native-orientation';
 import Parse from 'parse/react-native';
 
-var APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
-var MASTER_KEY = "54768afb0a2047887510999c7eeb7bb297b126800654480dabf7453cf134494f";
+const PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
+const PARSE_JAVASCRIPT_KEY = "9a7de08c37355cbc3e2913fab10e6ae1b7fce47f4592412678abe597f98aa786";
 
 class VentureApp extends Component {
   componentWillMount() {
-    Parse.initialize(APP_ID, MASTER_KEY);
+    Parse.initialize(PARSE_APP_ID, PARSE_JAVASCRIPT_KEY);
+    Parse.serverURL = 'http://45.55.201.172:9999/ventureparseserver';
   };
 
   componentDidMount() {

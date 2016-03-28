@@ -43,7 +43,8 @@ var GeoFire = require('geofire');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var RefreshableListView = require('react-native-refreshable-listview');
-var SGListView = require('react-native-sglistview')
+var SGListView = require('react-native-sglistview');
+var Swipeout = require('react-native-swipeout');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
 
@@ -335,7 +336,7 @@ var User = React.createClass({
           chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
         }
 
-        // @hmm put chat ids in match request object so overlays know which chat to destroy
+        // @hmm: put chat ids in match request object so overlays know which chat to destroy
         currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
         targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
 
@@ -346,10 +347,11 @@ var User = React.createClass({
           if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
             // TODO: in the future should be able to account for timezone differences?
             // good for now because in nearly all cases your match will be in same timezone
-            let currentTime = new Date().getTime(),
-              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+            let currentTime = new Date().getTime();
 
             chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
+            chatRoomRef.child(`seenMessages_${currentUserIDHashed}`).set(0); // @hmm: set current user seen messages count
+            chatRoomRef.child(`seenMessages_${targetUserIDHashed}`).set(0); // @hmm: set target user seen messages count
             chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
             chatRoomRef.child('user_activity_preference_titles') // @hmm: set activity preference titles for chat
               .child(currentUserIDHashed)
@@ -417,12 +419,14 @@ var User = React.createClass({
           style={{left: 10,  bottom: 6}} />;
       case 'matched':
         return <MatchSuccessIcon
-          chatRoomRef={this.props.firebaseRef && this.props.firebaseRef
-                    .child(`chat_rooms/${this.state.chatRoomId}`)}
+          chatRoomId={this.state.chatRoomId}
+          currentUserIDHashed={this.props.currentUserIDHashed}
           color='rgba(0,0,0,0.2)'
+          firebaseRef={this.props.firebaseRef}
           onPress={this.handleMatchInteraction}
           style={{left: 10,  bottom: 6}}
-          currentUserIDHashed={this.props.currentUserIDHashed} />;
+          targetUserIDHashed={this.props.data.ventureId}
+          />;
       default:
         return <DefaultMatchStatusIcon
           onPress={this.handleMatchInteraction}
@@ -431,37 +435,78 @@ var User = React.createClass({
   },
 
   render() {
+    let swipeoutBtns = this.state.status === 'matched' ?
+      [{
+        text: 'Unmatch',
+        backgroundColor: '#000',
+        onPress: () => {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+
+          let targetUserIDHashed = this.props.data.ventureId,
+            currentUserIDHashed = this.props.currentUserIDHashed,
+            firebaseRef = this.props.firebaseRef,
+            usersListRef = firebaseRef.child('users'),
+            currentUserRef = usersListRef.child(currentUserIDHashed),
+            targetUserRef = usersListRef.child(targetUserIDHashed),
+            chatRoomRef = this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`);
+
+          if (currentUserRef && targetUserRef) {
+            currentUserRef.child(`match_requests/${targetUserIDHashed}`).set(null);
+            targetUserRef.child(`match_requests/${currentUserIDHashed}`).set(null);
+          }
+          if (chatRoomRef) {
+            chatRoomRef.set(null)
+          }
+        }
+      },
+        {
+          text: 'Block',
+          backgroundColor: '#af3349',
+          onPress: () => {}
+        }]
+      :
+      [{
+        text: 'Block',
+        backgroundColor: '#af3349',
+        onPress: () => {}
+      }];
+
     let profileModal = (
       <View style={styles.profileModalContainer}>
         <View
           style={[styles.profileModal, {backgroundColor: this._getSecondaryStatusColor()}]}>
           <Image
             source={{uri: this.props.data && this.props.data.picture}}
-            style={[styles.profileModalUserPicture, (this.state.isFacebookFriend ?
-                        {borderWidth: 3, borderColor: '#4E598C'} : {})]}/>
+            style={[styles.profileModalUserPicture]}/>
           <Text
-            style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName}, {this.props.data && this.props.data.age && this.props.data.age.value} {'\t'}
-            | {'\t'}
+            style={styles.profileModalNameAgeInfo}>{this.props.data && this.props.data.firstName}, {this.props.data && this.props.data.age && this.props.data.age.value}
+            {'\n'}
             <Text style={styles.profileModalActivityInfo}>
               <Text
                 style={styles.profileModalActivityPreference}>{this.props.data
               && this.props.data.activityPreference && this.props.data.activityPreference.title
-              && this.props.data.activityPreference.title.slice(0, -1)} </Text>:
-              {' '} {this.props.data && this.props.data.activityPreference
+              && this.props.data.activityPreference.title.slice(0, -1)} {'\n\n'}</Text><Text style={[styles.profileModalSectionTitle]}>When: {this.props.data && this.props.data.activityPreference
             && (this.props.data.activityPreference.start.time
-            || this.props.data.activityPreference.status)} {'\n'}
+            || this.props.data.activityPreference.status)}</Text>{'\n'}
             </Text>
           </Text>
-          <View style={[styles.tagBar, {bottom: 10}]}>
+          <View
+            style={[styles.tagBar, {bottom: 15, width: ((this.tagsTitleWidth || 30.5) * 2) + (((this.tagsScrollBarWidth || 0) + 10) || width/1.3), alignSelf: 'center'}]}>
             <Text
-              style={styles.profileModalSectionTitle}>TAGS: </Text>
+              onLayout={(e)=>{
+                          this.tagsTitleWidth = parseFloat(e.nativeEvent.layout.width);
+                        }}
+              style={[styles.profileModalSectionTitle, {marginHorizontal: 0, alignSelf: 'center'}]}>Tags:</Text>
             <ScrollView
               automaticallyAdjustContentInsets={false}
               contentContainerStyle={{flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}} //@hmm: scrollview styles go here
               horizontal={true}
               directionalLockEnabled={true}
+              onContentSizeChange={(e)=>{
+                          this.tagsScrollBarWidth = parseFloat(e);
+                        }}
               showsHorizontalScrollIndicator={true}
-              style={[styles.scrollView, {height: 30}]}>
+              style={[{height: 30}]}>
               {this.props.data && this.props.data.activityPreference
               && this.props.data.activityPreference.tags
               && this.props.data.activityPreference.tags.map((tag, i) => (
@@ -472,12 +517,13 @@ var User = React.createClass({
             </ScrollView>
           </View>
           <Text
-            style={styles.profileModalBio}>{this.props.data && this.props.data.bio}</Text>
+            style={styles.profileModalBio}>Bio: {this.props.data && this.props.data.bio}</Text>
         </View>
       </View>
     );
 
     return (
+      <Swipeout right={swipeoutBtns}>
       <Animatable.View ref="user">
         <TouchableHighlight
           underlayColor={WHITE_HEX_CODE}
@@ -531,6 +577,7 @@ var User = React.createClass({
           </View>
         </TouchableHighlight>
       </Animatable.View>
+        </Swipeout>
     );
   }
 });
@@ -618,9 +665,9 @@ var UsersListPage = React.createClass({
                   .indexOf('friends+') > -1) {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                 /* && GeoFire.distance(this.props.currentUserLocationCoords,
+                  && GeoFire.distance(this.props.currentUserLocationCoords,
                     [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                   if (matchingPreferences && matchingPreferences.gender
                     && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender
@@ -635,8 +682,8 @@ var UsersListPage = React.createClass({
                   if (this.props.currentUserLocationCoords && user.location
                     && user.location.coordinates && user.location.coordinates.latitude
                     && user.location.coordinates.longitude
-                    /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609 */) {
+                    && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                     if (matchingPreferences && matchingPreferences.gender
                       && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
                     if (matchingPreferences && matchingPreferences.gender
@@ -648,9 +695,9 @@ var UsersListPage = React.createClass({
               } else {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  /* && GeoFire.distance(this.props.currentUserLocationCoords,
+                  && GeoFire.distance(this.props.currentUserLocationCoords,
                     [user.location.coordinates.latitude, user.location.coordinates.longitude])
-                  <= maxSearchDistance * 1.609 */) {
+                  <= maxSearchDistance * 1.609) {
                   if (matchingPreferences && matchingPreferences.gender
                     && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender
@@ -953,14 +1000,13 @@ var styles = StyleSheet.create({
     fontFamily: 'AvenirNextCondensed-Medium'
   },
   profileModalActivityPreference: {
-    fontFamily: 'AvenirNextCondensed-Medium'
+    fontFamily: 'AvenirNextCondensed-Medium',
   },
   profileModalBio: {
     color: '#222',
-    fontFamily: 'AvenirNextCondensed-Medium',
+    fontFamily: 'AvenirNextCondensed-Regular',
     textAlign: 'center',
     fontSize: 16,
-    marginTop: 15
   },
   profileModalNameAgeInfo: {
     color: '#222',
@@ -987,9 +1033,6 @@ var styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingHorizontal: width / 10
   },
-  scrollView: {
-    width: width / 1.3,
-  },
   searchTextInput: {
     color: '#222',
     backgroundColor: 'white',
@@ -1012,9 +1055,10 @@ var styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.4)'
   },
   tagBar: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   tagText: {
     color: 'rgba(255,255,255,0.95)',

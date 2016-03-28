@@ -31,11 +31,10 @@ import ProfilePage from '../Pages/NavigationLayoutItems/ProfilePage';
 import UsersListPage from '../Pages/NavigationLayoutItems/UsersListPage';
 import { TabBarIOS, } from 'react-native-icons';
 
-const Parse = require('parse/react-native');
 const TabBarItemIOS = TabBarIOS.Item;
 const {height} = Dimensions.get('window');
 const TAB_BAR_ICON_SIZE = height / 24;
-const TARGET_USERS = "Yalies";
+const TARGET_USERS = "Near Me";
 
 import type { NavigationContext } from 'NavigationContext';
 
@@ -141,39 +140,6 @@ class TabBarLayout extends Component {
       })
       .catch(error => console.log(error))
       .done();
-
-    // @hmm: Parse Push Notification Handlers
-    var GameScore = Parse.Object.extend('GameScore');
-    var GameScore = Parse.Object.extend("GameScore");
-    var gameScore = new GameScore();
-
-    gameScore.set("score", 1337);
-    gameScore.set("playerName", "Sean Plott");
-    gameScore.set("cheatMode", false);
-
-    gameScore.save(null, {
-      success: function(gameScore) {
-        alert('hey')
-        // Execute any logic that should take place after the object is saved.
-        alert('New object created with objectId: ' + gameScore.id);
-      },
-      error: function(gameScore, error) {
-        // Execute any logic that should take place if the save fails.
-        // error is a Parse.Error with an error code and message.
-        alert('Failed to create new object, with error code: ' + error.message);
-      }
-    });
-    //Parse.Cloud.afterSave("SendRequest", request => {
-    //
-    //});
-    //
-    //Parse.Cloud.afterSave("MatchRequest", request => {
-    //
-    //});
-    //
-    //Parse.Cloud.afterSave("EventInviteMatchRequest", request => {
-    //
-    //});
   };
 
   componentWillUnmount() {
@@ -185,10 +151,6 @@ class TabBarLayout extends Component {
     AsyncStorage.setItem('@AsyncStorage:Venture:currentUserFriends', 'null')
       .catch(error => console.log(error.message))
       .done();
-
-    // @hmm: deactivate Parse Push Notification Handlers here
-
-
   };
 
   navigateToLoginPage() {

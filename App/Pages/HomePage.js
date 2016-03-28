@@ -37,11 +37,13 @@ var {
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
 var BrandLogo = require('../Partials/BrandLogo');
+var DeviceUUID = require("react-native-device-uuid");
 var Dimensions = require('Dimensions');
 var dismissKeyboard = require('dismissKeyboard');
 var Firebase = require('firebase');
 var {Icon, } = require('react-native-icons');
 var LoginPage = require('../Pages/LoginPage');
+var Parse = require('parse/react-native');
 var SubmitActivityIcon = require('../Partials/Icons/SubmitActivityIcon');
 var TabBarLayout = require('../NavigationLayouts/TabBarLayout.ios');
 var TimerMixin = require('react-timer-mixin');
@@ -67,6 +69,7 @@ var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var MAX_TEXT_INPUT_VAL_LENGTH = 15;
 var NEXT_BUTTON_SIZE = 28;
+var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var TAG_SELECTION_INPUT_REF = 'tagSelectionInput';
 var TAG_TEXT_INPUT_PADDING = 3;
 
@@ -132,24 +135,8 @@ var HomePage = React.createClass({
           return;
         }
 
-        if (account.isFirstSession) {
-          this.setState({
-            firstSession: {
-              hasSeenAddInfoButtonTutorial: false,
-              hasSentFirstRequest: false,
-              hasReceivedFirstRequest: false,
-              hasMatched: false,
-              hasSeenSearchPreferencesIcon: false,
-              hasStartedFirstChat: false,
-              hasVisitedChatsListPage: false,
-              hasVisitedEventsPage: false,
-              hasVisitedHotPage: false,
-              hasVisitedEditProfilePage: false
-            }
-          })
-        }
-
         this.setState({isLoggedIn: true, showTextInput: true, ventureId: account.ventureId});
+        PushNotificationIOS.addEventListener('register', this._getDeviceToken);
         PushNotificationIOS.requestPermissions();
 
         let firebaseRef = this.state.firebaseRef,
@@ -165,12 +152,11 @@ var HomePage = React.createClass({
           if(!snapshot.val()) {
             currentUserRef.child('status/isOnline').set(true);
           }
-        })
+        });
 
         // @hmm: fetch first session object to update as tutorial gets completed
         firstSessionRef.on('value', snapshot => {
           _this.setState({firstSession: snapshot.val()});
-          // alert(JSON.stringify(this.state.firstSession));
         });
 
         trendingItemsRef.once('value', snapshot => {
@@ -213,32 +199,44 @@ var HomePage = React.createClass({
 
         AppStateIOS.addEventListener('change', this._handleAppStateChange);
 
-        // @hmm: modified clean up procedure (in case of reload): remove old chats and match requests
-        currentUserRef.child('match_requests').once('value', snapshot => {
-          snapshot.val() && _.each(snapshot.val(), (match) => {
-            if (match && match._id && match.expireTime) {
-              currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
-              usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
-            }
-            if (match && match.chatRoomId) {
-              chatRoomsRef.child(match.chatRoomId).set(null)
-            }
-          });
+        //// @hmm: modified clean up procedure (in case of reload): remove old chats and match requests
+        //currentUserRef.child('match_requests').once('value', snapshot => {
+        //  snapshot.val() && _.each(snapshot.val(), (match) => {
+        //    if (match && match._id && match.expireTime) {
+        //      currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
+        //      usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
+        //    }
+        //    if (match && match.chatRoomId) {
+        //      chatRoomsRef.child(match.chatRoomId).set(null)
+        //    }
+        //  });
+        //});
+        //
+        //// @hmm: remove old event invite matches
+        //currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
+        //  snapshot.val() && _.each(snapshot.val(), (match) => {
+        //    if (match && match._id && match.expireTime) {
+        //      currentUserRef.child(`event_invite_match_requests/${match._id}/expireTime`).set(null);
+        //      usersListRef
+        //        .child(`${match._id}/event_invite_match_requests/${account.ventureId}/expireTime`)
+        //        .set(null);
+        //    }
+        //    if (match && match.chatRoomId) {
+        //      chatRoomsRef.child(match.chatRoomId).set(null)
+        //    }
+        //  });
+        //});
+
+
+        // @hmm: PUSH NOTIFICATION LOGIC
+
+        // @hmm: Parse Push Notification Handlers
+        Parse.Cloud.afterSave("MatchRequest", request => {
+
         });
 
-        // @hmm: remove old event invite matches
-        currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
-          snapshot.val() && _.each(snapshot.val(), (match) => {
-            if (match && match._id && match.expireTime) {
-              currentUserRef.child(`event_invite_match_requests/${match._id}/expireTime`).set(null);
-              usersListRef
-                .child(`${match._id}/event_invite_match_requests/${account.ventureId}/expireTime`)
-                .set(null);
-            }
-            if (match && match.chatRoomId) {
-              chatRoomsRef.child(match.chatRoomId).set(null)
-            }
-          });
+        Parse.Cloud.afterSave("EventInviteMatchRequest", request => {
+
         });
 
         // listener: for notifications when user receives a new request
@@ -374,6 +372,7 @@ var HomePage = React.createClass({
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
     this.state.firebaseRef && this.state.firebaseRef.off();
     PushNotificationIOS.removeEventListener('notification', this._onNotification);
+    PushNotificationIOS.removeEventListener('register', this._getDeviceToken)
   },
 
   animateViewLayout(text:string) {
@@ -434,6 +433,29 @@ var HomePage = React.createClass({
     )
   },
 
+  _getDeviceToken(token) {
+    if(!token) return;
+
+    let url = "http://45.55.201.172:9999/ventureparseserver";
+    url += "/installations";
+
+    DeviceUUID.getUUID().then((uuid) => {
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Parse-Application-Id': PARSE_APP_ID,
+          'Content-Type': 'application/json',
+        },
+        body: `{"deviceType": "ios","deviceToken": "${token}", "appName": "Venture Yale", "installationId": "${uuid}", "channels": ["yale-ios-users", "${this.state.ventureId}"]}`
+      })
+        .then(response => {
+          console.log(JSON.stringify(response))
+        })
+        .catch(error => console.log(error))
+    });
+  },
+
   _getTimeString(date) {
     var t = date.toLocaleTimeString();
     t = t.replace(/\u200E/g, ''); // remove left-to-right marks
@@ -443,7 +465,6 @@ var HomePage = React.createClass({
     if (this.state.hasIshSelected) return t.split(' ')[0] + '-ish ' + t.split(' ')[1]; // e.g. 9:10ish PM
     return t;
   },
-
 
   _handleAppStateChange(currentAppState) {
     this.setState({currentAppState});
@@ -548,7 +569,7 @@ var HomePage = React.createClass({
       activityPreferenceChange = {
         title: activityTitleInput + '?',
         tags: this.state.tagsArr,
-        status: this.state.activeTimeOption.toUpperCase(),
+        status: this.state.activeTimeOption.capitalize(),
         start: {
           time: (this.state.activeTimeOption === 'specify' ? this._getTimeString(this.state.date) : ''),
           dateTime: this.state.date,
@@ -726,7 +747,7 @@ var HomePage = React.createClass({
                             this.setState({activeTimeOption: 'specify'})
                         }}/>
           </ScrollView>
-          <View style={[styles.scrollbarArrow, (isAtScrollViewStart ? {right: 10} : {left: 10})]}>
+          <View style={[styles.scrollbarArrow, (isAtScrollViewStart ? {right: 5} : {left: 5})]}>
             <ChevronIcon
               size={25}
               direction={isAtScrollViewStart ? 'right' : 'left'}

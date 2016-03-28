@@ -40,6 +40,7 @@ var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
 var SGListView = require('react-native-sglistview');
+var Swipeout = require('react-native-swipeout')
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
@@ -80,6 +81,7 @@ var User = React.createClass({
   mixins: [TimerMixin],
 
   propTypes: {
+    closeAttendeeListModal: React.PropTypes.func,
     currentTime: React.PropTypes.number,
     currentUserLocationCoords: React.PropTypes.array,
     currentUserData: React.PropTypes.object,
@@ -291,10 +293,10 @@ var User = React.createClass({
       currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
 
         if (snapshot.val() && snapshot.val().role === 'sender') {
-          _id = targetUserIDHashed + '_TO_' + currentUserIDHashed;
+          _id = 'EVENT_INVITE_' + targetUserIDHashed + '_TO_' + currentUserIDHashed;
           chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
         } else {
-          _id = currentUserIDHashed + '_TO_' + targetUserIDHashed;
+          _id = 'EVENT_INVITE_' + currentUserIDHashed + '_TO_' + targetUserIDHashed;
           chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
         }
 
@@ -313,6 +315,8 @@ var User = React.createClass({
             let currentTime = new Date().getTime();
 
             chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
+            chatRoomRef.child(`seenMessages_${currentUserIDHashed}`).set(0); // @hmm: set current user seen messages count
+            chatRoomRef.child(`seenMessages_${targetUserIDHashed}`).set(0); // @hmm: set target user seen messages count
             chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
             chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
               .set(this.props.eventTitle);
@@ -327,7 +331,7 @@ var User = React.createClass({
               _id,
               recipient: _this.props.data,
               distance,
-              chatRoomActivityPreferenceTitle,
+              chatRoomEventTitle: this.props.eventTitle,
               chatRoomRef,
               currentUserData: _this.props.currentUserData,
               currentUserRef,
@@ -401,11 +405,14 @@ var User = React.createClass({
           style={{left: 10, bottom: 6}} />;
       case 'matched':
         return <MatchSuccessIcon
-          chatRoomRef={this.props.firebaseRef && this.props.firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`)}
+          chatRoomId={this.state.chatRoomId}
+          currentUserIDHashed={this.props.currentUserIDHashed}
           color='rgba(0,0,0,0.2)'
-          onPress={this.handleMatchInteraction}
+          firebaseRef={this.props.firebaseRef}
+          onPress={() => {this.handleMatchInteraction(); this.props.closeAttendeeListModal();}}
           style={{left: 10,  bottom: 6}}
-          currentUserIDHashed={this.props.currentUserIDHashed} />;
+          targetUserIDHashed={this.props.data.ventureId}
+          />;
       default:
         return <DefaultMatchStatusIcon
           color='rgba(0,0,0,0.2)'
@@ -415,6 +422,42 @@ var User = React.createClass({
   },
 
   render() {
+    let swipeoutBtns = this.state.status === 'matched' ?
+      [{
+        text: 'Unmatch',
+        backgroundColor: '#000',
+        onPress: () => {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+
+          let targetUserIDHashed = this.props.data.ventureId,
+            currentUserIDHashed = this.props.currentUserIDHashed,
+            firebaseRef = this.props.firebaseRef,
+            usersListRef = firebaseRef.child('users'),
+            currentUserRef = usersListRef.child(currentUserIDHashed),
+            targetUserRef = usersListRef.child(targetUserIDHashed),
+            chatRoomRef = this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`);
+
+          if (currentUserRef && targetUserRef) {
+            currentUserRef.child(`match_requests/${targetUserIDHashed}`).set(null);
+            targetUserRef.child(`match_requests/${currentUserIDHashed}`).set(null);
+          }
+          if (chatRoomRef) {
+            chatRoomRef.set(null)
+          }
+        }
+      },
+        {
+          text: 'Block',
+          backgroundColor: '#af3349',
+          onPress: () => {}
+        }]
+      :
+      [{
+        text: 'Block',
+        backgroundColor: '#af3349',
+        onPress: () => {}
+      }];
+
     let profileModal = (
       <View style={[styles.profileModalContainer, {alignSelf: 'center'}]}>
         <View
@@ -433,12 +476,13 @@ var User = React.createClass({
           <Text
             style={[styles.profileModalSectionTitle, {alignSelf: 'center'}]}>{this.props.eventLogistics}</Text>
           <Text
-            style={[styles.profileModalBio, {alignSelf: 'center'}]}>{this.props.data && this.props.data.bio}</Text>
+            style={[styles.profileModalBio, {alignSelf: 'center'}]}>Bio: {this.props.data && this.props.data.bio}</Text>
         </View>
       </View>
     );
 
     return (
+      <Swipeout right={swipeoutBtns}>
       <Animatable.View ref="attendee">
         <TouchableHighlight
           underlayColor={WHITE_HEX_CODE}
@@ -458,7 +502,7 @@ var User = React.createClass({
                 <Image
                   onPress={this._onPressItem}
                   source={{uri: this.props.data && this.props.data.picture}}
-                  style={[styles.thumbnail, {left: width/20}]}>
+                  style={[styles.thumbnail, {left: width/50}]}>
                   <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                     <Text
                       style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs))
@@ -478,13 +522,14 @@ var User = React.createClass({
                 <Text style={styles.eventTitle}>
                   {this.props.eventTitle} ?
                 </Text>
-                <View style={{top: 10, right: width/6.4}}>{this._renderStatusIcon()}</View>
+                <View style={{top: 10}}>{this._renderStatusIcon()}</View>
               </View>
             </LinearGradient>
             {this.state.dir === 'column' ? profileModal : <View />}
           </View>
         </TouchableHighlight>
       </Animatable.View>
+        </Swipeout>
     );
   }
 });
@@ -536,10 +581,12 @@ var AttendeeList = React.createClass({
     return (
       <Header>
         <View />
-        <Text>{"WHO'S GOING TO : "} 
-        <Text style={{color: '#F06449'}}>{this.props.eventData
+        <Text>{(this.props.eventData
+        && this.props.eventData.title 
+        && this.props.eventData.title.length < 24 ? "WHO'S GOING TO : " : "")} 
+        <Text style={{color: '#F06449', width: width/3, overflow: 'hidden'}}>{this.props.eventData
         && this.props.eventData.title}</Text></Text>
-        <CloseIcon style={{bottom: height / 15}}
+        <CloseIcon style={{bottom: height / 15, left: width/30}}
                    onPress={this.props.closeAttendeeListModal}/>
       </Header>
     )
@@ -549,7 +596,8 @@ var AttendeeList = React.createClass({
   _renderUser(user:Object, sectionID:number, rowID:number) {
     if (user.ventureId === this.props.ventureId) return <View />;
 
-    return <User currentTimeInMs={this.state.currentTimeInMs}
+    return <User closeAttendeeListModal={this.props.closeAttendeeListModal}
+                 currentTimeInMs={this.state.currentTimeInMs}
                  currentUserData={this.props.currentUserData}
                  currentUserIDHashed={this.props.ventureId}
                  currentUserLocationCoords={this.props.currentUserLocationCoords}
@@ -1124,7 +1172,7 @@ var styles = StyleSheet.create({
     width
   },
   eventTitle: {
-    width: width / 2.2,
+    width: width / 3.2,
     fontSize: 18,
     fontFamily: 'AvenirNextCondensed-UltraLight',
     fontWeight: '400',

@@ -5,6 +5,7 @@
 	};
 	objectVersion = 46;
 	objects = {
+
 /* Begin PBXBuildFile section */
 		00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302AC1ABCB8CE00DB3ED1 /* libRCTActionSheet.a */; };
 		00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302BA1ABCB90400DB3ED1 /* libRCTGeolocation.a */; };
@@ -52,6 +53,7 @@
 		42EE2FA81C97FCFF001A2541 /* AddressBook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42EE2FA71C97FCFF001A2541 /* AddressBook.framework */; };
 		42F160181C8DF35E006F965E /* libRNImagePicker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42F160171C8DF34C006F965E /* libRNImagePicker.a */; };
 		42F309A21C9E9536006F0926 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42F309A11C9E9536006F0926 /* StoreKit.framework */; };
+		795DFD39A1FE4C059B3F17F6 /* libRCTDeviceUUID.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7294E287AAD2430EBB1C22C5 /* libRCTDeviceUUID.a */; };
 		832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 832341B51AAA6A8300B99B32 /* libRCTText.a */; };
 		DCF5F13905BF42FB84BD8BC2 /* libRCTFBSDKCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6DD2FCC86424DE8812DBBB9 /* libRCTFBSDKCore.a */; };
 /* End PBXBuildFile section */
@@ -140,6 +142,13 @@
 			proxyType = 2;
 			remoteGlobalIDString = 134814201AA4EA6300B7C361;
 			remoteInfo = RCTPushNotification;
+		};
+		42D555A81CA8705E00530EFE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5082D4630F154828A0EFBD85 /* RCTDeviceUUID.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F12AFB9B1ADAF8F800E0535D;
+			remoteInfo = RCTDeviceUUID;
 		};
 		42E5EE8D1C7124A6009C7A35 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -270,8 +279,10 @@
 		42EE2FA71C97FCFF001A2541 /* AddressBook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AddressBook.framework; path = System/Library/Frameworks/AddressBook.framework; sourceTree = SDKROOT; };
 		42F160121C8DF34C006F965E /* RNImagePicker.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RNImagePicker.xcodeproj; path = "../node_modules/react-native-image-picker/ios/RNImagePicker.xcodeproj"; sourceTree = "<group>"; };
 		42F309A11C9E9536006F0926 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		5082D4630F154828A0EFBD85 /* RCTDeviceUUID.xcodeproj */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = "wrapper.pb-project"; name = RCTDeviceUUID.xcodeproj; path = "../node_modules/react-native-device-uuid/RCTDeviceUUID.xcodeproj"; sourceTree = "<group>"; };
 		522395951A384EDF974775F2 /* Foundation.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Foundation.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Foundation.ttf"; sourceTree = "<group>"; };
 		538CAFBFCF194F8F99364A99 /* EvilIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = EvilIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/EvilIcons.ttf"; sourceTree = "<group>"; };
+		7294E287AAD2430EBB1C22C5 /* libRCTDeviceUUID.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRCTDeviceUUID.a; sourceTree = "<group>"; };
 		78C398B01ACF4ADC00677621 /* RCTLinking.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTLinking.xcodeproj; path = "../node_modules/react-native/Libraries/LinkingIOS/RCTLinking.xcodeproj"; sourceTree = "<group>"; };
 		7BC2888F79B7405C923219C8 /* Ionicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Ionicons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Ionicons.ttf"; sourceTree = "<group>"; };
 		832341B01AAA6A8300B99B32 /* RCTText.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTText.xcodeproj; path = "../node_modules/react-native/Libraries/Text/RCTText.xcodeproj"; sourceTree = "<group>"; };
@@ -331,6 +342,7 @@
 				139FDEF61B0652A700C62182 /* libRCTWebSocket.a in Frameworks */,
 				DCF5F13905BF42FB84BD8BC2 /* libRCTFBSDKCore.a in Frameworks */,
 				2F77B5E7F9104EBABB0A700C /* libRCTFBSDKShare.a in Frameworks */,
+				795DFD39A1FE4C059B3F17F6 /* libRCTDeviceUUID.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -465,6 +477,14 @@
 			path = Batch.embeddedframework;
 			sourceTree = "<group>";
 		};
+		42D5559F1CA8705E00530EFE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				42D555A91CA8705E00530EFE /* libRCTDeviceUUID.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		42E5EE8A1C7124A6009C7A35 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -586,6 +606,7 @@
 				139FDEE61B06529A00C62182 /* RCTWebSocket.xcodeproj */,
 				266C8FB737A24730A6B6830E /* RCTFBSDKCore.xcodeproj */,
 				167CD755F9D64E7BA9B1E52D /* RCTFBSDKShare.xcodeproj */,
+				5082D4630F154828A0EFBD85 /* RCTDeviceUUID.xcodeproj */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -748,6 +769,10 @@
 					ProjectRef = 42E728D51C69BDA700FF970D /* RCTAutoComplete.xcodeproj */;
 				},
 				{
+					ProductGroup = 42D5559F1CA8705E00530EFE /* Products */;
+					ProjectRef = 5082D4630F154828A0EFBD85 /* RCTDeviceUUID.xcodeproj */;
+				},
+				{
 					ProductGroup = 42E728DD1C69BE3300FF970D /* Products */;
 					ProjectRef = 42E728DC1C69BE3300FF970D /* RCTFBLogin.xcodeproj */;
 				},
@@ -896,6 +921,13 @@
 			fileType = archive.ar;
 			path = libRCTPushNotification.a;
 			remoteRef = 421BEAFF1C71B9D20058D624 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		42D555A91CA8705E00530EFE /* libRCTDeviceUUID.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libRCTDeviceUUID.a;
+			remoteRef = 42D555A81CA8705E00530EFE /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		42E5EE8E1C7124A6009C7A35 /* libReactNativeIcons.a */ = {
@@ -1072,6 +1104,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VentureApp.app/VentureApp";
@@ -1092,6 +1125,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
@@ -1129,6 +1163,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
+					"$(SRCROOT)/../node_modules/react-native-device-uuid",
 				);
 				INFOPLIST_FILE = VentureApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -1170,6 +1205,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
+					"$(SRCROOT)/../node_modules/react-native-device-uuid",
 				);
 				INFOPLIST_FILE = VentureApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -1226,6 +1262,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
+					"$(SRCROOT)/../node_modules/react-native-device-uuid",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -1272,6 +1309,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
+					"$(SRCROOT)/../node_modules/react-native-device-uuid",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = NO;

@@ -18,6 +18,7 @@ var {
   AlertIOS,
   AsyncStorage,
   Image,
+  InteractionManager,
   LayoutAnimation,
   NativeModules,
   PixelRatio,
@@ -30,6 +31,7 @@ var {
 
 var _ = require('lodash');
 var BrandLogo = require('../Partials/BrandLogo');
+var ChevronIcon = require('../Partials/Icons/ChevronIcon');
 var Dimensions = require('Dimensions');
 var FBLogin = require('react-native-facebook-login');
 var FBLoginManager = require('NativeModules').FBLoginManager;
@@ -84,10 +86,10 @@ var LoginPage = React.createClass({
     return {
       asyncStorageAccountData: null,
       firebaseRef: new Firebase('https://ventureappinitial.firebaseio.com/'),
-      isFirstSession: false,
-      isVerified: false,
       loginError: false,
+      mustVerify: false,
       notificationModalText: VERIFY_UNIVERSITY_EMAIL_TEXT,
+      showChevronIcon: false,
       showEmailAuthScreen: false,
       user: null,
     }
@@ -96,6 +98,21 @@ var LoginPage = React.createClass({
   componentDidMount() {
     // TODO: ensure user is logged out when component mounts, otherwise component may read Log Out
     // if(GoogleSignin.currentUser()) GoogleSignin.signOut();
+
+    InteractionManager.runAfterInteractions(() => {
+      this.state.firebaseRef && this.state.firebaseRef.child('users/authPanel/showEmailAuthScreen').once('value', snapshot => {
+        if (snapshot.val() === true || snapshot.val() === 'true') {
+          AsyncStorage.getItem('@AsyncStorage:Venture:isValidUser')
+            .then((isValidUser) => {
+              if(!JSON.parse(isValidUser)) {
+                this.setTimeout(() => {
+                  this.setState({showEmailAuthScreen: true});
+                }, 1000);
+              }
+            })
+        }
+      });
+    });
 
     PushNotificationIOS.setApplicationIconBadgeNumber(0);
 
@@ -110,19 +127,6 @@ var LoginPage = React.createClass({
       webClientId: '52968692525-k8vd63becih12heieiskrvbf453h1c8r.apps.googleusercontent.com',
       offlineAccess: true
     });
-
-    AsyncStorage.getItem('@AsyncStorage:Venture:isValidUser')
-      .then((isValidUser) => {
-        if(!JSON.parse(isValidUser)) {
-          this.state.firebaseRef.child(`admin/showEmailAuthScreen`).once('value', snapshot => {
-            if (snapshot.val()) {
-              this.setTimeout(() => {
-                this.setState({showEmailAuthScreen: true});
-              }, 1000);
-            }
-          });
-        }
-    })
   },
 
   _createAccount() {
@@ -274,7 +278,6 @@ var LoginPage = React.createClass({
           }
         };
 
-        this.setState({isFirstSession: true});
         this.state.firebaseRef.child(`users/${ventureId}`).set(newUserData);
       })
       .done();
@@ -293,8 +296,6 @@ var LoginPage = React.createClass({
       let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName', 'lastName',
         'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
 
-      if (this.state.isFirstSession) _.assign({isFirstSession: true}, asyncStorageAccountData);
-
       AsyncStorage.setItem('@AsyncStorage:Venture:account', JSON.stringify(asyncStorageAccountData))
         .then(() => this._navigateToHomePage())
         .catch(error => console.log(error.message))
@@ -305,31 +306,31 @@ var LoginPage = React.createClass({
   _signInWithGoogleAccount() {
     GoogleSignin.signIn()
       .then((user) => {
-        if(user && _.endsWith(user.email, '@yale.edu')) {
+        if (user && _.endsWith(user.email, '@yale.edu')) {
           this.setState({showEmailAuthScreen: false});
           AsyncStorage.setItem('@AsyncStorage:Venture:isValidUser', 'true')
             .then(() => {
-              if(this.state.showEmailAuthScreen) this.setState({showEmailAuthScreen: false});
+              if (this.state.showEmailAuthScreen) this.setState({showEmailAuthScreen: false});
               AlertIOS.alert('Verification Successful', 'Welcome to Venture!');
               console.log("Successfully verified as a valid user.")
             })
             .catch((error) => console.log(error.message))
             .done();
         } else {
-            this.setState({notificationModalText: IS_NOT_VALID_USER_TEXT});
+          this.setState({notificationModalText: IS_NOT_VALID_USER_TEXT});
         }
       })
       .catch((err) => {
-        if(err.code === -5) {
-             //@hmm: must reconfigure if user cancels out of google signin modal
-             GoogleSignin.configure({
-              iosClientId: '52968692525-a6nhs31vnm9itavou919j4jcm2hr9dtc.apps.googleusercontent.com',
-              webClientId: '52968692525-k8vd63becih12heieiskrvbf453h1c8r.apps.googleusercontent.com',
-              offlineAccess: true
-            });
+        if (err.code === -5) {
+          //@hmm: must reconfigure if user cancels out of google signin modal
+          GoogleSignin.configure({
+            iosClientId: '52968692525-a6nhs31vnm9itavou919j4jcm2hr9dtc.apps.googleusercontent.com',
+            webClientId: '52968692525-k8vd63becih12heieiskrvbf453h1c8r.apps.googleusercontent.com',
+            offlineAccess: true
+          });
         } else {
-        console.log('WRONG SIGNIN', err);
-      }
+          console.log('WRONG SIGNIN', err);
+        }
       })
       .done();
   },
@@ -348,6 +349,20 @@ var LoginPage = React.createClass({
         currentUserRef.once('value', snapshot => {
           let asyncStorageAccountData = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
             'lastName', 'activityPreference', 'age', 'picture', 'bio', 'gender', 'matchingPreferences');
+
+          // @hmm: for launch, show tutorial every time user logs in
+          this.state.firebaseRef.child(`users/${ventureId}/firstSession`).set({
+            hasSeenAddInfoButtonTutorial: false,
+            hasSentFirstRequest: false,
+            hasReceivedFirstRequest: false,
+            hasMatched: false,
+            hasSeenSearchPreferencesIcon: false,
+            hasStartedFirstChat: false,
+            hasVisitedChatsListPage: false,
+            hasVisitedEventsPage: false,
+            hasVisitedHotPage: false,
+            hasVisitedEditProfilePage: false
+          });
 
           // @hmm: defer until after snapshot.val() has been called
           this.setTimeout(() => {
@@ -380,44 +395,59 @@ var LoginPage = React.createClass({
             <View style={styles.slide}>
               <Image
                 onLoadStart={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)}
+                onLoadEnd={() => this.setState({showChevronIcon: true})}
                 resizeMode={Image.resizeMode.stretch}
-                defaultSource={require('../../img/onboarding_what_do_you_want_to_do.png')}
-                source={require('../../img/onboarding_what_do_you_want_to_do.png')}
+                defaultSource={require('../../img/onboarding_1_what_do_you_want_to_do.png')}
+                source={require('../../img/onboarding_1_what_do_you_want_to_do.png')}
+                style={styles.backdrop}>
+              </Image>
+              {this.state.showChevronIcon ?
+              <ChevronIcon
+                animated={true}
+                size={width/6}
+                direction={'right'}
+                style={{position: 'absolute', right: -(width/300), top: height/2}}
+                /> : <View/>}
+            </View>
+            <View style={styles.slide}>
+              <Image
+                resizeMode={Image.resizeMode.stretch}
+                source={require('../../img/onboarding_2_find_activity_partners.png')}
                 style={styles.backdrop}>
               </Image>
             </View>
             <View style={styles.slide}>
               <Image
                 resizeMode={Image.resizeMode.stretch}
-                source={require('../../img/onboarding_find_activity_partners.png')}
+                source={require('../../img/onboarding_3_share_your_activities.png')}
                 style={styles.backdrop}>
               </Image>
             </View>
             <View style={styles.slide}>
               <Image
                 resizeMode={Image.resizeMode.stretch}
-                source={require('../../img/onboarding_share_your_activities.png')}
+                source={require('../../img/onboarding_4_connect_to_campus.png')}
                 style={styles.backdrop}>
               </Image>
             </View>
             <View style={styles.slide}>
               <Image
                 resizeMode={Image.resizeMode.stretch}
-                source={require('../../img/onboarding_connect_to_campus.png')}
+                source={require('../../img/onboarding_5_5_minute_matches.png')}
                 style={styles.backdrop}>
               </Image>
             </View>
             <View style={styles.slide}>
               <Image
                 resizeMode={Image.resizeMode.stretch}
-                source={require('../../img/onboarding_no_saved_conversations.png')}
+                source={require('../../img/onboarding_6_no_saved_conversations.png')}
                 style={styles.backdrop}>
               </Image>
             </View>
             <View style={styles.slide}>
               <Image
                 resizeMode={Image.resizeMode.stretch}
-                source={require('../../img/onboarding_sign_up_with_facebook.png')}
+                source={require('../../img/onboarding_7_log_in_with_facebook.png')}
                 style={styles.backdrop}>
 
                 <FBLogin ref={FACEBOOK_LOGIN_REF}
@@ -492,25 +522,25 @@ var LoginPage = React.createClass({
             </View>
           </Swiper>
         </Image>
-        :
-        <View
-          style={styles.showEmailAuthScreen}>
-          <View style={styles.modalView}>
-            <BrandLogo
-              logoContainerStyle={styles.logoContainerStyle}
-              logoStyle={styles.logoStyle}/>
-            <Text
-              style={styles.notificationModalText}>
-              {'\n\n'} {this.state.notificationModalText}</Text>
-            {this.state.notificationModalText !== IS_NOT_VALID_USER_TEXT ?
-            <GoogleSigninButton
-              ref={GOOGLE_LOGIN_REF}
-              style={{width: 185, height: 48, bottom: height / 16}}
-              size={GoogleSigninButton.Size.Wide}
-              color={GoogleSigninButton.Color.Dark}
-              onPress={this._signInWithGoogleAccount}/> : <View />}
-          </View>
-        </View> }
+          :
+          <View
+            style={styles.showEmailAuthScreen}>
+            <View style={styles.modalView}>
+              <BrandLogo
+                logoContainerStyle={styles.logoContainerStyle}
+                logoStyle={styles.logoStyle}/>
+              <Text
+                style={styles.notificationModalText}>
+                {'\n\n'} {this.state.notificationModalText}</Text>
+              {this.state.notificationModalText !== IS_NOT_VALID_USER_TEXT ?
+                <GoogleSigninButton
+                  ref={GOOGLE_LOGIN_REF}
+                  style={{width: 185, height: 48, bottom: height / 16}}
+                  size={GoogleSigninButton.Size.Wide}
+                  color={GoogleSigninButton.Color.Dark}
+                  onPress={this._signInWithGoogleAccount}/> : <View />}
+            </View>
+          </View> }
       </VentureAppPage>
     )
   }
@@ -525,7 +555,7 @@ const styles = StyleSheet.create({
     width: null,
     height: null
   },
-    logoContainerStyle: {
+  logoContainerStyle: {
     marginHorizontal: (width - LOGO_WIDTH) / 2
   },
   logoStyle: {
@@ -542,7 +572,7 @@ const styles = StyleSheet.create({
   notificationModalStyle: {
     backgroundColor: '#010634'
   },
-    notificationModalText: {
+  notificationModalText: {
     color: '#fff',
     fontFamily: 'AvenirNextCondensed-Medium',
     textAlign: 'center',

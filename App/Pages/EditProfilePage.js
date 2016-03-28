@@ -304,7 +304,7 @@ var EditProfilePage = React.createClass({
     );
 
     return (
-      <View>
+      <View style={{backgroundColor: '#040A19'}}>
         <View>
           {this._renderHeader()}
         </View>

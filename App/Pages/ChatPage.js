@@ -58,6 +58,7 @@ var TIMER_BAR_HEIGHT = 40;
 
 var GREEN_HEX_CODE = '#84FF9B';
 var YELLOW_HEX_CODE = '#ffe770';
+var WHITE_HEX_CODE = '#fff';
 
 var ChatMateTypingLoader = React.createClass({
   componentDidMount() {
@@ -92,7 +93,7 @@ var ChatPage = React.createClass({
       dataSource: new ListView.DataSource({
         rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
       }),
-      extendChatCountdownTimerVal: 10,
+      extendChatCountdownTimerVal: 60,
       hasKeyboardSpace: false,
       hasTimerExpired: false,
       infoContentVisible: false,
@@ -126,7 +127,6 @@ var ChatPage = React.createClass({
       });
 
       this.setState({chatRoomMessagesRef});
-
 
     });
   },
@@ -264,7 +264,7 @@ var ChatPage = React.createClass({
 
   render() {
     let chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle :
-      this.props.chatRoomEventTitle);
+      this.props.chatRoomEventTitle + '?');
 
     let messageTextInput = (
       <TextInput
@@ -305,7 +305,7 @@ var ChatPage = React.createClass({
                                     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
                                     var seenMessagesId = `seenMessages_${this.props.currentUserData.ventureId}`;
                                     this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
-                                    && this.state.messageList.length);
+                                    && this.state.messageList.length || 0);
                                     this.props.navigator.pop();
                 }} style={{right: 10, bottom: 5}}
             />
@@ -335,7 +335,7 @@ var ChatPage = React.createClass({
             onLayout={this.scrollToBottom}
             initialListSize={15}
             onLayout={(e)=>{
-                          this.listHeight = JSON.parse(e.nativeEvent.layout.height);
+                          this.listHeight = parseFloat(e.nativeEvent.layout.height);
                         }}
             onScroll={() => {
                         }}
@@ -344,7 +344,7 @@ var ChatPage = React.createClass({
             pageSize={15}
             renderFooter={() => {
                           return <View onLayout={(e)=> {
-                            this.footerY = JSON.parse(e.nativeEvent.layout.y);
+                            this.footerY = parseFloat(e.nativeEvent.layout.y);
                             this.scrollToBottom();
                           }}/>
                         }}
@@ -404,6 +404,7 @@ var ChatPage = React.createClass({
                       this.setTimeout(() => {
                         this.setState({showExtendChatModal: false});
                         // @hmm: if agree to extend chat
+                        this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${currentUserData.ventureId}`).set(true);
 
                       }, 400)
                     }
@@ -447,6 +448,7 @@ var RecipientInfoBar = React.createClass({
 
   getInitialState() {
     return {
+      backgroundColor: WHITE_HEX_CODE,
       currentUserActivityPreferenceTitle: this.props.recipientData.currentUserData.activityPreference.title,
       currentUserBio: this.props.recipientData.currentUserData.bio,
       dir: 'row',
@@ -478,6 +480,14 @@ var RecipientInfoBar = React.createClass({
         [this.props.recipientData && this.props.recipientData.currentUserData && this.props.recipientData.currentUserData.location && this.props.recipientData.currentUserData.location.coordinates && this.props.recipientData.currentUserData.location.coordinates.latitude,
           this.props.recipientData && this.props.recipientData.currentUserData && this.props.recipientData.currentUserData.location && this.props.recipientData.currentUserData.location.coordinates && this.props.recipientData.currentUserData.location.coordinates.longitude])})
     })
+  },
+
+  componentDidMount() {
+    this.props.chatRoomRef && this.props.chatRoomRef.child('timer/expireTime').on('value', snapshot => {
+      if(snapshot.val()) {
+        this.setState({backgroundColor: GREEN_HEX_CODE});
+      }
+    });
   },
 
   calculateDistance(location1:Array, location2:Array) {
@@ -663,7 +673,7 @@ var RecipientInfoBar = React.createClass({
 
     return (
       <View style={{flexDirection: 'column', width: width}}>
-        <View style={[styles.recipientInfoBar, {backgroundColor: GREEN_HEX_CODE}]}>
+        <View style={[styles.recipientInfoBar, {backgroundColor: this.state.backgroundColor}]}>
           <RecipientAvatar currentUserRef={this.props.currentUserRef} onPress={() => {
                     LayoutAnimation.configureNext(config);
                     this.props.handleInfoContentVisibility(this.state.infoContent === 'column');
@@ -806,7 +816,7 @@ var TimerBar = React.createClass({
       recipient = this.props.recipient,
       _this = this;
 
-    chatRoomRef.child('timer/expireTime').once('value', snapshot => {
+    chatRoomRef.child('timer/expireTime').on('value', snapshot => {
       // @hmm: if no timer value then return from function
       if (!snapshot.val()) {
         this.setState({timerValInSeconds: 300, timerActive: false});

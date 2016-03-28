@@ -155,8 +155,8 @@ class MatchSuccessIcon extends Component {
           }
           this.props.onPress();
         }}
-        style={[this.props.style,{width: (this.props.size || SIZE) * 1.18,
-                height: (this.props.size || SIZE) * 1.18}]}>
+        style={[this.props.style,{justifyContent: 'center', bottom: 8, width: (this.props.size || SIZE) * 1.58,
+                height: (this.props.size || SIZE) * 1.58}]}>
         {this.state.badgeValue > 0 ? badge : undefined}
         <Icon
           name="ion|chatboxes"
@@ -189,7 +189,8 @@ const styles = StyleSheet.create({
   icon: {
     opacity: 1.0,
     width: SIZE,
-    height: SIZE
+    height: SIZE,
+    alignSelf: 'center'
   }
 });
 

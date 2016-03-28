@@ -42,7 +42,7 @@ class DefaultMatchStatusIcon extends Component {
       <TouchableOpacity
         activeOpacity={0.3}
         onPress={this.props.onPress}
-        style={[this.props.style,{justifyContent: 'center', bottom: 8, width: (this.props.size || SIZE) * 1.58,
+        style={[this.props.style,{justifyContent: 'center', bottom: 10, width: (this.props.size || SIZE) * 1.58,
                 height: (this.props.size || SIZE) * 1.58}]}>
         <Icon
           name="ion|ios-arrow-right"

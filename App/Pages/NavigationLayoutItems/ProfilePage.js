@@ -105,7 +105,6 @@ var ProfilePage = React.createClass({
           if (match && match.chatRoomId) {
             chatRoomsRef.child(match.chatRoomId).set(null)
           }
-
         });
       });
 

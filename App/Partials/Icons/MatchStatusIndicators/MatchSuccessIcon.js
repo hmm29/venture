@@ -155,7 +155,7 @@ class MatchSuccessIcon extends Component {
           }
           this.props.onPress();
         }}
-        style={[this.props.style,{justifyContent: 'center', bottom: 8, width: (this.props.size || SIZE) * 1.58,
+        style={[this.props.style,{justifyContent: 'center', bottom: 10, width: (this.props.size || SIZE) * 1.58,
                 height: (this.props.size || SIZE) * 1.58}]}>
         {this.state.badgeValue > 0 ? badge : undefined}
         <Icon

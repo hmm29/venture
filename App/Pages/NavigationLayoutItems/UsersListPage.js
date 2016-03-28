@@ -523,7 +523,7 @@ var User = React.createClass({
     );
 
     return (
-      <Swipeout right={swipeoutBtns}>
+      <Swipeout autoClose={true} right={swipeoutBtns}>
       <Animatable.View ref="user">
         <TouchableHighlight
           underlayColor={WHITE_HEX_CODE}

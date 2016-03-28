@@ -750,7 +750,7 @@ var User = React.createClass({
     }
 
     return (
-      <Swipeout right={swipeoutBtns}>
+      <Swipeout autoClose={true} right={swipeoutBtns}>
         <TouchableHighlight
           underlayColor={WHITE_HEX_CODE}
           activeOpacity={0.3}

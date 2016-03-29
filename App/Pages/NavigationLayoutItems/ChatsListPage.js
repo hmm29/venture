@@ -42,7 +42,7 @@ var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var LinearGradient = require('react-native-linear-gradient');
 var ReactFireMixin = require('reactfire');
 var SGListView = require('react-native-sglistview');
-var Swipeout = require('react-native-swipeout')
+var Swipeout = require('react-native-swipeout');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
 
@@ -64,6 +64,8 @@ var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
+var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
+var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
 var THUMBNAIL_SIZE = 50;
 
 var BLUE_HEX_CODE = '#40cbfb';
@@ -183,10 +185,10 @@ var User = React.createClass({
 
   _handleAppStateChange(currentAppState) {
     if (currentAppState === 'background') {
-      this.setState({showTimerVal: false})
+      this.state.showTimerVal && this.setState({showTimerVal: false})
     }
     if (currentAppState === 'active') {
-      this.setState({showTimerVal: true});
+      !this.state.timerVal && this.setState({showTimerVal: true});
     }
   },
 
@@ -249,15 +251,6 @@ var User = React.createClass({
   },
 
   componentWillUnmount() {
-    //let currentUserIDHashed = this.props.currentUserIDHashed,
-    //  firebaseRef = this.props.firebaseRef,
-    //  currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/'+currentUserIDHashed+'/match_requests');
-    //
-    //if (this.props.data && this.props.data.isEventData) currentUserMatchRequestsRef = firebaseRef
-    //  && firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
-    //
-    //currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
-
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
   },
 
@@ -350,6 +343,21 @@ var User = React.createClass({
           status: 'matched',
           role: 'sender'
         });
+
+        fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-Parse-Application-Id': PARSE_APP_ID,
+            'Content-Type': 'application/json',
+          },
+          body: `{"channels": ["${targetUserIDHashed}"], "alert": "You have a new match!"}`
+        })
+          .then(response => {
+            console.log(JSON.stringify(response))
+          })
+          .catch(error => console.log(error))
+
       }
 
       else if (this.state.status === 'matched') {
@@ -417,7 +425,6 @@ var User = React.createClass({
       }
     } else {
 
-
       let targetUserIDHashed = this.props.data.ventureId,
         currentUserIDHashed = this.props.currentUserIDHashed,
         firebaseRef = this.props.firebaseRef,
@@ -451,6 +458,20 @@ var User = React.createClass({
           status: 'matched',
           role: 'sender'
         }, 100);
+
+        fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-Parse-Application-Id': PARSE_APP_ID,
+            'Content-Type': 'application/json',
+          },
+          body: `{"channels": ["${targetUserIDHashed}"], "alert": "You have a new match!"}`
+        })
+          .then(response => {
+            console.log(JSON.stringify(response))
+          })
+          .catch(error => console.log(error))
       }
 
       else if (this.state.status === 'matched') {
@@ -518,17 +539,6 @@ var User = React.createClass({
             }
           })
         });
-      }
-
-      else {
-        targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
-          status: 'received',
-          _id: currentUserIDHashed
-        }, 200);
-        currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-          status: 'sent',
-          _id: targetUserIDHashed
-        }, 300);
       }
     }
   },
@@ -689,10 +699,10 @@ var User = React.createClass({
               </Text>
             </Text>
             <View
-              style={[styles.tagBar, {bottom: 15, width: ((this.tagsTitleWidth || 30.5) * 2) + (((this.tagsScrollBarWidth || 0) + 10) || width/1.3), alignSelf: 'center'}]}>
+              style={[styles.tagBar, {bottom: 15, width: this.tagsTitleWidth + this.tagsScrollBarWidth, alignSelf: 'center'}]}>
               <Text
                 onLayout={(e)=>{
-                          this.tagsTitleWidth = parseFloat(e.nativeEvent.layout.width);
+                          this.tagsTitleWidth = parseFloat(e.nativeEvent.layout.width) || 30.5;
                         }}
                 style={[styles.profileModalSectionTitle, {marginHorizontal: 0, alignSelf: 'center'}]}>Tags:</Text>
               <ScrollView
@@ -934,7 +944,7 @@ var ChatsListPage = React.createClass({
         );
         firstSessionRef.child('hasVisitedChatsListPage').set(true);
       }
-    }, 1000);
+    }, 800);
   },
 
   componentWillUnmount() {
@@ -992,7 +1002,7 @@ var ChatsListPage = React.createClass({
   render() {
     let funFact = (
       <View style={{alignSelf: 'center', bottom: height/2.5}}>
-        <TouchableOpacity onPress={() => {this.refs.funFact.jello(500)}}>
+        <TouchableOpacity onPress={() => {this.refs.funFact && this.refs.funFact.jello && this.refs.funFact.jello(500)}}>
           <Animatable.View ref="funFact">
             <Text
               style={{color: '#fff', fontFamily: 'AvenirNextCondensed-Medium', textAlign: 'center', fontSize: 18}}>

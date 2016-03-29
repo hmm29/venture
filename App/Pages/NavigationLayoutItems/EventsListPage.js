@@ -40,7 +40,7 @@ var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
 var SGListView = require('react-native-sglistview');
-var Swipeout = require('react-native-swipeout')
+var Swipeout = require('react-native-swipeout');
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
@@ -63,6 +63,8 @@ var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
+var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
+var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
 var THUMBNAIL_SIZE = 50;
 
 var BLACK_HEX_CODE = '#000';
@@ -138,7 +140,6 @@ var User = React.createClass({
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
           }
         }
-
       });
   },
 
@@ -236,12 +237,12 @@ var User = React.createClass({
     let targetUserIDHashed = this.props.data.ventureId,
       currentUserIDHashed = this.props.currentUserIDHashed,
       firebaseRef = this.props.firebaseRef,
-      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests'),
-      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
+      targetUserEventInviteMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests'),
+      currentUserEventInviteMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests');
 
     // end match interactions
-    targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
-    currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+    targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).set(null);
+    currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).set(null);
 
     this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`).set(null);
 
@@ -257,32 +258,46 @@ var User = React.createClass({
       currentUserRef = usersListRef.child(currentUserIDHashed),
       targetUserRef = usersListRef.child(targetUserIDHashed),
       firstSessionRef = currentUserRef.child('firstSession'),
-      targetUserMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
-      currentUserMatchRequestsRef = currentUserRef.child('event_invite_match_requests'),
+      targetUserEventInviteMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
+      currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests'),
       _this = this;
 
     if (this.state.status === 'sent') {
 
       // @hmm: delete the requests
-      targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
-      currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+      targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).set(null);
+      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).set(null);
     }
 
     else if (this.state.status === 'received') {
 
       // @hmm: accept the request
       // chatroom reference uses id of the user who accepts the received matchInteraction
-      targetUserMatchRequestsRef.child(currentUserIDHashed).update({
+      targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({
         _id: currentUserIDHashed,
         status: 'matched',
         role: 'recipient'
       }, () => {});
 
-      currentUserMatchRequestsRef.child(targetUserIDHashed).update({
+      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({
         _id: targetUserIDHashed,
         status: 'matched',
         role: 'sender'
       }, () => {});
+
+      fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Parse-Application-Id': PARSE_APP_ID,
+          'Content-Type': 'application/json',
+        },
+        body: `{"channels": ["${targetUserIDHashed}"], "alert": "You have a new match!"}`
+      })
+        .then(response => {
+          console.log(JSON.stringify(response))
+        })
+        .catch(error => console.log(error))
     }
 
     else if (this.state.status === 'matched') {
@@ -290,7 +305,7 @@ var User = React.createClass({
         distance = this.state.distance + 'mi',
         _id;
 
-      currentUserMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
+      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
 
         if (snapshot.val() && snapshot.val().role === 'sender') {
           _id = 'EVENT_INVITE_' + targetUserIDHashed + '_TO_' + currentUserIDHashed;
@@ -301,8 +316,8 @@ var User = React.createClass({
         }
 
         // @hmm: put chat ids in match request object so overlays know which chat to destroy
-        currentUserMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
-        targetUserMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
+        currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
+        targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
 
         firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
 
@@ -352,12 +367,12 @@ var User = React.createClass({
     }
 
     else {
-      targetUserMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
+      targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
         eventTitle: this.props.eventTitle,
         status: 'received',
         _id: currentUserIDHashed
       }, 200);
-      currentUserMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
+      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
         eventTitle: this.props.eventTitle,
         status: 'sent',
         _id: targetUserIDHashed
@@ -368,7 +383,7 @@ var User = React.createClass({
           let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
             'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
 
-          targetUserMatchRequestsRef.child(currentUserIDHashed).update({
+          targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({
             account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
           });
         });
@@ -377,12 +392,30 @@ var User = React.createClass({
           let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
             'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
 
-          currentUserMatchRequestsRef.child(targetUserIDHashed).update({
+          currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({
             account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
           });
 
         });
       }, 0);
+
+      targetUserEventInviteMatchRequestsRef && targetUserEventInviteMatchRequestsRef.once('value', snapshot => {
+        if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 8 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 8
+          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'X-Parse-Application-Id': PARSE_APP_ID,
+              'Content-Type': 'application/json',
+            },
+            body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in going to an event with you!"}`
+          })
+            .then(response => {
+              console.log(JSON.stringify(response))
+            })
+            .catch(error => console.log(error))
+        }
+      })
     }
   },
 
@@ -522,7 +555,7 @@ var User = React.createClass({
                 <Text style={styles.eventTitle}>
                   {this.props.eventTitle} ?
                 </Text>
-                <View style={{top: 10}}>{this._renderStatusIcon()}</View>
+                <View style={{top: 10, right: width/60}}>{this._renderStatusIcon()}</View>
               </View>
             </LinearGradient>
             {this.state.dir === 'column' ? profileModal : <View />}
@@ -586,7 +619,7 @@ var AttendeeList = React.createClass({
         && this.props.eventData.title.length < 24 ? "WHO'S GOING TO : " : "")} 
         <Text style={{color: '#F06449', width: width/3, overflow: 'hidden'}}>{this.props.eventData
         && this.props.eventData.title}</Text></Text>
-        <CloseIcon style={{bottom: height / 15, left: width/30}}
+        <CloseIcon style={{bottom: height / 15, left: width/21}}
                    onPress={this.props.closeAttendeeListModal}/>
       </Header>
     )
@@ -620,7 +653,7 @@ var AttendeeList = React.createClass({
         {this._renderHeader()}
         </View>
         <ListView
-          style={{height: height/1.4}}
+          style={{height: height/1.35}}
           dataSource={this.state.dataSource}
           renderRow={this._renderUser}
           initialListSize={INITIAL_LIST_SIZE}
@@ -671,15 +704,6 @@ var Event = React.createClass({
       });
 
   },
-
-  //componentWillUnmount() {
-  //  let currentUserIDHashed = this.props.currentUserIDHashed,
-  //    firebaseRef = this.props.firebaseRef,
-  //    currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/' + currentUserIDHashed
-  //        + '/event_invite_match_requests');
-  //
-  //  currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
-  //},
 
   _getSecondaryStatusColor() {
     switch (this.state.status) {
@@ -895,13 +919,13 @@ var EventsListPage = React.createClass({
 
       if(this.props.firstSession && !this.props.firstSession.hasVisitedEventsPage) {
         AlertIOS.alert(
-          'Follow Events',
-          'What events are happening in your area? Tap on an event to learn more details and interact with other people who are going. Use the arrow to RSVP!'
+          'Follow Events!',
+          'What’s happening near you?\n Tap an event to learn more details and interact with other people who are going. Use the arrow to RSVP!'
         );
         firstSessionRef.child('hasVisitedEventsPage').set(true);
       }
 
-    }, 1000);
+    }, 800);
   },
 
   componentWillUnmount() {

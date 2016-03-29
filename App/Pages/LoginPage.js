@@ -107,7 +107,7 @@ var LoginPage = React.createClass({
               if(!JSON.parse(isValidUser)) {
                 this.setTimeout(() => {
                   this.setState({showEmailAuthScreen: true});
-                }, 1000);
+                }, 500);
               }
             })
         }

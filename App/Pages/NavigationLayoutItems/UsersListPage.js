@@ -66,6 +66,8 @@ var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
+var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
+var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
 var SEARCH_TEXT_INPUT_REF = 'searchTextInput';
 var THUMBNAIL_SIZE = 50;
 var USERS_LIST_VIEW_REF = "usersListView";
@@ -319,6 +321,20 @@ var User = React.createClass({
         status: 'matched',
         role: 'sender'
       }, 100);
+
+      fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Parse-Application-Id': PARSE_APP_ID,
+          'Content-Type': 'application/json',
+        },
+        body: `{"channels": ["${targetUserIDHashed}"], "alert": "You have a new match!"}`
+      })
+        .then(response => {
+          console.log(JSON.stringify(response))
+        })
+        .catch(error => console.log(error))
     }
 
     else if (this.state.status === 'matched') {
@@ -397,6 +413,25 @@ var User = React.createClass({
         status: 'sent',
         _id: targetUserIDHashed
       }, 300);
+
+
+      targetUserMatchRequestsRef && targetUserMatchRequestsRef.once('value', snapshot => {
+        if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 8 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 8
+          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'X-Parse-Application-Id': PARSE_APP_ID,
+              'Content-Type': 'application/json',
+            },
+            body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in your activity!"}`
+          })
+            .then(response => {
+              console.log(JSON.stringify(response))
+            })
+            .catch(error => console.log(error))
+        }
+      });
     }
   },
 
@@ -491,10 +526,10 @@ var User = React.createClass({
             </Text>
           </Text>
           <View
-            style={[styles.tagBar, {bottom: 15, width: ((this.tagsTitleWidth || 30.5) * 2) + (((this.tagsScrollBarWidth || 0) + 10) || width/1.3), alignSelf: 'center'}]}>
+            style={[styles.tagBar, {bottom: 15, width: this.tagsTitleWidth + this.tagsScrollBarWidth, alignSelf: 'center'}]}>
             <Text
               onLayout={(e)=>{
-                          this.tagsTitleWidth = parseFloat(e.nativeEvent.layout.width);
+                          this.tagsTitleWidth = parseFloat(e.nativeEvent.layout.width) || 30.5;
                         }}
               style={[styles.profileModalSectionTitle, {marginHorizontal: 0, alignSelf: 'center'}]}>Tags:</Text>
             <ScrollView
@@ -523,7 +558,7 @@ var User = React.createClass({
     );
 
     return (
-      <Swipeout autoClose={true} right={swipeoutBtns}>
+      <Swipeout autoClose={true} right={!this.props.isCurrentUser ? swipeoutBtns : null}>
       <Animatable.View ref="user">
         <TouchableHighlight
           underlayColor={WHITE_HEX_CODE}
@@ -539,7 +574,7 @@ var User = React.createClass({
               start={[0,1]}
               end={[1,1]}
               locations={[0.3,0.99,1.0]}
-              style={styles.container}>
+              style={[styles.container, {borderColor: (this.props.isCurrentUser ? 'rgba(255,255,255,0.02)' : 'rgba(100,100,105,0.2)')}]}>
               <View style={styles.rightContainer}>
                 <Image
                   onPress={this._onPressItem}
@@ -562,7 +597,7 @@ var User = React.createClass({
                 </Image>
                 <Text
                   style={[styles.distance]}>{this.state.distance ? this.state.distance + ' mi' : '      '}</Text>
-                <Text style={[styles.activityPreference, {right: (this.props.isCurrentUser ? width/150 : 0)}]}>
+                <Text style={[styles.activityPreference, {right: (this.props.isCurrentUser ? width/150 : 0), color: (this.props.isCurrentUser ? '#fff' : '#000')}]}>
                   {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title}
                 </Text>
                 <View>
@@ -661,6 +696,7 @@ var UsersListPage = React.createClass({
               if (user.status && !user.status.isOnline) return;
 
               // @hmm: bc of cumulative privacy selection, only check for friends+ for both 'friends+' and 'all'
+              // right now only yalies use the app so friends+ and all are equivalent
               if (matchingPreferences && matchingPreferences.privacy && matchingPreferences.privacy
                   .indexOf('friends+') > -1) {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
@@ -779,7 +815,7 @@ var UsersListPage = React.createClass({
 
   _renderCurrentUser() {
     return (
-      <User backgroundColor={'rgba(255,245,226, 0.5)'}
+      <User backgroundColor={'#040A19'}
             data={this.state.currentUserData}
             editable={true}
             isCurrentUser={true}/>
@@ -926,7 +962,6 @@ var styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    borderColor: 'rgba(100,100,105,0.2)',
     borderWidth: 1,
   },
   customRefreshingActivityIndicatorIOS: {

@@ -334,10 +334,10 @@ var EditProfilePage = React.createClass({
 
   _renderHeader() {
     return (
-      <Header containerStyle={{backgroundColor: '#040A19'}}>
+      <Header>
         <BackIcon onPress={() => {
                         this.props.navigator.pop();
-                    }}/>
+                    }} style={{bottom: 2}}/>
         <Text>EDIT PROFILE</Text>
         <View />
       </Header>

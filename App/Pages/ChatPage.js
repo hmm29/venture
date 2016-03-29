@@ -41,17 +41,19 @@ var Header = require('../Partials/Header');
 var Icon = require('react-native-vector-icons/Ionicons');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../Partials/Modals/Base/ModalBase');
-var Parse = require('parse/react-native');
 var ReactFireMixin = require('reactfire');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('./Base/VentureAppPage');
 
 var {height, width} = Dimensions.get('window');
+var CHAT_DURATION_IN_MINUTES = 5;
 var HEADER_CONTAINER_HEIGHT = height / 20;
 var MAX_TEXT_INPUT_VAL_LENGTH = 15;
 var MESSAGE_TEXT_INPUT_HEIGHT = 30;
 var MESSAGE_TEXT_INPUT_REF = 'messageTextInput';
 var MESSAGES_LIST_REF = 'messagesList';
+var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
+var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
 var RECIPIENT_INFO_BAR_HEIGHT = 78;
 var SCREEN_HEIGHT = height;
 var TIMER_BAR_HEIGHT = 40;
@@ -100,7 +102,6 @@ var ChatPage = React.createClass({
       loaded: false,
       message: '',
       messageList: Object,
-      messageListCount: 0,
       showExtendChatModal: false,
     };
   },
@@ -127,7 +128,6 @@ var ChatPage = React.createClass({
       });
 
       this.setState({chatRoomMessagesRef});
-
     });
   },
 
@@ -141,13 +141,9 @@ var ChatPage = React.createClass({
       this.setState({chatMateIsTyping: snapshot.val()});
     });
 
-    //Parse.Cloud.afterSave("Message", request => {
-    //
-    //});
-    //
-    //Parse.Cloud.afterSave("ChatExtension", request => {
-    //
-    //});
+    this.props.chatRoomRef && this.props.chatRoomRef.on('value', snapshot => {
+      if(!snapshot.val()) this.props.navigator.pop();
+    });
   },
 
   componentWillUnmount() {
@@ -259,7 +255,38 @@ var ChatPage = React.createClass({
       _this.refs[MESSAGE_TEXT_INPUT_REF] && _this.refs[MESSAGE_TEXT_INPUT_REF].blur();
 
       this.scrollToBottom();
+
+      //@hmm: if both users in chatroom when first message is sent
+      if(this.state.messageList && this.state.messageList.length === 1) {
+        this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+          if (snapshot.val() === 0) {
+            let currentTime = new Date().getTime(),
+              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+
+            this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
+          }
+        })
+      }
     });
+
+    this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
+      if(this.state.messageList && (this.state.messageList.length-snapshot.val() === 1)) { //@hmm: reset point when target user has seen all messages except one just sent
+
+        fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-Parse-Application-Id': PARSE_APP_ID,
+            'Content-Type': 'application/json',
+          },
+          body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
+        })
+          .then(response => {
+            console.log(JSON.stringify(response))
+          })
+          .catch(error => console.log(error))
+      }
+    })
   },
 
   render() {
@@ -335,7 +362,7 @@ var ChatPage = React.createClass({
             onLayout={this.scrollToBottom}
             initialListSize={15}
             onLayout={(e)=>{
-                          this.listHeight = parseFloat(e.nativeEvent.layout.height);
+                          this.listHeight = e.nativeEvent && e.nativeEvent.layout && parseFloat(e.nativeEvent.layout.height);
                         }}
             onScroll={() => {
                         }}
@@ -344,7 +371,7 @@ var ChatPage = React.createClass({
             pageSize={15}
             renderFooter={() => {
                           return <View onLayout={(e)=> {
-                            this.footerY = parseFloat(e.nativeEvent.layout.y);
+                            this.footerY = e.nativeEvent && e.nativeEvent.layout && parseFloat(e.nativeEvent.layout.y);
                             this.scrollToBottom();
                           }}/>
                         }}
@@ -404,8 +431,7 @@ var ChatPage = React.createClass({
                       this.setTimeout(() => {
                         this.setState({showExtendChatModal: false});
                         // @hmm: if agree to extend chat
-                        this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${currentUserData.ventureId}`).set(true);
-
+                        this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.currentUserData.ventureId}`).set(true);
                       }, 400)
                     }
                   }}/>
@@ -826,7 +852,11 @@ var TimerBar = React.createClass({
       if (!this.state.timerActive) this.setState({timerActive: true});
 
       // @hmm: for creator of chatroom
-      this.setState({timerValInSeconds: Math.floor((snapshot.val() - this.state.currentTime) / 1000)});
+        if(Math.floor((snapshot.val() - this.state.currentTime) / 1000) > 300) {
+          this.setState({timerValInSeconds: 300});
+        } else {
+          this.setState({timerValInSeconds: Math.floor((snapshot.val() - this.state.currentTime) / 1000)});
+        }
 
       // @hmm: update in match_request objects so it can be referenced in users list for timer overlays
       if (this.props.recipientData.chatRoomEventTitle) {
@@ -841,14 +871,17 @@ var TimerBar = React.createClass({
           .update({expireTime: snapshot.val()});
       }
 
-
       _this.handle = _this.setInterval(() => {
         if (this.state.timerValInSeconds - 1 <= 0) {
           _this.clearInterval(_this.handle);
           _this._destroyChatroom(chatRoomRef);
         }
 
-        this.setState({timerValInSeconds: this.state.timerValInSeconds - 1})
+        if(this.state.timerValInSeconds > 300) {
+          this.setState({timerValInSeconds: 299})
+        } else {
+          this.setState({timerValInSeconds: this.state.timerValInSeconds - 1})
+        }
 
       }, 1000);
 

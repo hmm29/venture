@@ -43,16 +43,12 @@ class ChevronIcon extends Component {
 
   componentDidMount() {
     InteractionManager.runAfterInteractions(() => {
-      if (this.props.animated) this._animate();
+      this.props.animated && this._animate();
     });
   };
 
   _animate() {
-    this.refs.chevronIcon.flash(3000).then(() => {
-      this.refs.chevronIcon.flash(3000).then(() => {
-        this.refs.chevronIcon.flash(3000);
-      })
-    })
+    this.refs.chevronIcon.flash(3000);
   };
 
   render() {
@@ -60,8 +56,11 @@ class ChevronIcon extends Component {
       <Animatable.View ref="chevronIcon" style={[this.props.style, {width: (this.props.size || SIZE) * 1.18,
                 height: (this.props.size || SIZE) * 1.18, alignItems: 'center'}]}>
       <TouchableOpacity
-        activeOpacity={0.3}
-        onPress={this.props.onPress}>
+        activeOpacity={this.props.animated ? 0.8 : 0.3}
+        onPress={() => {
+          this.props.animated && this._animate();
+          this.props.onPress && this.props.onPress();
+        }}>
         <Icon
           name={"ion|ios-arrow-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ?
                     this.props.direction : 'up')}

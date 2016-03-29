@@ -137,7 +137,7 @@ class MatchSuccessIcon extends Component {
 
   render() {
     let badge = (
-      <View style={{flex: 1}}>
+      <View style={{flex: 1, top: 8, left: 6}}>
         <Text
           style={styles.badge}>{this.state.badgeValue}</Text>
       </View>

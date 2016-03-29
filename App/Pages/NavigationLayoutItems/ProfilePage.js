@@ -18,6 +18,7 @@ var {
   ActivityIndicatorIOS,
   AsyncStorage,
   Image,
+  InteractionManager,
   LayoutAnimation,
   NativeModules,
   StyleSheet,
@@ -335,12 +336,14 @@ var Info = React.createClass({
   },
 
   componentDidMount() {
-    this.setTimeout(() => {
-      if (_.isEmpty(this.state.info)) this.setState({showLoadingModal: true});
+    InteractionManager.runAfterInteractions(() => {
       this.setTimeout(() => {
-        if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
-      }, 5000); // @hmm: timeout for loading modal
-    }, 2000);
+        if (_.isEmpty(this.state.info)) this.setState({showLoadingModal: true});
+        this.setTimeout(() => {
+          if (this.state.showLoadingModal) this.setState({showLoadingModal: false});
+        }, 5000); // @hmm: timeout for loading modal
+      }, 2000);
+    });
   },
 
   componentWillUnmount() {

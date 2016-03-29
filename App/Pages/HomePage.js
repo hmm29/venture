@@ -43,7 +43,6 @@ var dismissKeyboard = require('dismissKeyboard');
 var Firebase = require('firebase');
 var {Icon, } = require('react-native-icons');
 var LoginPage = require('../Pages/LoginPage');
-var Parse = require('parse/react-native');
 var SubmitActivityIcon = require('../Partials/Icons/SubmitActivityIcon');
 var TabBarLayout = require('../NavigationLayouts/TabBarLayout.ios');
 var TimerMixin = require('react-timer-mixin');
@@ -112,6 +111,8 @@ var HomePage = React.createClass({
       timeZoneOffsetInHours: (-1) * (new Date()).getTimezoneOffset() / 60,
       trendingContent: 'YALIES',
       trendingContentOffsetXVal: 0,
+      trendingItemsLoadEnded: false,
+      userFullName: '',
       ventureId: null,
       viewStyle: {
         marginHorizontal: 0,
@@ -135,9 +136,10 @@ var HomePage = React.createClass({
           return;
         }
 
+        this.setState({userFullName: account.name});
+
         this.setState({isLoggedIn: true, showTextInput: true, ventureId: account.ventureId});
         PushNotificationIOS.addEventListener('register', this._getDeviceToken);
-        PushNotificationIOS.requestPermissions();
 
         let firebaseRef = this.state.firebaseRef,
           usersListRef = firebaseRef && firebaseRef.child('users'),
@@ -176,6 +178,7 @@ var HomePage = React.createClass({
         // @hmm: get current user location & save to firebase object
         // and make sure this fires before navigating away!
         if(this.state.ventureId) {
+          PushNotificationIOS.requestPermissions();
           navigator.geolocation.getCurrentPosition(
             (currentPosition) => {
               currentUserRef.child(`location/coordinates`).set(currentPosition.coords);
@@ -199,46 +202,43 @@ var HomePage = React.createClass({
 
         AppStateIOS.addEventListener('change', this._handleAppStateChange);
 
-        //// @hmm: modified clean up procedure (in case of reload): remove old chats and match requests
-        //currentUserRef.child('match_requests').once('value', snapshot => {
-        //  snapshot.val() && _.each(snapshot.val(), (match) => {
-        //    if (match && match._id && match.expireTime) {
-        //      currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
-        //      usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
-        //    }
-        //    if (match && match.chatRoomId) {
-        //      chatRoomsRef.child(match.chatRoomId).set(null)
-        //    }
-        //  });
-        //});
-        //
-        //// @hmm: remove old event invite matches
-        //currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
-        //  snapshot.val() && _.each(snapshot.val(), (match) => {
-        //    if (match && match._id && match.expireTime) {
-        //      currentUserRef.child(`event_invite_match_requests/${match._id}/expireTime`).set(null);
-        //      usersListRef
-        //        .child(`${match._id}/event_invite_match_requests/${account.ventureId}/expireTime`)
-        //        .set(null);
-        //    }
-        //    if (match && match.chatRoomId) {
-        //      chatRoomsRef.child(match.chatRoomId).set(null)
-        //    }
-        //  });
-        //});
+
+        // @hmm: for now, persist chats and match data even after app restart
+
+        // @hmm: modified clean up procedure (in case of reload): remove old chats and match requests
+        currentUserRef.child('match_requests').once('value', snapshot => {
+          snapshot.val() && _.each(snapshot.val(), (match) => {
+            if (match && match._id && match.expireTime) {
+              currentUserRef.child(`match_requests/${match._id}/expireTime`).set(null);
+              usersListRef.child(`${match._id}/match_requests/${account.ventureId}/expireTime`).set(null);
+            }
+            if (match && match.chatRoomId) {
+              chatRoomsRef.child(match.chatRoomId).set(null)
+            }
+          });
+        });
+
+        // @hmm: remove old event invite matches
+        currentUserRef.child('event_invite_match_requests').once('value', snapshot => {
+          snapshot.val() && _.each(snapshot.val(), (match) => {
+            if (match && match._id && match.expireTime) {
+              currentUserRef.child(`event_invite_match_requests/${match._id}/expireTime`).set(null);
+              usersListRef
+                .child(`${match._id}/event_invite_match_requests/${account.ventureId}/expireTime`)
+                .set(null);
+            }
+            if (match && match.chatRoomId) {
+              chatRoomsRef.child(match.chatRoomId).set(null)
+            }
+          });
+        });
 
 
         // @hmm: PUSH NOTIFICATION LOGIC
 
-        // @hmm: Parse Push Notification Handlers
-        Parse.Cloud.afterSave("MatchRequest", request => {
-
-        });
-
-        Parse.Cloud.afterSave("EventInviteMatchRequest", request => {
-
-        });
-
+        /*
+        // TODO: once React Native supports background tasks, can send local notifications
+        // until then rely on self-hosted Parse push notification server to handle notifications in background state
         // listener: for notifications when user receives a new request
         currentUserRef.child('match_requests').on('child_added', childSnapshot => {
           childSnapshot.val() && childSnapshot.val()._id && firebaseRef
@@ -303,6 +303,7 @@ var HomePage = React.createClass({
               }
             })
         });
+      */
       })
       .catch((error) => console.log(error.message))
       .done();
@@ -365,13 +366,13 @@ var HomePage = React.createClass({
       .catch(error => console.log(error.message))
       .done();
 
-    PushNotificationIOS.addEventListener('notification', this._onNotification);
+    // PushNotificationIOS.addEventListener('notification', this._onNotification);
   },
 
   componentWillUnmount() {
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
     this.state.firebaseRef && this.state.firebaseRef.off();
-    PushNotificationIOS.removeEventListener('notification', this._onNotification);
+    // PushNotificationIOS.removeEventListener('notification', this._onNotification);
     PushNotificationIOS.removeEventListener('register', this._getDeviceToken)
   },
 
@@ -393,6 +394,7 @@ var HomePage = React.createClass({
           onLoadEnd={() => {
                         // @hmm: reset trending content title to yalies when image loads
                         this.setState({trendingContent: 'YALIES'})
+                        !this.state.trendingItemsLoadEnded && this.setState({trendingItemsLoadEnded: true});
                     }}
           style={styles.trendingUserImg}
           source={{uri}}/>
@@ -447,7 +449,7 @@ var HomePage = React.createClass({
           'X-Parse-Application-Id': PARSE_APP_ID,
           'Content-Type': 'application/json',
         },
-        body: `{"deviceType": "ios","deviceToken": "${token}", "appName": "Venture Yale", "installationId": "${uuid}", "channels": ["yale-ios-users", "${this.state.ventureId}"]}`
+        body: `{"deviceType": "ios","deviceToken": "${token}", "appName": "Venture Yale", "installationId": "${uuid}", "channels": ["yale-ios-users", "${this.state.ventureId}", "${this.state.userFullName}"]}`
       })
         .then(response => {
           console.log(JSON.stringify(response))
@@ -547,6 +549,8 @@ var HomePage = React.createClass({
     this.setState({hasKeyboardSpace: true, showAddInfoButton: false, showSubmitActivityIcon: false, showTextInput: false});
   },
 
+  /*
+  // @hmm: No need for these until RN supports background tasks
   _onNotification(notification) {
     PushNotificationIOS.presentLocalNotification({
       alertBody: notification.getMessage()
@@ -563,6 +567,7 @@ var HomePage = React.createClass({
         }
       });
   },
+  */
 
   onSubmitActivity() {
     let activityTitleInput = (this.state.activityTitleInput),
@@ -632,7 +637,7 @@ var HomePage = React.createClass({
                         if(!text) this.setState({showTimeSpecificationOptions: false});
                         this.setState({activityTitleInput: text.toUpperCase(), showSubmitActivityIcon: !!text});
                     }}
-          placeholder={'What do you want to do?'}
+          placeholder={(this.state.firstSession && this.state.trendingItemsLoadEnded ? 'Type your activity here!' : 'What do you want to do?')}
           placeholderTextColor={'rgba(255,255,255,1.0)'}
           returnKeyType='done'
           style={[styles.activityTitleInput, this.state.viewStyle, {marginTop: height/48}]}
@@ -659,7 +664,6 @@ var HomePage = React.createClass({
                               LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                               this.setState({activeTimeOption: 'now', date: new Date(),
                               showAddInfoBox: !this.state.showAddInfoBox, tagInput: '', tags: []});
-
 
                               // @hmm: disable add info button tutorial
                               if(this.state.firstSession && !this.state.firstSession.hasSeenAddInfoButtonTutorial) {
@@ -795,7 +799,7 @@ var HomePage = React.createClass({
                         }
                         this.setState({tagsArr, tagInput: ''});
                     }}
-          placeholder={'Type a tag and submit. Tap to delete.'}
+          placeholder={'Type a tag and submit. Tap a tag to delete it.'}
           placeholderTextColor={'rgba(0,0,0,0.8)'}
           returnKeyType='done'
           style={styles.tagsInputText}

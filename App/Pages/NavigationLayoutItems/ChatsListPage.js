@@ -813,7 +813,7 @@ var ChatsListPage = React.createClass({
       funFact: '1 in every 16 Yale students\nis a section asshole.',
       userRows: [],
       showFiltersModal: false,
-      showFunFact: true,
+      showFunFact: false,
       showLoadingModal: false,
       usersListRef
     };

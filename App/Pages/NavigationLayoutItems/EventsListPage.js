@@ -701,6 +701,7 @@ var Event = React.createClass({
         else _this.setState({status: 'notAttending'});
       });
 
+    // TODO: handle push notification cancelling for canceled events
     this.props.usersListRef && this.props.data && this.props.currentUserIDHashed && this.props.data.id
     && this.props.usersListRef.child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}/hasBeenSentPushNotificationReminder`)
       .once('value', snapshot => {

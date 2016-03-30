@@ -46,7 +46,7 @@ class ProfilePageIcon extends Component {
     return (
       <Animatable.View ref="profilePageIcon">
         <TouchableOpacity
-          activeOpacity={0.3}
+          activeOpacity={0.2} // @hmm: slightly more noticeable active opacity
           onPress={this.props.onPress}
           style={[this.props.style, {width: (this.props.size || SIZE) * 2.78, paddingLeft: SIZE/1.4, backgroundColor: 'transparent',
                 height: (this.props.size || SIZE) * 2.78, justifyContent: 'center', alignItems: 'flex-start'}]}>

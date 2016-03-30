@@ -48,8 +48,8 @@ class ProfilePageIcon extends Component {
         <TouchableOpacity
           activeOpacity={0.3}
           onPress={this.props.onPress}
-          style={[this.props.style, {width: (this.props.size || SIZE) * 2.48,
-                height: (this.props.size || SIZE) * 2.48, justifyContent: 'center', alignItems: 'flex-start'}]}>
+          style={[this.props.style, {width: (this.props.size || SIZE) * 2.78, paddingLeft: SIZE/1.4, backgroundColor: 'transparent',
+                height: (this.props.size || SIZE) * 2.78, justifyContent: 'center', alignItems: 'flex-start'}]}>
           <Icon
             name="ion|person"
             size={this.props.size || SIZE}

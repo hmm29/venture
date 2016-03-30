@@ -226,12 +226,6 @@ var User = React.createClass({
       firebaseRef = this.props.firebaseRef,
       currentUserMatchRequestsRef = firebaseRef && firebaseRef.child('users/'+currentUserIDHashed+'/match_requests');
 
-    this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
-    && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
-      .child(this.props.data.ventureId)
-    && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
-      .child(this.props.data.ventureId).off();
-
     currentUserMatchRequestsRef && currentUserMatchRequestsRef.off();
   },
 
@@ -592,7 +586,7 @@ var User = React.createClass({
                   onPress={this._onPressItem}
                   onLoadEnd={() => this.setState({thumbnailReady: true})}
                   source={{uri: this.props.data && this.props.data.picture}}
-                  style={[styles.thumbnail, (this.state.thumbnailReady ? {} : {backgroundColor: '#040A19'})]}>
+                  style={[styles.thumbnail, {right: (this.props.isCurrentUser ? width/80 : 0)}, (this.state.thumbnailReady ? {} : {backgroundColor: '#040A19'})]}>
                   <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                     <Text
                       style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs))
@@ -609,7 +603,7 @@ var User = React.createClass({
                 </Image>
                 <Text
                   style={[styles.distance]}>{this.state.distance ? this.state.distance + ' mi' : '      '}</Text>
-                <Text style={[styles.activityPreference, {right: (this.props.isCurrentUser ? width/150 : 0), color: (this.props.isCurrentUser ? '#fff' : '#000')}]}>
+                <Text style={[styles.activityPreference, {right: (this.props.isCurrentUser ? width/45 : 0), color: (this.props.isCurrentUser ? '#fff' : '#000')}]}>
                   {this.props.data && this.props.data.activityPreference && this.props.data.activityPreference.title}
                 </Text>
                 <View>
@@ -691,6 +685,8 @@ var UsersListPage = React.createClass({
         _this = this;
 
       currentUserRef && currentUserRef.child('matchingPreferences').on('value', snapshot => {
+
+        this.setState({currentUserMatchingPreferencesRef: currentUserRef.child('matchingPreferences')});
 
         let matchingPreferences = snapshot.val(),
           maxSearchDistance = matchingPreferences && matchingPreferences.maxSearchDistance,
@@ -788,9 +784,7 @@ var UsersListPage = React.createClass({
   },
 
   componentWillUnmount() {
-    this.state.usersListRef && this.state.usersListRef.off();
-    this.state.firebaseRef.child('chat_rooms') && this.state.firebaseRef.child('chat_rooms').off();
-    this.state.firebaseRef.off();
+    this.state.currentUserMatchingPreferencesRef && this.state.currentUserMatchingPreferencesRef.off();
   },
 
   _handleShowFiltersModal(showFiltersModal:boolean){
@@ -1078,7 +1072,7 @@ var styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: width / 10
+    marginRight: width / 64
   },
   searchTextInput: {
     color: '#222',
@@ -1116,6 +1110,7 @@ var styles = StyleSheet.create({
     height: THUMBNAIL_SIZE,
     borderRadius: THUMBNAIL_SIZE / 2,
     marginVertical: 7,
+    marginLeft: width/20 // for thumbnail columnwise alignment
   },
   thumbnailLoading: {
     width: THUMBNAIL_SIZE,

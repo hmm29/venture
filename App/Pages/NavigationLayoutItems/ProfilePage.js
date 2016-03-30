@@ -205,6 +205,9 @@ var ProfilePage = React.createClass({
                                     _this.setState({user : null, ventureId: null});
                                     _this.props.navigator.resetTo({title: 'Login', component: LoginPage});
 
+                                    _this.state.firebaseRef && _this.state.firebaseRef.unauth();
+                                    Firebase.goOffline();
+
                                      // @hmm: clean up async storage cache, except isValidUser bool marker
                                      AsyncStorage.multiRemove(['@AsyncStorage:Venture:account', '@AsyncStorage:Venture:authToken',
                                      '@AsyncStorage:Venture:currentUser:friendsAPICallURL',
@@ -269,9 +272,14 @@ var Photo = React.createClass({
   componentWillMount() {
     this.props.firebaseRef.child(`users/${this.props.ventureId}/picture`).on('value', snapshot => {
       this.setState({
-        currentPic: snapshot.val()
+        currentPic: snapshot.val(),
+        currentUserPictureRef: this.props.firebaseRef.child(`users/${this.props.ventureId}/picture`)
       })
     });
+  },
+
+  componentWillUnmount() {
+    this.state.currentUserPictureRef && this.state.currentUserPictureRef.off();
   },
 
   render() {
@@ -333,6 +341,10 @@ var Info = React.createClass({
           }
         })
     );
+  },
+
+  componentWillUnmount() {
+    this.state.currentUserDataRef && this.state.currentUserDataRef.off();
   },
 
   componentDidMount() {

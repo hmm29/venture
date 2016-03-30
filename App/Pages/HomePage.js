@@ -160,11 +160,11 @@ var HomePage = React.createClass({
 
         // @hmm: fetch first session object to update as tutorial gets completed
         firstSessionRef.on('value', snapshot => {
-          _this.setState({firstSession: snapshot.val()});
+          _this.setState({firstSession: snapshot.val(), firstSessionRef});
         });
 
         chatCountRef.on('value', snapshot => {
-          _this.setState({chatCount: snapshot.val()});
+          _this.setState({chatCount: snapshot.val(), chatCountRef});
         });
 
         trendingItemsRef.once('value', snapshot => {
@@ -379,7 +379,9 @@ var HomePage = React.createClass({
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
     this.state.firebaseRef && this.state.firebaseRef.off();
     // PushNotificationIOS.removeEventListener('notification', this._onNotification);
-    PushNotificationIOS.removeEventListener('register', this._getDeviceToken)
+    PushNotificationIOS.removeEventListener('register', this._getDeviceToken);
+    this.state.firstSessionRef && this.state.firstSessionRef.off();
+    this.state.chatCountRef && this.state.chatCountRef.off();
   },
 
   animateViewLayout(text:string) {
@@ -875,7 +877,7 @@ var HomePage = React.createClass({
             <View style={{backgroundColor: 'transparent'}}>
               <Header>
                 <ProfilePageIcon
-                  style={{bottom: height/20}}
+                  style={{bottom: height/19, right: width/12}}
                   onPress={() => {
                                     this.props.navigator.push({title: 'Profile', component: TabBarLayout,
                                     passProps: {
@@ -888,7 +890,7 @@ var HomePage = React.createClass({
                                  }}/>
                 <ChatsListPageIcon
                   chatCount={this.state.showTextInput && this.state.trendingItemsLoadEnded ? this.state.chatCount : 0}
-                  style={{bottom: height/20}}
+                  style={{bottom: height/19, left: width/12}}
                   onPress={() => {
                                     this.props.navigator.push({title: 'Chats', component: TabBarLayout,
                                     passProps: {

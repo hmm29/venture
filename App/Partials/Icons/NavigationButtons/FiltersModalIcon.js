@@ -25,7 +25,7 @@ import React, {
 import Animatable from 'react-native-animatable';
 import {Icon, } from 'react-native-icons'
 
-const SIZE = 30;
+const SIZE = 32;
 
 type Props = {
   color: React.PropTypes.string,
@@ -70,7 +70,7 @@ class FiltersModalIcon extends Component {
         <TouchableOpacity
           activeOpacity={0.3}
           onPress={this.props.onPress}
-          style={[this.props.style,{width: (this.props.size || SIZE) * 1.48,
+          style={[this.props.style,{width: (this.props.size || SIZE) * 1.48, paddingLeft: SIZE/3.5,
                   height: (this.props.size || SIZE) * 1.48, alignItems: 'center'}]} // scale size: 1.48
           >
           <Icon

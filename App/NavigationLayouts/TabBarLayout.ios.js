@@ -80,7 +80,7 @@ class TabBarLayout extends Component {
       if((_.values(snapshot.val())).length === 10 && _.every(_.values(snapshot.val()), v => v)) {
         firstSessionRef.set(null);
       }
-      this.setState({firstSession: snapshot.val()});
+      this.setState({firstSession: snapshot.val(), firstSessionRef});
     });
 
     currentUserChatCount.once('value', snapshot => {

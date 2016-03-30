@@ -68,8 +68,8 @@ class ChatsListPageIcon extends Component {
         <Animatable.View ref="chatsListPageIcon">
           <TouchableOpacity
             onPress={this.props.onPress}
-            style={[this.props.style, {width: (this.props.size || SIZE) * 2.48,
-                      height: (this.props.size || SIZE) * 2.48, justifyContent: 'center', alignItems: 'flex-end'}]}>
+            style={[this.props.style, {width: (this.props.size || SIZE) * 2.78, paddingRight: SIZE/1.4, backgroundColor: 'transparent',
+                      height: (this.props.size || SIZE) * 2.78, justifyContent: 'center', alignItems: 'flex-end'}]}>
             <Icon
               name="ion|ios-chatboxes"
               size={this.props.size || SIZE}
@@ -92,8 +92,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     fontFamily: 'AvenirNextCondensed-Medium',
-    left: SIZE*2,
-    bottom: SIZE / 8,
+    left: SIZE*2.45,
+    bottom: SIZE / 14,
     paddingTop: 1,
     backgroundColor: '#FF0017',
     color: 'white',

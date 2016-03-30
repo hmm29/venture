@@ -107,6 +107,21 @@ var User = React.createClass({
           this.props.data.location.coordinates.longitude]),
       _this = this;
 
+    // clear the old first
+    if(this.props.data.isEventInvite) {
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).off();
+    } else {
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
+        .child(this.props.data.ventureId).off();
+    }
+
     if (this.props.data && this.props.data.isEventInvite) {
 
       this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
@@ -256,6 +271,20 @@ var User = React.createClass({
   },
 
   componentWillUnmount() {
+    if(this.props.data.isEventInvite) {
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).off();
+    } else {
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
+        .child(this.props.data.ventureId).off();
+    }
+
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
   },
 
@@ -595,8 +624,6 @@ var User = React.createClass({
         text: 'Unmatch',
         backgroundColor: '#000',
         onPress: () => {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-
           let targetUserIDHashed = this.props.data.ventureId,
             currentUserIDHashed = this.props.currentUserIDHashed,
             firebaseRef = this.props.firebaseRef,
@@ -857,6 +884,8 @@ var ChatsListPage = React.createClass({
           // @hmm: filter according to currentUser matching preferences before putting into usersRow Array :)
           currentUserRef && currentUserRef.child('matchingPreferences').on('value', snapshot => {
 
+            this.setState({currentUserMatchingPreferencesRef: currentUserRef.child('matchingPreferences')});
+
             let matchingPreferences = snapshot.val(),
               maxSearchDistance = matchingPreferences && matchingPreferences.maxSearchDistance;
 
@@ -921,10 +950,12 @@ var ChatsListPage = React.createClass({
           if (!_.isEmpty(usersListSnapshotVal && usersListSnapshotVal[this.props.ventureId].match_requests)
             || !_.isEmpty(usersListSnapshotVal
               && usersListSnapshotVal[this.props.ventureId].event_invite_match_requests)) {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             this.setState({showFunFact: false});
           }
-          else this.setState({showFunFact: true});
+          else {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            this.setState({showFunFact: true});
+          }
 
         });
 
@@ -959,8 +990,7 @@ var ChatsListPage = React.createClass({
 
   componentWillUnmount() {
     this.state.usersListRef && this.state.usersListRef.off();
-    this.state.firebaseRef.child('chat_rooms') && this.state.firebaseRef.child('chat_rooms').off();
-    this.state.firebaseRef.off();
+    this.state.currentUserMatchingPreferencesRef && this.state.currentUserMatchingPreferencesRef.off();
   },
 
   _handleShowFiltersModal(showFiltersModal:boolean){
@@ -1236,6 +1266,7 @@ var styles = StyleSheet.create({
     height: THUMBNAIL_SIZE,
     borderRadius: THUMBNAIL_SIZE / 2,
     marginVertical: 7,
+    marginLeft: width/20 // for thumbnail columnwise alignment
   },
   timerValText: {
     opacity: 1.0,

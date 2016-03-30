@@ -123,14 +123,13 @@ var ChatPage = React.createClass({
 
       chatRoomMessagesRef.on('value', (snapshot) => {
         _this.setState({
+          chatRoomMessagesRef,
           contentOffsetYValue: 0,
           message: '',
           messageList: snapshot.val() && _.cloneDeep(_.values(snapshot.val()))
         });
         _this.updateMessages(_.cloneDeep(_.values(snapshot.val())))
       });
-
-      this.setState({chatRoomMessagesRef});
     });
   },
 
@@ -161,7 +160,8 @@ var ChatPage = React.createClass({
   },
 
   componentWillUnmount() {
-    // @hmm: don't turn off chaRoomsRef
+    this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).off();
+    this.state.chatRoomMessagesRef && this.state.chatRoomMessagesRef.off();
     this.state.chatExists && this.props.chatRoomRef.update({messageListHeightRef: this.footerY});
     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
   },
@@ -652,7 +652,12 @@ var RecipientInfoBar = React.createClass({
   },
 
   componentWillUnmount() {
+    this.props.chatRoomRef && this.props.chatRoomRef.child('timer/expireTime') && this.props.chatRoomRef.child('timer/expireTime').off();
     this.props.currentUserRef.child('location/coordinates') && this.props.currentUserRef.child('location/coordinates').off();
+    this.props.chatRoomRef && this.props.recipientData && this.props.recipientData.currentUserData
+    && this.props.recipientData.currentUserData.ventureId && this.props.recipientData.recipient
+    && this.props.recipientData.recipient.ventureId && this.props.chatRoomRef
+      .child('user_activity_preference_titles').off();
   },
 
   _getBackgroundColor() {
@@ -1105,6 +1110,7 @@ var TimerBar = React.createClass({
   },
 
   componentWillUnmount() {
+    this.props.chatRoomRef.child('timer/expireTime') && this.props.chatRoomRef.child('timer/expireTime').off();
     AppStateIOS.removeEventListener('change', this._handleAppStateChange);
   },
 

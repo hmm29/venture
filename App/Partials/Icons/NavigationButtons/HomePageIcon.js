@@ -42,7 +42,7 @@ class HomePageIcon extends Component {
       <TouchableOpacity
         activeOpacity={0.3}
         onPress={this.props.onPress}
-        style={[this.props.style]}>
+        style={[this.props.style, {right: SIZE/40}]}>
         <Icon
           name="ion|ios-home-outline"
           size={this.props.size || SIZE}

@@ -20,7 +20,6 @@ var {
   Image,
   InteractionManager,
   LayoutAnimation,
-  NativeModules,
   PixelRatio,
   PushNotificationIOS,
   StyleSheet,
@@ -455,6 +454,8 @@ var LoginPage = React.createClass({
                          permissions={['email','user_friends']}
                          loginBehavior={FBLoginManager.LoginBehaviors.Native}
                          onLogin={function(data){
+                                            Firebase.goOnline();
+
                                             let friendsAPICallURL = `https://graph.facebook.com/v2.3/${data.credentials
                                             && data.credentials.userId}/friends?access_token=${data.credentials
                                             && data.credentials.token}`,
@@ -463,15 +464,13 @@ var LoginPage = React.createClass({
                                             _this.setState({user: data.credentials,
                                             ventureId: hash(data.credentials.userId)});
 
-                                           // ref.authWithOAuthToken("facebook", data.credentials.token, function(error, authData) {
-                                           //  if (error) {
-                                           //    alert("Login Failed!", error);
-                                           //  } else {
-                                           //    console.log("Authenticated successfully with payload: "+JSON.stringify(authData));
-                                           //    // @hmm: pass to Batch transactional REST API for push notifications
-                                           //    authData && authData.uid && NativeModules.CustomBatchFirebaseIntegration.passAuthDataToBatch(authData);
-                                           //  }
-                                           //});
+                                            ref.authWithOAuthToken("facebook", data.credentials.token, function(error, authData) {
+                                             if (error) {
+                                               alert("Login Failed!", error);
+                                             } else {
+                                               console.log("Authenticated successfully with payload: "+JSON.stringify(authData));
+                                             }
+                                           });
 
                                            AsyncStorage.setItem('@AsyncStorage:Venture:authToken', data.credentials.token)
                                             .then(() => {

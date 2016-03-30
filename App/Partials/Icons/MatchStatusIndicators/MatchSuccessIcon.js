@@ -41,7 +41,7 @@ class MatchSuccessIcon extends Component {
   constructor(props:Props) {
     super(props);
     this.state = {
-      badgeValue: 0
+      chatRoomRef: null
     };
   };
 
@@ -57,9 +57,12 @@ class MatchSuccessIcon extends Component {
     this.setState({badgeValue: 0}); // @hmm: is this necessary??
     // @hmm: NOTE: pay attention to when you turn off refs.
     // like, you cant call chatRoomMessagesRef.off() or chatRoomRef.off() because will turn off other functionality
+    this.state.chatRoomRef && this.state.chatRoomRef.off();
+
   };
 
   _calculateBadgeValue(chatRoomRef) {
+    this.setState({chatRoomRef});
     chatRoomRef.on('value', snapshot => {
       let badgeValue, messageList, messageListCount, seenMessageCount, seenMessagesId;
 
@@ -182,9 +185,10 @@ const styles = StyleSheet.create({
     bottom: SIZE / 8,
     paddingTop: 1,
     backgroundColor: '#FF0017',
-    opacity: 1.0,
     color: 'white',
-    textAlign: 'center'
+    textAlign: 'center',
+    position: 'absolute',
+    opacity: 0.8
   },
   icon: {
     opacity: 1.0,

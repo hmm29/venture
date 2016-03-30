@@ -151,6 +151,14 @@ var User = React.createClass({
     this.refs.attendee.fadeIn(600);
   },
 
+  componentWillUnmount() {
+    this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+    && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+      .child(this.props.data.ventureId)
+    && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+      .child(this.props.data.ventureId).off();
+  },
+
   componentWillReceiveProps(nextProps) {
     let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location
         && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords,
@@ -617,8 +625,7 @@ var AttendeeList = React.createClass({
   },
 
   componentWillUnmount() {
-    //this.state.currentUserRef && this.state.currentUserRef.off();
-    //this.state.usersListRef && this.state.usersListRef.off();
+    this.state.attendeesListRef && this.state.attendeesListRef.off();
   },
 
   updateRows(rows) {

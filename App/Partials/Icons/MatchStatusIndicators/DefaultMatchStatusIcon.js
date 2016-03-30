@@ -22,7 +22,7 @@ import React, {
 
 import {Icon, } from 'react-native-icons';
 
-const SIZE = 28;
+const SIZE = 25;
 
 type Props = {
   color: React.PropTypes.string,

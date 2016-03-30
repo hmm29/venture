@@ -40,7 +40,7 @@ class BrandLogo extends Component {
   };
 
   _animate() {
-    this.refs.brandLogo.tada(800);
+    this.refs.brandLogo && this.refs.brandLogo.tada(800);
   };
 
   render() {

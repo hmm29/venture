@@ -702,6 +702,7 @@ var Event = React.createClass({
       });
 
     // TODO: handle push notification cancelling for canceled events
+    // Note: reminder gets sent after you come back to page and are still subscribed, instead of whenever you tap the event attendance icon :)
     this.props.usersListRef && this.props.data && this.props.currentUserIDHashed && this.props.data.id
     && this.props.usersListRef.child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}/hasBeenSentPushNotificationReminder`)
       .once('value', snapshot => {

@@ -47,7 +47,7 @@ class ChatsListPageIcon extends Component {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       this.setState({animationDidFinish: true})
     }, 1500);
-    this.refs.chatsListPageIcon.fadeInDown(900); // do second after set timeout
+    this.refs.chatsListPageIcon && this.refs.chatsListPageIcon.fadeInDown(900); // do second after set timeout
   };
 
   componentWillUnmount() {

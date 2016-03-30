@@ -182,6 +182,8 @@ var ChatPage = React.createClass({
 
   handleSetHasTimerExpiredState(hasTimerExpired:boolean){
     this.setState({hasTimerExpired, showExtendChatModal: hasTimerExpired});
+    // if user in chat that partner has ended but hasnt tried typing anything
+    if(!this.state.chatExists) this.props.navigator.pop();
   },
 
   updateMessages(messages:Array<Object>) {

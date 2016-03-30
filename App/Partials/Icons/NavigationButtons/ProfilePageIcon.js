@@ -39,7 +39,7 @@ class ProfilePageIcon extends Component {
   };
 
   componentDidMount() {
-    this.refs.profilePageIcon.fadeInDown(900);
+    this.refs.profilePageIcon && this.refs.profilePageIcon.fadeInDown(900);
   };
 
   render() {

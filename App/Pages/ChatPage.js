@@ -144,10 +144,13 @@ var ChatPage = React.createClass({
       this.setState({chatMateIsTyping: snapshot.val()});
     });
 
+    var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
+    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
+      && this.state.messageList.length || 0);
+
     this.props.chatRoomRef && this.props.chatRoomRef.on('value', snapshot => {
       if(!snapshot.val()) {
         this.setState({chatExists: false});
-        this.props.navigator.pop();
       }
       else if(snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime) {
         // save object here whenever changes are made for easy recreation
@@ -269,7 +272,7 @@ var ChatPage = React.createClass({
       //@hmm: if both users in chatroom when first message is sent
       if(this.state.messageList && this.state.messageList.length === 1) {
         this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
-          if (snapshot.val() === 0) {
+          if (snapshot.val() > 0) {
             let currentTime = new Date().getTime(),
               expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
 
@@ -322,6 +325,15 @@ var ChatPage = React.createClass({
                     this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(false);
                 })}
         onFocus={() => {
+                    if(!this.state.chatExists) {
+                      AlertIOS.alert(
+                        'Chat Ending',
+                        'The other user has ended this chat...Taking you back to the users list to find more partners!',
+                        [
+                          {text: 'OK', onPress: () => this.props.navigator.pop()}
+                        ]
+                      );
+                    } // pop if chat doesn't exist
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     this.setState({hasKeyboardSpace: true, closeDropdownProfile: true});
                     this.scrollToBottom();
@@ -340,9 +352,9 @@ var ChatPage = React.createClass({
         <Header containerStyle={{backgroundColor: '#000'}}>
           <BackIcon onPress={() => {
                                     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
-                                    var seenMessagesId = `seenMessages_${this.props.currentUserData.ventureId}`;
+                                    var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
                                     this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
-                                    && this.state.messageList.length || 0);
+                                      && this.state.messageList.length || 0);
                                     this.props.navigator.pop();
                 }} style={{right: 10, bottom: 5}}
             />
@@ -463,17 +475,35 @@ var ChatPage = React.createClass({
                         // recreate the chat object, reset it and make sure certain fields are set to
                         // reset messages, reset expireTime to null, reset seen messages, and get rid of extendChat field altogether
                         // firebase will not recreate them if theyre already in the db/ are the same :)
-                        let chatRoomObj = this.state.chatRoomObjectCopy;
+                        let chatRoomObj = this.state.chatRoomObjectCopy,
+                          currentUserData = this.props.currentUserData,
+                          currentUserIDHashed = currentUserData.ventureId,
+                          firebaseRef = this.state.firebaseRef,
+                          currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
+                          recipient = this.props.recipient,
+                          targetUserIDHashed = recipient.ventureId,
+                          targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests');
+
+                          if(this.props.chatRoomEventTitle) {
+                            currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests'),
+                            targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests');
+                          }
+
                         chatRoomObj.messages = chatRoomObj.expireTime = chatRoomObj.extendChat = null;
                         chatRoomObj[`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`] = chatRoomObj[`seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`] = 0;
                         this.props.chatRoomRef && this.props.chatRoomRef.set(chatRoomObj);
 
                         // @hmm: if agree to extend chat
                         this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.currentUserData && this.props.currentUserData.ventureId}`).set(true);
+                        currentUserMatchRequestsRef.child(targetUserIDHashed).update({hasRequestedExtension: true}); // so that question mark appears over thumbnail for both users
+                        targetUserMatchRequestsRef.child(currentUserIDHashed).update({hasRequestedExtension: true});
+
                         this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
                           if(snapshot.val() === true) {
                             // reset chat process, make extra sure expireTime is null
                             this.props.chatRoomRef && this.props.chatRoomRef.child('timer/expireTime').set(null);
+                            currentUserMatchRequestsRef.child(targetUserIDHashed).update({hasRequestedExtension: false}); // stop showing +5 ? overlay
+                            targetUserMatchRequestsRef.child(currentUserIDHashed).update({hasRequestedExtension: false});
 
                             // send push notification that chat has been extended
                             fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
@@ -946,8 +976,7 @@ var TimerBar = React.createClass({
     chatRoomRef.child('timer/expireTime').on('value', snapshot => {
       // @hmm: if no timer value then return from function
       if (!snapshot.val()) {
-        // TODO: change back to CHAT_DURATION_IN_MINUTES * 60, important so that chat modal doesnt pop up all the time
-        this.setState({timerValInSeconds: 0, timerActive: false});
+        this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES*60, timerActive: false});
         return;
       }
 

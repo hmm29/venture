@@ -88,6 +88,7 @@ var HomePage = React.createClass({
       activeTimeOption: 'now',
       activityTitleInput: '',
       brandLogoVisible: false,
+      chatCount: 0,
       contentOffsetXVal: 0,
       currentAppState: AppStateIOS.currentState,
       currentUserLocationCoords: null,
@@ -144,6 +145,7 @@ var HomePage = React.createClass({
         let firebaseRef = this.state.firebaseRef,
           usersListRef = firebaseRef && firebaseRef.child('users'),
           currentUserRef = usersListRef.child(this.state.ventureId || account.ventureId),
+          chatCountRef = currentUserRef.child('chatCount'),
           firstSessionRef = currentUserRef.child('firstSession'),
           trendingItemsRef = firebaseRef && firebaseRef.child('trending'),
           chatRoomsRef = firebaseRef && firebaseRef.child('chat_rooms'),
@@ -159,6 +161,10 @@ var HomePage = React.createClass({
         // @hmm: fetch first session object to update as tutorial gets completed
         firstSessionRef.on('value', snapshot => {
           _this.setState({firstSession: snapshot.val()});
+        });
+
+        chatCountRef.on('value', snapshot => {
+          _this.setState({chatCount: snapshot.val()});
         });
 
         trendingItemsRef.once('value', snapshot => {
@@ -881,6 +887,7 @@ var HomePage = React.createClass({
                                     ventureId: this.state.ventureId}});
                                  }}/>
                 <ChatsListPageIcon
+                  chatCount={this.state.showTextInput && this.state.trendingItemsLoadEnded ? this.state.chatCount : 0}
                   style={{bottom: height/20}}
                   onPress={() => {
                                     this.props.navigator.push({title: 'Chats', component: TabBarLayout,

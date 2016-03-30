@@ -118,7 +118,8 @@ var User = React.createClass({
             chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
             distance,
             status: snapshot.val() && snapshot.val().status,
-            expireTime: snapshot.val() && snapshot.val().expireTime
+            expireTime: snapshot.val() && snapshot.val().expireTime,
+            hasRequestedExtension: snapshot.val() && snapshot.val().hasRequestedExtension
           });
 
           // @hmm: onboarding tutorial logic
@@ -154,7 +155,8 @@ var User = React.createClass({
             chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
             distance,
             status: snapshot.val() && snapshot.val().status,
-            expireTime: snapshot.val() && snapshot.val().expireTime
+            expireTime: snapshot.val() && snapshot.val().expireTime,
+            hasRequestedExtension: snapshot.val() && snapshot.val().hasRequestedExtension
           });
 
           // @hmm: onboarding tutorial logic
@@ -217,11 +219,13 @@ var User = React.createClass({
     && (nextProps.firebaseRef).child(matchRequestsRef)
       .child(nextProps.data.ventureId).on('value', snapshot => {
         let status = this.state.status;
-        _this.setState({
+          _this.setState({status: ''}); // @hmm: quick clear before changing status value
+          _this.setState({
           chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
           distance,
           status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
+          expireTime: snapshot.val() && snapshot.val().expireTime,
+          hasRequestedExtension: snapshot.val() && snapshot.val().hasRequestedExtension
         });
 
         if (status !== this.state.status) {
@@ -666,10 +670,10 @@ var User = React.createClass({
                 <Text
                   style={[styles.timerValText, (!_.isString(this._getTimerValue(this.state.currentTimeInMs))
                   && _.parseInt((this._getTimerValue(this.state.currentTimeInMs))/60) === 0 ? {color: '#F12A00'} :{})]}>
-                  {!_.isString(this._getTimerValue(this.state.currentTimeInMs))
+                  {this.state.hasRequestedExtension ? '+5 ?' : !_.isString(this._getTimerValue(this.state.currentTimeInMs))
                   && (this._getTimerValue(this.state.currentTimeInMs) >= 0)
                   && _.parseInt(this._getTimerValue(this.state.currentTimeInMs) / 60) + 'm '}
-                  {!_.isString(this._getTimerValue(this.state.currentTimeInMs))
+                  {this.state.hasRequestedExtension ? '' : !_.isString(this._getTimerValue(this.state.currentTimeInMs))
                   && (this._getTimerValue(this.state.currentTimeInMs) >= 0)
                   && this._getTimerValue(this.state.currentTimeInMs) % 60 + 's'}
                 </Text>
@@ -766,7 +770,7 @@ var User = React.createClass({
     }
 
     return (
-      <Swipeout autoClose={true} right={swipeoutBtns}>
+      <Swipeout autoClose={true} right={!_.isEmpty(swipeoutBtns) ? swipeoutBtns : null}>
         <TouchableHighlight
           underlayColor={WHITE_HEX_CODE}
           activeOpacity={0.3}

@@ -65,6 +65,7 @@ var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
+var PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES = 10;
 var THUMBNAIL_SIZE = 50;
 
 var BLACK_HEX_CODE = '#000';
@@ -90,6 +91,7 @@ var User = React.createClass({
     currentUserIDHashed: React.PropTypes.string,
     data: React.PropTypes.object,
     isCurrentUser: React.PropTypes.func,
+    firebaseRef: React.PropTypes.object,
     firstSession: React.PropTypes.object,
     navigator: React.PropTypes.object
   },
@@ -97,7 +99,9 @@ var User = React.createClass({
   getInitialState() {
     return {
       dir: 'row',
-      expireTime: ''
+      expireTime: '',
+      lastPushNotificationSentTime: 0,
+      thumbnailReady: false
     }
   },
 
@@ -350,6 +354,7 @@ var User = React.createClass({
               chatRoomRef,
               currentUserData: _this.props.currentUserData,
               currentUserRef,
+              firebaseRef,
               targetUserRef
             }
           });
@@ -400,20 +405,27 @@ var User = React.createClass({
       }, 0);
 
       targetUserEventInviteMatchRequestsRef && targetUserEventInviteMatchRequestsRef.once('value', snapshot => {
-        if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 8 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 8
-          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'X-Parse-Application-Id': PARSE_APP_ID,
-              'Content-Type': 'application/json',
-            },
-            body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in going to an event with you!"}`
-          })
-            .then(response => {
-              console.log(JSON.stringify(response))
+        if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 2 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 2
+          // @hmm: prevents spamming push notification invites on repeated tapping of user bar, but will reset with each dismount then mount
+          // only send if current time is not in push notification refractory period
+          const currentTime = new Date().getTime();
+          if(currentTime > (new Date(this.state.lastPushNotificationSentTime + (PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES * 60 * 1000))).getTime()) {
+            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'X-Parse-Application-Id': PARSE_APP_ID,
+                'Content-Type': 'application/json',
+              },
+              body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in going to an event with you!"}`
             })
-            .catch(error => console.log(error))
+              .then(response => {
+                _this.setState({lastPushNotificationSentTime: (new Date()).getTime()})
+                console.log(JSON.stringify(response))
+              })
+              .catch(error => console.log(error))
+          }
+          
         }
       })
     }
@@ -479,17 +491,20 @@ var User = React.createClass({
           }
         }
       },
-        {
-          text: 'Block',
-          backgroundColor: '#af3349',
-          onPress: () => {}
-        }]
+        //{
+        //  text: 'Block',
+        //  backgroundColor: '#af3349',
+        //  onPress: () => {}
+        //}
+      ]
       :
-      [{
-        text: 'Block',
-        backgroundColor: '#af3349',
-        onPress: () => {}
-      }];
+      [
+      //  {
+      //  text: 'Block',
+      //  backgroundColor: '#af3349',
+      //  onPress: () => {}
+      //}
+      ];
 
     let profileModal = (
       <View style={[styles.profileModalContainer, {alignSelf: 'center'}]}>
@@ -533,9 +548,10 @@ var User = React.createClass({
               style={styles.container}>
               <View style={styles.rightContainer}>
                 <Image
+                  onLoadEnd={() => this.setState({thumbnailReady: true})}
                   onPress={this._onPressItem}
                   source={{uri: this.props.data && this.props.data.picture}}
-                  style={[styles.thumbnail, {left: width/50}]}>
+                  style={[styles.thumbnail, (this.state.thumbnailReady ? {} : {backgroundColor: '#040A19'}), {left: width/50}]}>
                   <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                     <Text
                       style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs))
@@ -685,6 +701,28 @@ var Event = React.createClass({
         else _this.setState({status: 'notAttending'});
       });
 
+    this.props.usersListRef && this.props.data && this.props.currentUserIDHashed && this.props.data.id
+    && this.props.usersListRef.child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}/hasBeenSentPushNotificationReminder`)
+      .once('value', snapshot => {
+        if(snapshot.val() === false) {
+          // send push notification, then set to true
+          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'X-Parse-Application-Id': PARSE_APP_ID,
+              'Content-Type': 'application/json',
+            },
+            body: `{"channels": ["${this.props.currentUserIDHashed}"], "push_time" : "${this.props.data && this.props.data.reminder && this.props.data.reminder.sendTime}", "expiration_interval":"86400", "alert": "${this.props.data && this.props.data.title} is starting soon!"}`
+          })
+            .then(response => {
+              console.log(JSON.stringify(response))
+            })
+            .catch(error => console.log(error))
+
+          this.props.usersListRef.child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}/hasBeenSentPushNotificationReminder`).set(true);
+        }
+      })
   },
 
   componentDidMount() {
@@ -743,8 +781,7 @@ var Event = React.createClass({
         .set(_.pick(this.props.currentUserData, 'firstName', 'name', 'picture', 'ventureId', 'bio', 'age', 'location'));
       this.props.usersListRef && this.props.data && this.props.currentUserIDHashed && this.props.data.id
       && this.props.usersListRef.child(`${this.props.currentUserIDHashed}/events/${this.props.data.id}`)
-        .set(_.pick(this.props.data, 'id', 'title', 'description', 'location', 'start'));
-
+        .set(_.set(_.pick(this.props.data, 'id', 'title', 'description', 'location', 'start'), 'hasBeenSentPushNotificationReminder', false));
     }
     else {
       this.setState({status: 'notAttending'});

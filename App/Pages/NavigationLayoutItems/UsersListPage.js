@@ -68,6 +68,7 @@ var LOGO_HEIGHT = 120;
 var PAGE_SIZE = 10;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
+var PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES = 10;
 var SEARCH_TEXT_INPUT_REF = 'searchTextInput';
 var THUMBNAIL_SIZE = 50;
 var USERS_LIST_VIEW_REF = "usersListView";
@@ -87,6 +88,7 @@ var User = React.createClass({
     currentUserLocationCoords: React.PropTypes.array,
     currentUserData: React.PropTypes.object,
     data: React.PropTypes.object,
+    firebaseRef: React.PropTypes.object,
     firstSession: React.PropTypes.object,
     isCurrentUser: React.PropTypes.bool,
     navigator: React.PropTypes.object,
@@ -97,6 +99,7 @@ var User = React.createClass({
     return {
       dir: 'row',
       expireTime: '',
+      lastPushNotificationSentTime: 0,
       thumbnailReady: false
     }
   },
@@ -388,6 +391,7 @@ var User = React.createClass({
               chatRoomRef,
               currentUserData: _this.props.currentUserData,
               currentUserRef,
+              firebaseRef,
               targetUserRef
             }
           });
@@ -416,20 +420,25 @@ var User = React.createClass({
 
 
       targetUserMatchRequestsRef && targetUserMatchRequestsRef.once('value', snapshot => {
-        if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 8 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 8
-          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'X-Parse-Application-Id': PARSE_APP_ID,
-              'Content-Type': 'application/json',
-            },
-            body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in your activity!"}`
-          })
-            .then(response => {
-              console.log(JSON.stringify(response))
+        if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 4 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 4
+          // @hmm: prevents spamming push notification invites on repeated tapping of user bar, but will reset with each dismount then mount
+          // only send if current time is not in push notification refractory period
+          const currentTime = new Date().getTime();
+          if(currentTime > (new Date(this.state.lastPushNotificationSentTime + (PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES * 60 * 1000))).getTime()) {
+            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'X-Parse-Application-Id': PARSE_APP_ID,
+                'Content-Type': 'application/json',
+              },
+              body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in your activity!"}`
             })
-            .catch(error => console.log(error))
+              .then(response => {
+                console.log(JSON.stringify(response))
+              })
+              .catch(error => console.log(error))
+          }
         }
       });
     }
@@ -494,17 +503,20 @@ var User = React.createClass({
           }
         }
       },
-        {
-          text: 'Block',
-          backgroundColor: '#af3349',
-          onPress: () => {}
-        }]
+        //{
+        //  text: 'Block',
+        //  backgroundColor: '#af3349',
+        //  onPress: () => {}
+        //}
+      ]
       :
-      [{
-        text: 'Block',
-        backgroundColor: '#af3349',
-        onPress: () => {}
-      }];
+      [
+      //  {
+      //  text: 'Block',
+      //  backgroundColor: '#af3349',
+      //  onPress: () => {}
+      //}
+      ];
 
     let profileModal = (
       <View style={styles.profileModalContainer}>

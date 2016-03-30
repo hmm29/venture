@@ -83,6 +83,7 @@ var User = React.createClass({
     currentUserLocationCoords: React.PropTypes.array,
     currentUserData: React.PropTypes.object,
     data: React.PropTypes.object,
+    firebaseRef: React.PropTypes.object,
     firstSession: React.PropTypes.object,
     navigator: React.PropTypes.object,
     updateRows: React.PropTypes.func
@@ -408,6 +409,7 @@ var User = React.createClass({
                 chatRoomRef,
                 currentUserData: _this.props.currentUserData,
                 currentUserRef,
+                firebaseRef,
                 targetUserRef
               }
             });
@@ -526,6 +528,7 @@ var User = React.createClass({
                 chatRoomRef,
                 currentUserData: _this.props.currentUserData,
                 currentUserRef,
+                firebaseRef,
                 targetUserRef
               }
             });
@@ -607,17 +610,20 @@ var User = React.createClass({
           }
         }
       },
-      {
-        text: 'Block',
-        backgroundColor: '#af3349',
-        onPress: () => {}
-      }]
+      //{
+      //  text: 'Block',
+      //  backgroundColor: '#af3349',
+      //  onPress: () => {}
+      //}
+      ]
       :
-      [{
-        text: 'Block',
-        backgroundColor: '#af3349',
-        onPress: () => {}
-      }];
+      [
+      //  {
+      //  text: 'Block',
+      //  backgroundColor: '#af3349',
+      //  onPress: () => {}
+      //}
+      ];
 
     let profileModal, userRowContent;
 

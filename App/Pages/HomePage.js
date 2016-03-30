@@ -449,7 +449,7 @@ var HomePage = React.createClass({
           'X-Parse-Application-Id': PARSE_APP_ID,
           'Content-Type': 'application/json',
         },
-        body: `{"deviceType": "ios","deviceToken": "${token}", "appName": "Venture Yale", "installationId": "${uuid}", "channels": ["yale-ios-users", "${this.state.ventureId}", "${this.state.userFullName}"]}`
+        body: `{"deviceType": "ios","deviceToken": "${token}", "appName": "Venture Yale", "installationId": "${uuid}", "ventureId":"${this.state.ventureId}", "channels": ["yale-ios-users", "${this.state.ventureId}", "${this.state.userFullName}"]}`
       })
         .then(response => {
           console.log(JSON.stringify(response))
@@ -673,7 +673,7 @@ var HomePage = React.createClass({
                                   'Tap the (+) icon to add more information about your activity. Set a time, and add a tag that users can search.'
                                 );
 
-                                if(this._handle) this.clearInterval(this._handle);
+                                this.clearInterval(this._handle);
 
                                 this.setState({firstSession:{hasSeenAddInfoButtonTutorial: true}});
                                 // @hmm: update remote Firebase obj prop

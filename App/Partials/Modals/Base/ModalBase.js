@@ -29,7 +29,7 @@ var ModalBase = React.createClass({
   },
 
   componentDidMount() {
-    if(this.props.modalVisible) this.props.onLayout && this.props.onLayout();
+    this.props.onLayout && this.props.onLayout();
   },
 
   render() {

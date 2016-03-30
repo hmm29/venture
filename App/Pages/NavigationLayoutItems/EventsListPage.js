@@ -112,6 +112,13 @@ var User = React.createClass({
           [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
       _this = this;
 
+    // clear old data
+    this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+    && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+      .child(this.props.data.ventureId)
+    && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+      .child(this.props.data.ventureId).off();
+
     this.props.firebaseRef && this.props.data && this.props.data.ventureId
     && this.props.currentUserIDHashed && this.props.firebaseRef
       .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
@@ -164,6 +171,13 @@ var User = React.createClass({
         && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords,
           [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
       _this = this;
+
+    // @hmm: must have this to clean up old match subscriptions
+    nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
+    && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
+      .child(nextProps.data.ventureId)
+    && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
+      .child(nextProps.data.ventureId).off();
 
     nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
     && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)

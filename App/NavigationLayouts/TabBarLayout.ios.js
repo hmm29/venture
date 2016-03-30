@@ -143,7 +143,6 @@ class TabBarLayout extends Component {
   };
 
   componentWillUnmount() {
-    this.state.chatRoomRef && this.state.chatRoomRef.off();
     this.state.firstSessionRef && this.state.firstSessionRef.off();
     this.state.currentUserMatchRequestsRef && this.state.currentUserMatchRequestsRef.off();
     this.state.currentUserEventInviteMatchRequestsRef && this.state.currentUserEventInviteMatchRequestsRef.off();

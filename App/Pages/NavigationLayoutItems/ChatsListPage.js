@@ -107,22 +107,13 @@ var User = React.createClass({
           this.props.data.location.coordinates.longitude]),
       _this = this;
 
-    // clear the old first
-    if(this.props.data.isEventInvite) {
+    if (this.props.data && this.props.data.isEventInvite) {
+      // clear old
       this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
       && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
         .child(this.props.data.ventureId)
       && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
         .child(this.props.data.ventureId).off();
-    } else {
-      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
-      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
-        .child(this.props.data.ventureId)
-      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
-        .child(this.props.data.ventureId).off();
-    }
-
-    if (this.props.data && this.props.data.isEventInvite) {
 
       this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
       && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
@@ -160,6 +151,12 @@ var User = React.createClass({
         });
 
     } else {
+      // clear old
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
+        .child(this.props.data.ventureId).off();
 
       this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
       && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
@@ -216,6 +213,7 @@ var User = React.createClass({
     }, 1000);
 
     this.setState({currentTimeInMs: nextProps.currentTimeInMs});
+
     let distance = nextProps.data && nextProps.data.location && nextProps.data.location.coordinates
         && this.calculateDistance(nextProps.currentUserLocationCoords, [nextProps.data.location.coordinates.latitude,
           nextProps.data.location.coordinates.longitude]),
@@ -223,8 +221,22 @@ var User = React.createClass({
       _this = this;
 
     if (nextProps.data && nextProps.data.isEventInvite) {
+      // @hmm: must have this to clean up old match subscriptions
+      nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
+      && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
+        .child(nextProps.data.ventureId)
+      && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
+        .child(nextProps.data.ventureId).off();
+
       matchRequestsRef = `users/${nextProps.currentUserIDHashed}/event_invite_match_requests`;
     } else {
+      // @hmm: must have this to clean up old match subscriptions
+      nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
+      && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/match_requests`)
+        .child(nextProps.data.ventureId)
+      && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`)
+        .child(nextProps.data.ventureId).off();
+
       matchRequestsRef = `users/${nextProps.currentUserIDHashed}/match_requests`;
     }
 

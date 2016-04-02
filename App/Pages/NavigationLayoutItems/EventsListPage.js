@@ -593,7 +593,7 @@ var User = React.createClass({
                 <Text style={styles.eventTitle}>
                   {this.props.eventTitle} ?
                 </Text>
-                <View style={{top: 10, right: width/60}}>{this._renderStatusIcon()}</View>
+                <View style={{top: 10, right: (width < 375 ? width/17 : width/60)}}>{this._renderStatusIcon()}</View>
               </View>
             </LinearGradient>
             {this.state.dir === 'column' ? profileModal : <View />}
@@ -656,7 +656,7 @@ var AttendeeList = React.createClass({
         && this.props.eventData.title.length < 24 ? "WHO'S GOING TO : " : "")} 
         <Text style={{color: '#F06449', width: width/3, overflow: 'hidden'}}>{this.props.eventData
         && this.props.eventData.title}</Text></Text>
-        <CloseIcon style={{bottom: height / 15, left: width/21}}
+        <CloseIcon style={{bottom: height / 15, left: (width < 420 ? width/21 : 0)}}
                    onPress={this.props.closeAttendeeListModal}/>
       </Header>
     )
@@ -1233,7 +1233,7 @@ var styles = StyleSheet.create({
     height: THUMBNAIL_SIZE,
     borderRadius: THUMBNAIL_SIZE / 2,
     marginVertical: 7,
-    marginLeft: 10
+    marginLeft: (width < 420 ? 10 : width/8)
   },
   timerValOverlay: {
     backgroundColor: 'rgba(0,0,0,0.6)',

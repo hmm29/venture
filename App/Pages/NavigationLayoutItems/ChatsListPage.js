@@ -965,8 +965,10 @@ var ChatsListPage = React.createClass({
             this.setState({showFunFact: false});
           }
           else {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            this.setState({showFunFact: true});
+            this.setTimeout(() => { // defer to prevent flash on load
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                this.setState({showFunFact: true});
+              }, 0);
           }
 
         });

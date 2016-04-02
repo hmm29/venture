@@ -88,7 +88,6 @@ var LoginPage = React.createClass({
       loginError: false,
       mustVerify: false,
       notificationModalText: VERIFY_UNIVERSITY_EMAIL_TEXT,
-      showChevronIcon: false,
       showEmailAuthScreen: false,
       user: null,
     }
@@ -310,7 +309,7 @@ var LoginPage = React.createClass({
           AsyncStorage.setItem('@AsyncStorage:Venture:isValidUser', 'true')
             .then(() => {
               if (this.state.showEmailAuthScreen) this.setState({showEmailAuthScreen: false});
-              AlertIOS.alert('Verification Successful', 'Welcome to Venture!');
+              AlertIOS.alert('Verification Successful', 'Welcome to Venture!\n\nSwipe to continue!');
               console.log("Successfully verified as a valid user.")
             })
             .catch((error) => console.log(error.message))
@@ -384,29 +383,33 @@ var LoginPage = React.createClass({
       <VentureAppPage>
         {!this.state.showEmailAuthScreen ? <Image>
           <Swiper style={styles.wrapper}
-                  autoplay={false}
                   dot={<View style={{backgroundColor:'rgba(255,255,255,.3)', width: 13,
                             height: 13,borderRadius: 7, top: height / 30, marginLeft: 7, marginRight: 7}} />}
                   activeDot={<View style={{backgroundColor: '#fff', width: 13, height: 13,
                             borderRadius: 7, top: height / 30, marginLeft: 7, marginRight: 7}} />}
                   paginationStyle={{bottom: height/22}}
-                  loop={false}>
+                  loop={false}
+                  showsButtons={true}
+                  prevButton={
+                    <ChevronIcon
+                      isStatic={true}
+                      size={width/11}
+                      direction={'left'}
+                      style={{}}/>
+                  }
+                  nextButton={<ChevronIcon
+                      isStatic={true}
+                      size={width/11}
+                      direction={'right'}
+                      style={{}}/>}>
             <View style={styles.slide}>
               <Image
                 onLoadStart={() => LayoutAnimation.configureNext(LayoutAnimation.Presets.linear)}
-                onLoadEnd={() => this.setState({showChevronIcon: true})}
                 resizeMode={Image.resizeMode.stretch}
                 defaultSource={require('../../img/onboarding_1_what_do_you_want_to_do.png')}
                 source={require('../../img/onboarding_1_what_do_you_want_to_do.png')}
                 style={styles.backdrop}>
               </Image>
-              {this.state.showChevronIcon ?
-              <ChevronIcon
-                animated={true}
-                size={width/6}
-                direction={'right'}
-                style={{position: 'absolute', right: -(width/300), top: height/2}}
-                /> : <View/>}
             </View>
             <View style={styles.slide}>
               <Image

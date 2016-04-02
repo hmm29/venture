@@ -26,7 +26,6 @@ var {
   } = React;
 
 var BrandLogo = require('../../Partials/BrandLogo');
-var ChevronIcon = require('../../Partials/Icons/ChevronIcon');
 var Dimensions = require('Dimensions');
 var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');

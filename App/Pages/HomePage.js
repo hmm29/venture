@@ -44,6 +44,7 @@ var Firebase = require('firebase');
 var {Icon, } = require('react-native-icons');
 var LoginPage = require('../Pages/LoginPage');
 var SubmitActivityIcon = require('../Partials/Icons/SubmitActivityIcon');
+var Swiper = require('react-native-swiper');
 var TabBarLayout = require('../NavigationLayouts/TabBarLayout.ios');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('./Base/VentureAppPage');
@@ -63,6 +64,7 @@ var {height, width} = Dimensions.get('window');
 var ACTIVITY_TEXT_INPUT_PADDING = 5;
 var ACTIVITY_TITLE_INPUT_REF = 'activityTitleInput';
 var ADD_INFO_BUTTON_SIZE = 28;
+var CATEGORY_OF_USERS = 'YALIES';
 var DEFAULT_CITY_COORDINATES = {latitude: 41.310809, longitude: -72.924953}; // New Haven coords
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
@@ -71,6 +73,7 @@ var NEXT_BUTTON_SIZE = 28;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var TAG_SELECTION_INPUT_REF = 'tagSelectionInput';
 var TAG_TEXT_INPUT_PADDING = 3;
+var TRENDING_ITEMS_CAROUSEL_REF = 'trendingItemsCarousel';
 
 class Title extends Component {
   render() {
@@ -110,7 +113,7 @@ var HomePage = React.createClass({
       tagsArr: [],
       tagInput: '',
       timeZoneOffsetInHours: (-1) * (new Date()).getTimezoneOffset() / 60,
-      trendingContent: 'YALIES',
+      trendingContent: CATEGORY_OF_USERS,
       trendingContentOffsetXVal: 0,
       trendingItemsLoadEnded: false,
       userFullName: '',
@@ -625,7 +628,6 @@ var HomePage = React.createClass({
       addInfoButton,
       content,
       isAtScrollViewStart = this.state.contentOffsetXVal === 0,
-      isAtTrendingScrollViewStart = this.state.trendingContentOffsetXVal === 0,
       submitActivityIcon,
       tagSelection,
       trendingItemsCarousel;
@@ -648,7 +650,7 @@ var HomePage = React.createClass({
           placeholder={(this.state.firstSession && this.state.trendingItemsLoadEnded ? 'Type your activity here!' : 'What do you want to do?')}
           placeholderTextColor={'rgba(255,255,255,1.0)'}
           returnKeyType='done'
-          style={[styles.activityTitleInput, this.state.viewStyle, {marginTop: height/48}]}
+          style={[styles.activityTitleInput, this.state.viewStyle]}
           value={this.state.activityTitleInput}/>
       </View>
     );
@@ -662,7 +664,9 @@ var HomePage = React.createClass({
           }
         }}
         style={[styles.addInfoButtonContainer, {bottom: (this.state.showSubmitActivityIcon
-                && this.state.showAddInfoBox ? height/18 : height/32 )}]}>
+                && this.state.showAddInfoBox ? height/10.4 : height/11.5 )}, (width < 420 ? {} : {bottom: (this.state.showSubmitActivityIcon
+                && this.state.showAddInfoBox ? -(height/88) : -(height/89) )}), (width < 375 ? {bottom: (this.state.showSubmitActivityIcon
+                && this.state.showAddInfoBox ? height/7.2 : height/11.5  )} : {})]}>
         <TouchableOpacity
           activeOpacity={0.4}
           onPress={() => {
@@ -686,6 +690,9 @@ var HomePage = React.createClass({
                                 this.setState({firstSession:{hasSeenAddInfoButtonTutorial: true}});
                                 // @hmm: update remote Firebase obj prop
                                 this.state.currentUserRef.child('firstSession/hasSeenAddInfoButtonTutorial').set(true);
+
+                                // @hmm: ensure it's cleaned up
+                                if(this._handle) this.clearInterval(this._handle);
                               }
                             });
                         }}>
@@ -761,7 +768,8 @@ var HomePage = React.createClass({
           </ScrollView>
           <View style={[styles.scrollbarArrow, (isAtScrollViewStart ? {right: 5} : {left: 5})]}>
             <ChevronIcon
-              size={25}
+              size={28}
+              style={{top: height/80}}
               direction={isAtScrollViewStart ? 'right' : 'left'}
               onPress={() => {
                             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -774,7 +782,7 @@ var HomePage = React.createClass({
     //@hmm: platform differences will have this format
     if (Platform.OS === 'ios') {
       submitActivityIcon = (
-        <View style={styles.submitActivityIconContainer}>
+        <View style={[styles.submitActivityIconContainer]}>
           <SubmitActivityIcon
             onPress={this.onSubmitActivity}/>
         </View>
@@ -824,33 +832,142 @@ var HomePage = React.createClass({
       </View>
     );
 
+    let users = this.state.yalies,
+      events = this.state.events,
+      len = users.length + events.length, slide1, slide2, slide3, slide4, swiper;
+
+    if(len >= 3) {
+      slide1 = (
+        <View style={styles.slide}>
+          {users && _.slice(users, 0, 3) && _.slice(users, 0, 3).map(this._createTrendingItem.bind(null, 'user'))}
+        </View>
+      );
+    }
+
+    if(len === 4) {
+      slide2 = (
+        <View style={styles.slide}>
+          {events && _.slice(events, 0, 1) && _.slice(events, 0, 1).map(this._createTrendingItem.bind(null, 'event'))}
+        </View>
+      )
+    }
+
+    if(len === 5) {
+      slide3 = (
+        <View style={styles.slide}>
+          {events && _.slice(events, 1, 2) && _.slice(events, 1, 2).map(this._createTrendingItem.bind(null, 'event'))}
+        </View>
+      )
+    }
+
+    if(len === 6) {
+      slide4 = (
+        <View style={styles.slide}>
+          {events && _.slice(events, 2, 3) && _.slice(events, 2, 3).map(this._createTrendingItem.bind(null, 'event'))}
+        </View>
+      )
+    }
+
+    swiper = (len === 4  ?
+      <Swiper ref={TRENDING_ITEMS_CAROUSEL_REF}
+              buttonWrapperStyle={styles.buttonWrapperStyle}
+              height={100}
+              index={this.state.trendingContent === CATEGORY_OF_USERS ? 0 : 1} // this works!
+              width={width/1.2}
+              onMomentumScrollEnd={(e, state, context) => {
+                console.log('state: ' + JSON.stringify(state) + ',\n' + JSON.stringify(context.state));
+                this.setState({trendingContent: (this.state.trendingContent === CATEGORY_OF_USERS ? 'EVENTS' : CATEGORY_OF_USERS)});
+              }}
+              showsButtons={true}
+              showsPagination={false}
+              loop={false}
+              prevButton={
+                    <ChevronIcon
+                      isStatic={true}
+                      size={height/20}
+                      direction={'left'}
+                      style={{}}/>
+                  }
+              nextButton={<ChevronIcon
+                      isStatic={true}
+                      size={height/20}
+                      direction={'right'}
+                      style={{}}/>}
+              style={styles.swiper}>
+        {slide1}
+        {slide2}
+      </Swiper>
+
+      :
+
+      (
+        len === 6 ?
+          <Swiper ref={TRENDING_ITEMS_CAROUSEL_REF}
+                  buttonWrapperStyle={styles.buttonWrapperStyle}
+                  height={100}
+                  index={this.state.trendingContent === CATEGORY_OF_USERS ? 0 : 1} // this works!
+                  width={width/1.2}
+                  onMomentumScrollEnd={(e, state, context) => {
+                console.log('state: ' + JSON.stringify(state) + ',\n' + JSON.stringify(context.state));
+                this.setState({trendingContent: (this.state.trendingContent === CATEGORY_OF_USERS ? 'EVENTS' : CATEGORY_OF_USERS)});
+              }}
+                  showsButtons={true}
+                  showsPagination={false}
+                  loop={false}
+                  prevButton={
+                    <ChevronIcon
+                      isStatic={true}
+                      size={height/20}
+                      direction={'left'}
+                      style={{}}/>
+                  }
+                  nextButton={<ChevronIcon
+                      isStatic={true}
+                      size={height/20}
+                      direction={'right'}
+                      style={{}}/>}
+                  style={styles.swiper}>
+            {slide1}
+            {slide2}
+            {slide3}
+            {slide4}
+          </Swiper>
+          :
+          <Swiper ref={TRENDING_ITEMS_CAROUSEL_REF}
+                  buttonWrapperStyle={styles.buttonWrapperStyle}
+                  height={100}
+                  index={this.state.trendingContent === CATEGORY_OF_USERS ? 0 : 1} // this works!
+                  width={width/1.2}
+                  onMomentumScrollEnd={(e, state, context) => {
+                console.log('state: ' + JSON.stringify(state) + ',\n' + JSON.stringify(context.state));
+                this.setState({trendingContent: (this.state.trendingContent === CATEGORY_OF_USERS ? 'EVENTS' : CATEGORY_OF_USERS)});
+              }}
+                  showsButtons={true}
+                  showsPagination={false}
+                  loop={false}
+                  prevButton={
+                    <ChevronIcon
+                      isStatic={true}
+                      size={height/20}
+                      direction={'left'}
+                      style={{}}/>
+                  }
+                  nextButton={<ChevronIcon
+                      isStatic={true}
+                      size={height/20}
+                      direction={'right'}
+                      style={{}}/>}
+                  style={styles.swiper}>
+            {slide1}
+            {slide2}
+            {slide3}
+          </Swiper>
+      ));
+
     trendingItemsCarousel = (
       <Animatable.View ref="trendingItemsCarousel" style={styles.trendingItemsCarousel}>
         <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContent}</Text></Title>
-        <ScrollView
-          automaticallyAdjustContentInsets={false}
-          canCancelContentTouches={false}
-          contentOffset={{x: this.state.trendingContentOffsetXVal, y: 0}}
-          horizontal={true}
-          directionalLockEnabled={true}
-          showsHorizontalScrollIndicator={true}
-          style={[styles.scrollView, styles.horizontalScrollView, {marginTop: 10}]}>
-          {this.state.yalies && this.state.yalies.map(this._createTrendingItem.bind(null, 'user'))}
-          {this.state.events && this.state.events.map(this._createTrendingItem.bind(null, 'event'))}
-        </ScrollView>
-        <View
-          style={[styles.scrollbarArrow, {bottom: height / 13.5},
-                    (isAtTrendingScrollViewStart ? {right: 5} : {left: 5})]}>
-          <ChevronIcon
-            color='rgba(255,255,255,0.8)'
-            size={25}
-            direction={isAtTrendingScrollViewStart ? 'right' : 'left'}
-            onPress={() => {
-                            LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                            this.setState({trendingContentOffsetXVal: (isAtTrendingScrollViewStart ? width / 1.31 : 0),
-                            trendingContent: (isAtTrendingScrollViewStart ? 'EVENTS' : 'YALIES')})
-                            }}/>
-        </View>
+        {swiper}
       </Animatable.View>
     );
 
@@ -877,7 +994,7 @@ var HomePage = React.createClass({
             <View style={{backgroundColor: 'transparent'}}>
               <Header>
                 <ProfilePageIcon
-                  style={{bottom: height/19, right: width/12}}
+                  style={{bottom: height/19, right: (width < 420 ? width/12 : 0)}}
                   onPress={() => {
                                     this.props.navigator.push({title: 'Profile', component: TabBarLayout,
                                     passProps: {
@@ -890,7 +1007,7 @@ var HomePage = React.createClass({
                                  }}/>
                 <ChatsListPageIcon
                   chatCount={this.state.showTextInput && this.state.trendingItemsLoadEnded ? this.state.chatCount : 0}
-                  style={{bottom: height/19, left: width/12}}
+                  style={{bottom: height/19, left: (width < 420 ? width/12 : 0)}}
                   onPress={() => {
                                     this.props.navigator.push({title: 'Chats', component: TabBarLayout,
                                     passProps: {
@@ -937,11 +1054,14 @@ const styles = StyleSheet.create({
     fontSize: height / 23,
     color: 'white',
     backgroundColor: 'rgba(0,0,0,0.7)',
-    fontFamily: 'AvenirNextCondensed-UltraLight'
+    fontFamily: 'AvenirNextCondensed-UltraLight',
+    marginBottom: height/20,
+    top: (width < 420 ? 0 : height/10)
   },
   addInfoBox: {
     position: 'absolute',
     width: width / 1.2,
+    maxHeight: height/3,
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.85)',
     marginHorizontal: (width - (width / 1.2)) / 2,
@@ -978,17 +1098,24 @@ const styles = StyleSheet.create({
   logoContainerStyle: {
     bottom: height / 28,
   },
-  submitActivityIconContainer: {
-    bottom: 40,
-    right: width / 28,
-    alignSelf: 'flex-end'
-  },
   scrollbarArrow: {
     position: 'absolute',
     bottom: height / 28
   },
   scrollView: {
     backgroundColor: 'rgba(0,0,0,0.008)'
+  },
+  slide: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    width: width / 1.2,
+  },
+  submitActivityIconContainer: {
+    bottom: (width < 420 ? (width < 375 ? height/8.5 : (height >= 736 ? height/10 : height/9.3)) : -(height/80)),
+    right: width / 28,
+    alignSelf: 'flex-end'
   },
   tag: {
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -1051,17 +1178,18 @@ const styles = StyleSheet.create({
     fontFamily: 'AvenirNextCondensed-Regular',
     fontSize: 20,
     textAlign: 'center',
-    paddingTop: 5
+    paddingTop: 5,
+    marginBottom: height/180
   },
   trendingEventImg: {
-    width: width / 1.34,
-    right: width / 134,
+    width: width / 2,
+    left: width/134,
     height: 64,
-    resizeMode: 'contain'
+    resizeMode: 'contain',
+    top: width < 420 ? height/80 : 0
   },
   trendingItem: {
     borderRadius: 3,
-    marginHorizontal: width / 29.9
   },
   trendingItemsCarousel: {
     position: 'absolute',
@@ -1071,15 +1199,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: (width - (width / 1.2)) / 2,
     backgroundColor: 'rgba(0,0,0,0.8)',
-    padding: 10,
     borderRadius: 5,
   },
   trendingUserImg: {
-    width: width / 5.30,
-    height: width / 5.30,
+    width: (width < 420 ? width / 6 : width/10),
+    height: (width < 420 ? width / 6 : width/10),
     resizeMode: 'contain',
     backgroundColor: '#040A19',
-    borderRadius: width / 10.60
+    borderRadius: (width < 420 ? width / 12 : width/20),
+    marginHorizontal: width/48,
+    top: width < 375 ? height/27 : (width < 420 ? height/60 : 0)
   }
 });
 

@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: (width < 420 ? 18 : 30),
     fontFamily: 'AvenirNextCondensed-Medium'
   },
   infoTextBio: {
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     textAlign: 'left'
   },
   infoTextNameAge: {
-    fontSize: 24
+    fontSize: (width < 420 ? 24 : 36)
   },
   loadingModalActivityIndicatorIOS: {
     height: 80,

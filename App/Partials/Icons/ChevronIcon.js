@@ -30,6 +30,7 @@ type Props = {
   animate: React.PropTypes.bool,
   color: React.PropTypes.string,
   direction: React.PropTypes.string.isRequired,
+  isStatic: React.PropTypes.bool,
   onPress: React.PropTypes.func,
   size: React.PropTypes.number,
   style: View.propTypes.style
@@ -52,13 +53,12 @@ class ChevronIcon extends Component {
   };
 
   render() {
-    return (
-      <Animatable.View ref="chevronIcon" style={[this.props.style, {width: (this.props.size || SIZE) * 1.18,
-                height: (this.props.size || SIZE) * 1.18, alignItems: 'center'}]}>
-      <TouchableOpacity
+    return (this.props.isStatic ? 
+      <View
         activeOpacity={this.props.animated ? 0.8 : 0.3}
+        style={[this.props.style, {width: (this.props.size || SIZE) * 1.18,
+                height: (this.props.size || SIZE) * 1.18, alignItems: 'center'}]}
         onPress={() => {
-          this.props.animated && this._animate();
           this.props.onPress && this.props.onPress();
         }}>
         <Icon
@@ -66,8 +66,22 @@ class ChevronIcon extends Component {
                     this.props.direction : 'up')}
           size={this.props.size || SIZE}
           color={this.props.color || '#ccc'}
-          style={[styles.icon]}
-          />
+          style={[styles.icon]}/>
+      </View>
+      :
+      <Animatable.View ref="chevronIcon" style={[this.props.style, {width: (this.props.size || SIZE) * 1.18,
+                height: (this.props.size || SIZE) * 1.18, alignItems: 'center'}]}>
+      <TouchableOpacity
+        activeOpacity={this.props.animated ? 0.8 : 0.3}
+        onPress={() => {
+          this.props.onPress && this.props.onPress();
+        }}>
+        <Icon
+          name={"ion|ios-arrow-" + (DIRECTIONS.indexOf(this.props.direction) > -1 ?
+                    this.props.direction : 'up')}
+          size={this.props.size || SIZE}
+          color={this.props.color || '#ccc'}
+          style={[styles.icon]}/>
       </TouchableOpacity>
       </Animatable.View>
     );

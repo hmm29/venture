@@ -14,6 +14,7 @@
 
 import React, {
   Component,
+  Dimensions,
   LayoutAnimation,
   StyleSheet,
   Text,
@@ -24,6 +25,7 @@ import React, {
 import Animatable from 'react-native-animatable';
 import {Icon, } from 'react-native-icons';
 
+var {height, width} = Dimensions.get('window');
 const SIZE = 34;
 
 type Props = {
@@ -92,8 +94,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     fontFamily: 'AvenirNextCondensed-Medium',
-    left: SIZE*2.45,
-    bottom: SIZE / 14,
+    left: (width < 420 ? (width < 375 ? SIZE*2.3 : SIZE*2.45) : SIZE*1.7),
+    bottom: (width < 420 ? (width < 375 ? -(SIZE/20) : SIZE/8) : SIZE/2),
     paddingTop: 1,
     backgroundColor: '#FF0017',
     color: 'white',

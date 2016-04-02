@@ -586,7 +586,7 @@ var User = React.createClass({
                   onPress={this._onPressItem}
                   onLoadEnd={() => this.setState({thumbnailReady: true})}
                   source={{uri: this.props.data && this.props.data.picture}}
-                  style={[styles.thumbnail, {right: (this.props.isCurrentUser ? width/80 : 0)}, (this.state.thumbnailReady ? {} : {backgroundColor: '#040A19'})]}>
+                  style={[styles.thumbnail, {right: (this.props.isCurrentUser && width < 420 ? width/80 : (this.props.isCurrentUser ? width/135 : 0))}, (this.state.thumbnailReady ? {} : {backgroundColor: '#040A19'})]}>
                   <View style={(this.state.expireTime ? styles.timerValOverlay : {})}>
                     <Text
                       style={[styles.timerValText, (!_.isString(this._getTimerValue(this.props.currentTimeInMs))
@@ -1079,7 +1079,7 @@ var styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 3,
     borderWidth: 1,
-    width: 200,
+    width: width/1.7,
     height: 30,
     paddingLeft: 10,
     fontSize: 18,

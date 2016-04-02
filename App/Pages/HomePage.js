@@ -872,11 +872,11 @@ var HomePage = React.createClass({
       <Swiper ref={TRENDING_ITEMS_CAROUSEL_REF}
               buttonWrapperStyle={styles.buttonWrapperStyle}
               height={100}
-              index={this.state.trendingContent === CATEGORY_OF_USERS ? 0 : 1} // this works!
+              index={this.state.trendingContent !== 'EVENTS' ? 0 : 1} // this works!
               width={width/1.2}
               onMomentumScrollEnd={(e, state, context) => {
                 console.log('state: ' + JSON.stringify(state) + ',\n' + JSON.stringify(context.state));
-                this.setState({trendingContent: (this.state.trendingContent === CATEGORY_OF_USERS ? 'EVENTS' : CATEGORY_OF_USERS)});
+                this.setState({trendingContent: (this.state.trendingContent !== 'EVENTS' ? 'EVENTS' : CATEGORY_OF_USERS)});
               }}
               showsButtons={true}
               showsPagination={false}
@@ -905,11 +905,12 @@ var HomePage = React.createClass({
           <Swiper ref={TRENDING_ITEMS_CAROUSEL_REF}
                   buttonWrapperStyle={styles.buttonWrapperStyle}
                   height={100}
-                  index={this.state.trendingContent === CATEGORY_OF_USERS ? 0 : 1} // this works!
+                  index={this.state.trendingContent !== 'EVENTS' ? 0 : 1} // this works!
                   width={width/1.2}
                   onMomentumScrollEnd={(e, state, context) => {
                 console.log('state: ' + JSON.stringify(state) + ',\n' + JSON.stringify(context.state));
-                this.setState({trendingContent: (this.state.trendingContent === CATEGORY_OF_USERS ? 'EVENTS' : CATEGORY_OF_USERS)});
+                // @hmm: use 'EVENTS' as comparison bc trendingContent is either 'EVENTS', 'YALIES', or '{TRENDING_YALIE_FIRST_NAME}'
+                this.setState({trendingContent: (this.state.trendingContent !== 'EVENTS' ? 'EVENTS' : CATEGORY_OF_USERS)});
               }}
                   showsButtons={true}
                   showsPagination={false}
@@ -936,11 +937,11 @@ var HomePage = React.createClass({
           <Swiper ref={TRENDING_ITEMS_CAROUSEL_REF}
                   buttonWrapperStyle={styles.buttonWrapperStyle}
                   height={100}
-                  index={this.state.trendingContent === CATEGORY_OF_USERS ? 0 : 1} // this works!
+                  index={this.state.trendingContent !== 'EVENTS' ? 0 : 1} // this works!
                   width={width/1.2}
                   onMomentumScrollEnd={(e, state, context) => {
                 console.log('state: ' + JSON.stringify(state) + ',\n' + JSON.stringify(context.state));
-                this.setState({trendingContent: (this.state.trendingContent === CATEGORY_OF_USERS ? 'EVENTS' : CATEGORY_OF_USERS)});
+                this.setState({trendingContent: (this.state.trendingContent !== 'EVENTS' ? 'EVENTS' : CATEGORY_OF_USERS)});
               }}
                   showsButtons={true}
                   showsPagination={false}

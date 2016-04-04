@@ -428,22 +428,23 @@ var ChatPage = React.createClass({
               style={[styles.textBoxContainer, {marginBottom: this.state.hasKeyboardSpace ? height/3.1 : 0}]}>
               {messageTextInput}
               <TouchableOpacity onPress={() => {
-                         this.props.chatRoomRef && this.props.chatRoomRef.once('value', snapshot => {
-                          if(_.size(snapshot.val()) <= 3) { //@hmm: note that chat object still has isTyping and messages props even if other user destroyed chat, so not completely gone yet :(
-                            AlertIOS.alert(
-                              'Chat Ending...',
-                              'This chat has expired!',
-                              [
-                                {text: 'OK', onPress: () => {
-                                this.props.navigator.pop();
-                                this.props.chatRoomRef.set(null);
-                                }}
-                              ]
-                            );
-                          }
-                        });
-
-                        if(this.state.message.length) this._sendMessage();
+                        if(this.state.message.length) {
+                          this.props.chatRoomRef && this.props.chatRoomRef.once('value', snapshot => {
+                            if(_.size(snapshot.val()) <= 3) { //@hmm: note that chat object still has isTyping and messages props even if other user destroyed chat, so not completely gone yet :(
+                              AlertIOS.alert(
+                                'Chat Ending...',
+                                'This chat has expired!',
+                                [
+                                  {text: 'OK', onPress: () => {
+                                  this.props.navigator.pop();
+                                  this.props.chatRoomRef.set(null);
+                                  }}
+                                ]
+                              );
+                            }
+                          });
+                          this._sendMessage();
+                        }
                         else this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
                     }}>
                 <Text

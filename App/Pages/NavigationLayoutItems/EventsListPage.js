@@ -100,13 +100,18 @@ var User = React.createClass({
     return {
       dir: 'row',
       expireTime: '',
-      hasShown: false,
+      tutorialModalHasBeenShown: false,
       lastPushNotificationSentTime: 0,
       thumbnailReady: false
     }
   },
 
   componentWillMount() {
+    // TODO: fix this issue
+    // @hmm: note, there is currently a bug that doesnt reactively update color status when one user unsends a request
+    // its helpful for now bc the recipient user will still have the blue bar and can create a match, which hides the unmatch and ends up in a match :)
+    // can still see event invites reactively change in chats list
+
     let distance = this.props.currentUserLocationCoords && this.props.data
         && this.props.data.location && this.props.data.location.coordinates
         && this.calculateDistance(this.props.currentUserLocationCoords,
@@ -121,7 +126,6 @@ var User = React.createClass({
       .child(this.props.data.ventureId).off();
 
     // prevent conflict with data clearing
-    this.setTimeout(() => {
 
       this.props.firebaseRef && this.props.data && this.props.data.ventureId
       && this.props.currentUserIDHashed && this.props.firebaseRef
@@ -137,7 +141,7 @@ var User = React.createClass({
 
           this.setTimeout(() => {
             // @hmm: onboarding tutorial logic
-            if (this.props.firstSession && !this.state.hasShown) {
+            if (this.props.firstSession && !this.state.tutorialModalHasBeenShown) {
               if (this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
                 // @hmm: account for case in which user already has received requests before first nav to users list
                 AlertIOS.alert(
@@ -146,7 +150,7 @@ var User = React.createClass({
                 );
                 this.props.firebaseRef
                   .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
-                this.setState({hasShown: true});
+                this.setState({tutorialModalHasBeenShown: true});
               }
               else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
                 AlertIOS.alert(
@@ -155,7 +159,7 @@ var User = React.createClass({
                 );
                 this.props.firebaseRef
                   .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
-                this.setState({hasShown: true});
+                this.setState({tutorialModalHasBeenShown: true});
               }
               else if(this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
                 AlertIOS.alert(
@@ -164,12 +168,11 @@ var User = React.createClass({
                 );
                 this.props.firebaseRef
                   .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
-                this.setState({hasShown: true});
+                this.setState({tutorialModalHasBeenShown: true});
               }
             }
           }, 0);
         });
-    }, 900);
   },
 
   componentDidMount() {
@@ -237,6 +240,22 @@ var User = React.createClass({
   },
 
   handleMatchInteraction() {
+    let _this = this;
+
+    _this.setTimeout(() => {
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId
+      && this.props.currentUserIDHashed && this.props.firebaseRef
+        .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).on('value', snapshot => {
+          _this.setState({
+            chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+            status: snapshot.val() && snapshot.val().status,
+            expireTime: snapshot.val() && snapshot.val().expireTime
+          });
+        });
+    }, 0);
+
     // @hmm: use hashed targetUserID as key for data for user in list
     let targetUserIDHashed = this.props.data.ventureId,
       currentUserIDHashed = this.props.currentUserIDHashed,
@@ -246,8 +265,7 @@ var User = React.createClass({
       targetUserRef = usersListRef.child(targetUserIDHashed),
       firstSessionRef = currentUserRef.child('firstSession'),
       targetUserEventInviteMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
-      currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests'),
-      _this = this;
+      currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests');
 
     if (this.state.status === 'sent') {
 
@@ -393,6 +411,7 @@ var User = React.createClass({
           // only send if current time is not in push notification refractory period
           const currentTime = new Date().getTime();
           if(currentTime > (new Date(this.state.lastPushNotificationSentTime + (PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES * 60 * 1000))).getTime()) {
+            _this.setState({lastPushNotificationSentTime: (new Date()).getTime()});
             fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
               method: 'POST',
               headers: {
@@ -401,14 +420,12 @@ var User = React.createClass({
                 'Content-Type': 'application/json',
               },
               body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in going to an event with you!"}`
-            })
-              .then(response => {
-                _this.setState({lastPushNotificationSentTime: (new Date()).getTime()})
+            }).then(response => {
                 console.log(JSON.stringify(response))
               })
               .catch(error => console.log(error))
           }
-          
+
         }
       })
     }
@@ -604,7 +621,7 @@ var AttendeeList = React.createClass({
   },
 
   componentWillUnmount() {
-    //this.state.attendeesListRef && this.state.attendeesListRef.off();
+    this.state.attendeesListRef && this.state.attendeesListRef.off();
   },
 
   updateRows(rows) {

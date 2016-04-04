@@ -419,6 +419,7 @@ var User = React.createClass({
           // only send if current time is not in push notification refractory period
           const currentTime = new Date().getTime();
           if(currentTime > (new Date(this.state.lastPushNotificationSentTime + (PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES * 60 * 1000))).getTime()) {
+            this.setState({lastPushNotificationSentTime: (new Date()).getTime()});
             fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
               method: 'POST',
               headers: {

@@ -5,6 +5,7 @@
 	};
 	objectVersion = 46;
 	objects = {
+
 /* Begin PBXBuildFile section */
 		00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302AC1ABCB8CE00DB3ED1 /* libRCTActionSheet.a */; };
 		00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302BA1ABCB90400DB3ED1 /* libRCTGeolocation.a */; };
@@ -35,6 +36,7 @@
 		42646CF31C7BA129004FB7F8 /* libicucore.A.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 42646CF11C7BA129004FB7F8 /* libicucore.A.dylib */; };
 		42646CF51C7BA167004FB7F8 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42646CF41C7BA166004FB7F8 /* CFNetwork.framework */; };
 		42646CF71C7BA16E004FB7F8 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42646CF61C7BA16E004FB7F8 /* Security.framework */; };
+		4290ECA01CB259BF00A7C749 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 4290EC9F1CB259BF00A7C749 /* Default-568h@2x.png */; };
 		42E5EE8F1C7124CC009C7A35 /* libReactNativeIcons.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E5EE8E1C7124A6009C7A35 /* libReactNativeIcons.a */; };
 		42E5EE931C712D71009C7A35 /* ionicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 42E5EE921C712D71009C7A35 /* ionicons.ttf */; };
 		42E728D01C69BB7400FF970D /* libAppHub.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 42E728CD1C69BB0A00FF970D /* libAppHub.a */; };
@@ -259,6 +261,7 @@
 		42646CF11C7BA129004FB7F8 /* libicucore.A.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libicucore.A.dylib; path = ../../../../../../usr/lib/libicucore.A.dylib; sourceTree = "<group>"; };
 		42646CF41C7BA166004FB7F8 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		42646CF61C7BA16E004FB7F8 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		4290EC9F1CB259BF00A7C749 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ReactNativeIcons.xcodeproj; path = "../node_modules/react-native-icons/ios/ReactNativeIcons.xcodeproj"; sourceTree = "<group>"; };
 		42E5EE921C712D71009C7A35 /* ionicons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = ionicons.ttf; sourceTree = "<group>"; };
 		42E728C51C69BB0A00FF970D /* AppHub.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = AppHub.xcodeproj; path = ../node_modules/apphub/AppHub/AppHub.xcodeproj; sourceTree = "<group>"; };
@@ -621,6 +624,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				4290EC9F1CB259BF00A7C749 /* Default-568h@2x.png */,
 				42F849D11C9B6CCE007F83A6 /* Frameworks */,
 				42EE2FA71C97FCFF001A2541 /* AddressBook.framework */,
 				42EE2F891C97FCDC001A2541 /* RNGoogleSignin */,
@@ -1018,6 +1022,7 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				421BEB111C7267730058D624 /* Batch.bundle in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
+				4290ECA01CB259BF00A7C749 /* Default-568h@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

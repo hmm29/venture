@@ -969,11 +969,6 @@ var ChatsListPage = React.createClass({
             this.setState({showFunFact: false});
           }
           else {
-            this.setTimeout(() => { // defer to prevent flash on load
-              // extra sure
-                this.setState({showFunFact: true, done: true});
-            }, 10);
-
             this.setTimeout(() => {
               if (!this.state.done) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
               if (filteredUsersArray.length) this.setState({showFunFact: false});

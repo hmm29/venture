@@ -170,11 +170,11 @@ var User = React.createClass({
             }
           }, 0);
         });
-    }, 200);
+    }, 600);
   },
 
   componentDidMount() {
-    this.refs.attendee.fadeIn(600);
+    //this.refs.attendee.fadeIn(600);
   },
 
   componentWillUnmount() {

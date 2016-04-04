@@ -974,6 +974,7 @@ var ChatsListPage = React.createClass({
               if (filteredUsersArray.length) this.setState({showFunFact: false});
               this.setState({showFunFact: true, done: true});
             }, 0); // prevent flash
+            this.setState({showFunFact: true, done: true});
           }
 
         });

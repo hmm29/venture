@@ -128,11 +128,10 @@ var User = React.createClass({
         .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
       && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
         .child(this.props.data.ventureId).on('value', snapshot => {
-          _this.setTimeout(() => _this.setState({status: snapshot.val() && snapshot.val().status}), 0); // account for delay to change color
-
           _this.setState({
             chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
             distance,
+            status: snapshot.val() && snapshot.val().status,
             expireTime: snapshot.val() && snapshot.val().expireTime
           });
 
@@ -170,7 +169,7 @@ var User = React.createClass({
             }
           }, 0);
         });
-    }, 600);
+    }, 700);
   },
 
   componentDidMount() {

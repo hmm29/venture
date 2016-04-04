@@ -46,7 +46,8 @@ class MatchSuccessIcon extends Component {
   };
 
   componentWillMount() {
-   this._createCallbacksWithCurrentProps(this.props);
+    this.setState({badgeValue: 0});
+    this._createCallbacksWithCurrentProps(this.props);
   };
 
   componentWillReceiveProps(nextProps) {
@@ -57,8 +58,7 @@ class MatchSuccessIcon extends Component {
     this.setState({badgeValue: 0}); // @hmm: is this necessary??
     // @hmm: NOTE: pay attention to when you turn off refs.
     // like, you cant call chatRoomMessagesRef.off() or chatRoomRef.off() because will turn off other functionality
-    this.state.chatRoomRef && this.state.chatRoomRef.off();
-
+    if(this.state.chatRoomRef && this.state.chatRoomRef.off) this.state.chatRoomRef.off();
   };
 
   _calculateBadgeValue(chatRoomRef) {

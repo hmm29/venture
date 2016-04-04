@@ -40,7 +40,8 @@ class ChatsListPageIcon extends Component {
   constructor(props:Props) {
     super(props);
     this.state = {
-      animationDidFinish: false
+      animationDidFinish: false,
+      chatCount: 0
     };
   };
 
@@ -52,6 +53,10 @@ class ChatsListPageIcon extends Component {
     this.refs.chatsListPageIcon && this.refs.chatsListPageIcon.fadeInDown(900); // do second after set timeout
   };
 
+  componentWillReceiveProps(nextProps) {
+    this.setState({chatCount: nextProps.chatCount});
+  };
+
   componentWillUnmount() {
     clearTimeout(this.timer);
   };
@@ -60,13 +65,13 @@ class ChatsListPageIcon extends Component {
     let badge = (
       <View ref="badge" style={{flex: 1, top: 8, left: 6}}>
         <Text
-          style={styles.badge}>{this.props.chatCount}</Text>
+          style={styles.badge}>{this.props.chatCount || this.state.chatCount}</Text>
       </View>
     );
 
     return (
       <TouchableOpacity activeOpacity={0.3} onPress={this.props.onPress}>
-        {this.props.chatCount > 0 && this.state.animationDidFinish ? badge : undefined}
+        {(this.props.chatCount > 0 || this.state.chatCount > 0)&& this.state.animationDidFinish ? badge : undefined}
         <Animatable.View ref="chatsListPageIcon">
           <TouchableOpacity
             onPress={this.props.onPress}

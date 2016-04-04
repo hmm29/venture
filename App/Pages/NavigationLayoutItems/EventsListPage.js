@@ -100,6 +100,7 @@ var User = React.createClass({
     return {
       dir: 'row',
       expireTime: '',
+      hasShown: false,
       lastPushNotificationSentTime: 0,
       thumbnailReady: false
     }
@@ -119,39 +120,57 @@ var User = React.createClass({
     && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
       .child(this.props.data.ventureId).off();
 
-    this.props.firebaseRef && this.props.data && this.props.data.ventureId
-    && this.props.currentUserIDHashed && this.props.firebaseRef
-      .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
-    && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
-      .child(this.props.data.ventureId).on('value', snapshot => {
-        _this.setState({
-          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-          distance,
-          status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
-        });
+    // prevent conflict with data clearing
+    this.setTimeout(() => {
 
-        // @hmm: onboarding tutorial logic
-        if(this.props.firstSession) {
-          if(this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
-            // @hmm: account for case in which user already has received requests before first nav to users list
-            AlertIOS.alert(
-              'Someone Is Interested In Your Activity!',
-              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
-            );
-            this.props.firebaseRef
-              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
-          }
-          else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
-            AlertIOS.alert(
-              'You Matched With Someone!',
-              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
-            );
-            this.props.firebaseRef
-              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
-          }
-        }
-      });
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId
+      && this.props.currentUserIDHashed && this.props.firebaseRef
+        .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).on('value', snapshot => {
+          _this.setTimeout(() => _this.setState({status: snapshot.val() && snapshot.val().status}), 0); // account for delay to change color
+
+          _this.setState({
+            chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+            distance,
+            expireTime: snapshot.val() && snapshot.val().expireTime
+          });
+
+          this.setTimeout(() => {
+            // @hmm: onboarding tutorial logic
+            if (this.props.firstSession && !this.state.hasShown) {
+              if (this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
+                // @hmm: account for case in which user already has received requests before first nav to users list
+                AlertIOS.alert(
+                  'Someone Is Interested In Your Activity!',
+                  'Tap on their smiley face icon to match with them!'
+                );
+                this.props.firebaseRef
+                  .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+                this.setState({hasShown: true});
+              }
+              else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+                AlertIOS.alert(
+                  'You Matched With Someone!',
+                  'You matched with another user! Tap on the message bubble to chat!'
+                );
+                this.props.firebaseRef
+                  .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+                this.setState({hasShown: true});
+              }
+              else if(this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
+                AlertIOS.alert(
+                  'Activity Request Sent!',
+                  'You have just shown interest in another user\'s activity! If they accept, you will match with them!'
+                );
+                this.props.firebaseRef
+                  .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
+                this.setState({hasShown: true});
+              }
+            }
+          }, 0);
+        });
+    }, 90);
   },
 
   componentDidMount() {
@@ -164,63 +183,6 @@ var User = React.createClass({
       .child(this.props.data.ventureId)
     && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
       .child(this.props.data.ventureId).off();
-  },
-
-  componentWillReceiveProps(nextProps) {
-    let distance = nextProps.currentUserLocationCoords && nextProps.data && nextProps.data.location
-        && nextProps.data.location.coordinates && this.calculateDistance(nextProps.currentUserLocationCoords,
-          [nextProps.data.location.coordinates.latitude, nextProps.data.location.coordinates.longitude]),
-      _this = this;
-
-    // @hmm: must have this to clean up old match subscriptions
-    nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
-    && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-      .child(nextProps.data.ventureId)
-    && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-      .child(nextProps.data.ventureId).off();
-
-    nextProps.firebaseRef && nextProps.data && nextProps.data.ventureId && nextProps.currentUserIDHashed
-    && nextProps.firebaseRef.child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-      .child(nextProps.data.ventureId)
-    && (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/event_invite_match_requests`)
-      .child(nextProps.data.ventureId).on('value', snapshot => {
-        let status = this.state.status;
-
-        _this.setState({
-          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-          distance,
-          status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
-        });
-
-        // @hmm: onboarding tutorial logic
-        if(nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
-          if(this.state.status === 'sent' && !nextProps.firstSession.hasSentFirstRequest) {
-            AlertIOS.alert(
-              'Activity Request Sent!',
-              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
-            );
-            this.props.firebaseRef
-              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
-          }
-          else if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
-            AlertIOS.alert(
-              'Someone Is Interested In Your Activity!',
-              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
-            );
-            nextProps.firebaseRef
-              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
-          }
-          else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
-            AlertIOS.alert(
-              'You Matched With Someone!',
-              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
-            );
-            nextProps.firebaseRef
-              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
-          }
-        }
-      });
   },
 
   calculateDistance(location1:Array, location2:Array) {
@@ -476,7 +438,7 @@ var User = React.createClass({
           currentUserIDHashed={this.props.currentUserIDHashed}
           color='rgba(0,0,0,0.2)'
           firebaseRef={this.props.firebaseRef}
-          onPress={() => {this.handleMatchInteraction(); this.props.closeAttendeeListModal();}}
+          onPress={() => { this.props.closeAttendeeListModal(); this.handleMatchInteraction()}}
           style={{left: 10,  bottom: 6}}
           targetUserIDHashed={this.props.data.ventureId}
           />;
@@ -504,10 +466,14 @@ var User = React.createClass({
             targetUserRef = usersListRef.child(targetUserIDHashed),
             chatRoomRef = this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`);
 
-          if (currentUserRef && targetUserRef) {
+          if(this.props.eventTitle && currentUserRef && targetUserRef) {
+            currentUserRef.child(`event_invite_match_requests/${targetUserIDHashed}`).set(null);
+            targetUserRef.child(`event_invite_match_requests/${currentUserIDHashed}`).set(null);
+          } else  {
             currentUserRef.child(`match_requests/${targetUserIDHashed}`).set(null);
             targetUserRef.child(`match_requests/${currentUserIDHashed}`).set(null);
           }
+
           if (chatRoomRef) {
             chatRoomRef.set(null)
           }
@@ -639,7 +605,7 @@ var AttendeeList = React.createClass({
   },
 
   componentWillUnmount() {
-    this.state.attendeesListRef && this.state.attendeesListRef.off();
+    //this.state.attendeesListRef && this.state.attendeesListRef.off();
   },
 
   updateRows(rows) {

@@ -175,7 +175,7 @@ var HotPage = React.createClass({
       <VentureAppPage backgroundColor='#000'>
         {this._renderHeader()}
         <View style={styles.container}>
-          <Title>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContentTitle}</Text></Title>
+          <Title titleStyle={{fontSize: 18, top: 10}}>TRENDING <Text style={{color: '#ee964b'}}>{this.state.trendingContentTitle}</Text></Title>
           {len <= 6  ?
             <Swiper ref={TRENDING_USERS_REF}
                      autoplay={true}
@@ -222,14 +222,14 @@ var HotPage = React.createClass({
                       </Swiper>
             )
           }
-          <Title>TRENDING <Text style={{color: '#ee964b'}}>ACTIVITIES</Text></Title>
+          <Title titleStyle={{fontSize: 18, top: 10}}>TRENDING <Text style={{color: '#ee964b'}}>ACTIVITIES</Text></Title>
           <ScrollView
             ref={TRENDING_ACTIVITIES_SCROLLVIEW}
             automaticallyAdjustContentInsets={false}
             scrollEventThrottle={200}
             style={styles.scrollView}>
             {this.state.activities && this.state.activities.map((activity) => <Text
-              style={[styles.title, {fontSize: height/(this.state.activities.length * 4.5)}]}>
+              style={[styles.title, {fontSize: height/(this.state.activities.length * 6.5), paddingVertical: 6}]}>
               {activity && activity.toUpperCase()}?</Text>)}
           </ScrollView>
         </View>
@@ -346,9 +346,9 @@ const styles = StyleSheet.create({
   title: {
     color: '#fff',
     fontFamily: 'AvenirNextCondensed-Regular',
-    fontSize: 20,
+    fontSize: 30,
     textAlign: 'center',
-    paddingVertical: 10
+    paddingVertical: 30
   },
   trendingItem: {
     flex: 1,

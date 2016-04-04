@@ -135,7 +135,7 @@ var User = React.createClass({
             // @hmm: account for case in which user already has received requests before first nav to users list
             AlertIOS.alert(
               'Someone Is Interested In Your Activity!',
-              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+              'Tap on their smiley face icon to match with them!'
             );
             this.props.firebaseRef
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
@@ -143,7 +143,7 @@ var User = React.createClass({
           else if(this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
             AlertIOS.alert(
               'You Matched With Someone!',
-              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+              'You matched with another user! Tap on the message bubble to chat!'
             );
             this.props.firebaseRef
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
@@ -151,7 +151,7 @@ var User = React.createClass({
           else if(this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
             AlertIOS.alert(
               'Activity Request Sent!',
-              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
+              'You have just shown interest in another user\'s activity! If they accept, you will match with them!'
             );
             this.props.firebaseRef
               .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
@@ -196,7 +196,7 @@ var User = React.createClass({
           if(this.state.status === 'sent' && !nextProps.firstSession.hasSentFirstRequest) {
             AlertIOS.alert(
               'Activity Request Sent!',
-              'You have just shown interest in another user\'s activity! This person will be notified, and appear yellow on your screen. If they accept, you will match with them!'
+              'You have just shown interest in another user\'s activity! If they accept, you will match with them!'
             );
             nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
@@ -204,7 +204,7 @@ var User = React.createClass({
           else if(this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
             AlertIOS.alert(
               'Someone Is Interested In Your Activity!',
-              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+              'Tap on their smiley face icon to match with them!'
             );
             nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
@@ -212,7 +212,7 @@ var User = React.createClass({
           else if(this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
             AlertIOS.alert(
               'You Matched With Someone!',
-              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+              'You matched with another user! Tap on the message bubble to chat!'
             );
             nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);

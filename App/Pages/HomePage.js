@@ -529,6 +529,10 @@ var HomePage = React.createClass({
           .catch((error) => console.log(error.message))
           .done(() => ref.off());
       }
+
+      this.state.chatCountRef && this.state.chatCountRef.once('value', snapshot => {
+          this.setState({chatCount: snapshot.val()});
+        });
     }
   },
 

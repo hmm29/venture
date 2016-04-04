@@ -46,7 +46,7 @@ var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('./Base/VentureAppPage');
 
 var {height, width} = Dimensions.get('window');
-var CHAT_DURATION_IN_MINUTES = 5;
+var CHAT_DURATION_IN_MINUTES = 1/6;
 var HEADER_CONTAINER_HEIGHT = height / 20;
 var MAX_TEXT_INPUT_VAL_LENGTH = 15;
 var MESSAGE_TEXT_INPUT_HEIGHT = 30;
@@ -122,6 +122,12 @@ var ChatPage = React.createClass({
       this.bindAsObject(chatRoomMessagesRef, 'messageList');
 
       chatRoomMessagesRef.on('value', (snapshot) => {
+        // if user has sent messages and other user closes chat
+        let messageListLength = this.state.messageListLength;
+        if(messageListLength > _.size(snapshot.val())) {
+          this.props.navigator.pop();
+        }
+
         _this.setState({
           chatRoomMessagesRef,
           contentOffsetYValue: 0,
@@ -143,15 +149,18 @@ var ChatPage = React.createClass({
       this.setState({chatMateIsTyping: snapshot.val()});
     });
 
-    var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
-    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
-      && this.state.messageList.length || 0);
-
     this.props.chatRoomRef && this.props.chatRoomRef.on('value', snapshot => {
       if(!snapshot.val()) {
         this.setState({chatExists: false});
+        this.props.navigator.pop();
+        return;
+      } else {
+        var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
+        this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
+          && this.state.messageList.length || 0);
       }
-      else if(snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime) {
+
+      if(snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime) {
         // save object here whenever changes are made for easy recreation
         // only save if snapshot is not null
         this.setState({chatRoomObjectCopy: snapshot.val()})
@@ -162,7 +171,10 @@ var ChatPage = React.createClass({
   componentWillUnmount() {
     this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).off();
     this.state.chatRoomMessagesRef && this.state.chatRoomMessagesRef.off();
-    this.state.chatExists && this.props.chatRoomRef.update({messageListHeightRef: this.footerY});
+
+    this.state.chatRoomMessagesRef && this.state.chatRoomMessagesRef.once('value', snapshot => {
+            if(snapshot.val() && !this.state.hasTimerExpired) this.props.chatRoomRef.update({messageListHeightRef: this.footerY});
+    })
     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
   },
 
@@ -181,7 +193,8 @@ var ChatPage = React.createClass({
   },
 
   handleSetHasTimerExpiredState(hasTimerExpired:boolean){
-    this.setState({hasTimerExpired, showExtendChatModal: hasTimerExpired});
+    //this.setState({hasTimerExpired, showExtendChatModal: hasTimerExpired});
+    this.setState({hasTimerExpired});
     // if user in chat that partner has ended but hasnt tried typing anything
     if(!this.state.chatExists) this.props.navigator.pop();
   },
@@ -264,7 +277,8 @@ var ChatPage = React.createClass({
     this.state.chatRoomMessagesRef.once('value', (snapshot) => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
       _this.setState({
-        message: ''
+        message: '',
+        messageListLength: _.size(snapshot.val())
       });
       _this.updateMessages(_.cloneDeep(_.values(snapshot.val())));
       _this.refs[MESSAGE_TEXT_INPUT_REF] && _this.refs[MESSAGE_TEXT_INPUT_REF].blur();
@@ -285,7 +299,7 @@ var ChatPage = React.createClass({
     });
 
     this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
-      if(this.state.messageList && (this.state.messageList.length-snapshot.val() === 1)) { //@hmm: reset point when target user has seen all messages except one just sent
+      if(this.state.messageList && (this.state.messageList.length-snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
 
         fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
           method: 'POST',
@@ -327,15 +341,18 @@ var ChatPage = React.createClass({
                     this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(false);
                 })}
         onFocus={() => {
-                    if(!this.state.chatExists) {
-                      AlertIOS.alert(
-                        'Chat Ending',
-                        'The other user has ended this chat...Taking you back to the users list to find more partners!',
-                        [
-                          {text: 'OK', onPress: () => this.props.navigator.pop()}
-                        ]
-                      );
-                    } // pop if chat doesn't exist
+                    this.props.chatRoomRef && this.props.chatRoomRef.once('value', snapshot => {
+                      if(!snapshot.val()) {
+                        AlertIOS.alert(
+                          'Chat Ending...',
+                          'This chat has expired!',
+                          [
+                            {text: 'OK', onPress: () => this.props.navigator.pop()}
+                          ]
+                        );
+                      }
+                    });
+
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     this.setState({hasKeyboardSpace: true, closeDropdownProfile: true});
                     this.scrollToBottom();
@@ -366,7 +383,8 @@ var ChatPage = React.createClass({
           <Text />
         </Header>
         <View onStartShouldSetResponder={this.containerTouched} style={styles.container}>
-          <RecipientInfoBar chatRoomRef={this.props.chatRoomRef}
+          <RecipientInfoBar chatRoomEventTitle={this.props.chatRoomEventTitle}
+                            chatRoomRef={this.props.chatRoomRef}
                             closeDropdownProfile={this.state.closeDropdownProfile}
                             closeKeyboard={this.closeKeyboard}
                             currentUserRef={this.props.currentUserRef}
@@ -387,7 +405,7 @@ var ChatPage = React.createClass({
             onLayout={this.scrollToBottom}
             initialListSize={15}
             onLayout={(e)=>{
-                          this.listHeight = e.nativeEvent && e.nativeEvent.layout && parseFloat(e.nativeEvent.layout.height);
+                          this.listHeight = e.nativeEvent && e.nativeEvent.layout && (_.isNumber(e.nativeEvent.layout.height) && parseFloat(e.nativeEvent.layout.height)) || (_.isNumber(e.nativeEvent.layout.height.y) && parseFloat(e.nativeEvent.layout.height.y));
                         }}
             onScroll={() => {
                         }}
@@ -396,7 +414,7 @@ var ChatPage = React.createClass({
             pageSize={15}
             renderFooter={() => {
                           return <View onLayout={(e)=> {
-                            this.footerY = e.nativeEvent && e.nativeEvent.layout && parseFloat(e.nativeEvent.layout.y);
+                            this.footerY = e.nativeEvent && e.nativeEvent.layout && (_.isNumber(e.nativeEvent.layout.y) && parseFloat(e.nativeEvent.layout.y)) || (_.isNumber(e.nativeEvent.layout.y.y) && parseFloat(e.nativeEvent.layout.y.y));
                             this.scrollToBottom();
                           }}/>
                         }}
@@ -411,6 +429,21 @@ var ChatPage = React.createClass({
               style={[styles.textBoxContainer, {marginBottom: this.state.hasKeyboardSpace ? height/3.1 : 0}]}>
               {messageTextInput}
               <TouchableOpacity onPress={() => {
+                         this.props.chatRoomRef && this.props.chatRoomRef.once('value', snapshot => {
+                          if(_.size(snapshot.val()) <= 3) { //@hmm: note that chat object still has isTyping and messages props even if other user destroyed chat, so not completely gone yet :(
+                            AlertIOS.alert(
+                              'Chat Ending...',
+                              'This chat has expired!',
+                              [
+                                {text: 'OK', onPress: () => {
+                                this.props.navigator.pop();
+                                this.props.chatRoomRef.set(null);
+                                }}
+                              ]
+                            );
+                          }
+                        });
+
                         if(this.state.message.length) this._sendMessage();
                         else this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
                     }}>
@@ -422,7 +455,7 @@ var ChatPage = React.createClass({
             </View>
           </View>
         </View>
-        <ModalBase
+        {/*<ModalBase
           animated={true}
           onLayout={() => {
             this._handle = this.setInterval(() => {
@@ -581,7 +614,7 @@ var ChatPage = React.createClass({
               </View>
             </TouchableOpacity>
           </View>
-        </ModalBase>
+        </ModalBase>*/}
       </VentureAppPage>
     );
   }
@@ -589,6 +622,7 @@ var ChatPage = React.createClass({
 
 var RecipientInfoBar = React.createClass({
   propTypes: {
+    chatRoomEventTitle: React.PropTypes.string,
     chatRoomRef: React.PropTypes.object.isRequired,
     closeDropdownProfile: React.PropTypes.bool,
     closeKeyboard: React.PropTypes.func.isRequired,
@@ -861,7 +895,8 @@ var RecipientInfoBar = React.createClass({
             navigator={this.props.navigator}
             style={{marginRight: 20}}/>
         </View>
-        <TimerBar chatRoomRef={this.props.chatRoomRef}
+        <TimerBar chatRoomEventTitle={this.props.chatRoomEventTitle}
+                  chatRoomRef={this.props.chatRoomRef}
                   closeKeyboard={this.props.closeKeyboard}
                   currentUserData={currentUserData}
                   firebaseRef={this.props.firebaseRef}
@@ -943,6 +978,7 @@ var RecipientAvatar = React.createClass({
 
 var TimerBar = React.createClass({
   propTypes: {
+    chatRoomEventTitle: React.PropTypes.string,
     chatRoomRef: React.PropTypes.object.isRequired,
     closeKeyboard: React.PropTypes.func.isRequired,
     currentUserData: React.PropTypes.object.isRequired,
@@ -982,10 +1018,14 @@ var TimerBar = React.createClass({
 
     chatRoomRef.child('timer/expireTime').on('value', snapshot => {
       // @hmm: if no timer value then return from function
-      if (!snapshot.val()) {
+      if(!snapshot.val() && _.isNumber(this.state.timerValInSeconds) && this.state.timerValInSeconds < CHAT_DURATION_IN_MINUTES*60) {
+        this.props.navigator.pop();
+      }
+      else if (!snapshot.val()) {
         this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES*60, timerActive: false});
         return;
       }
+
 
       if (!this.state.timerActive) this.setState({timerActive: true});
 
@@ -1011,8 +1051,8 @@ var TimerBar = React.createClass({
 
       _this.handle = _this.setInterval(() => {
         if (this.state.timerValInSeconds-1 <= 0) {
-          _this.clearInterval(_this.handle);
           _this._destroyChatroom(chatRoomRef);
+          _this.clearInterval(_this.handle);
         }
 
         if(this.state.timerValInSeconds > CHAT_DURATION_IN_MINUTES*60) {
@@ -1049,16 +1089,17 @@ var TimerBar = React.createClass({
 
   componentDidMount() {
     if (this.state.timerValInSeconds <= 0) {
-      // if youve already done this, then just exit
-      this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.currentUserData && this.props.currentUserData.ventureId}`).once('value', snapshot => {
-        if(snapshot.val() === true) {
-          // pop back
-          this.setTimeout(() => this.props.navigator.pop(), 1000);
-        } else {
-          // will only show if timer is 0
-          this.props.handleSetHasTimerExpiredState(true);
-        }
-      });
+      this.props.navigator.pop();
+      // // if youve already done this, then just exit
+      // this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.currentUserData && this.props.currentUserData.ventureId}`).once('value', snapshot => {
+      //   if(snapshot.val() === true) {
+      //     // pop back
+      //     this.setTimeout(() => this.props.navigator.pop(), 1000);
+      //   } else {
+      //     // will only show if timer is 0
+      //     this.props.handleSetHasTimerExpiredState(true);
+      //   }
+      // });
     }
     AppStateIOS.addEventListener('change', this._handleAppStateChange);
   },
@@ -1079,16 +1120,31 @@ var TimerBar = React.createClass({
       targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests');
 
     this.props.closeKeyboard();
+    // the destruction of the match requests is now conditional, and navigator.pop() is not part of this function
+    this.props.navigator.pop();
+
+    if(this.props.chatRoomEventTitle) {
+      currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests'),
+      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests');
+    }
+
+    targetUserMatchRequestsRef.once('value', snapshot => {
+      if(snapshot.val()) { // first user to leave chat
+        // @hmm: destroy match requests
+        targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
+        currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
+        chatRoomRef && chatRoomRef.off(); // @hmm: end subscription
+        chatRoomRef && chatRoomRef.set(null); // @hmm: destroy chatRoom
+      } else { // second user to leave chat
+        chatRoomRef && chatRoomRef.off(); // @hmm: end subscription
+        chatRoomRef && chatRoomRef.set(null); // @hmm: destroy chatRoom
+      }
+    });
 
     // @hmm: decrement chat count by 1
     firebaseRef.child(`users/${currentUserIDHashed}/chatCount`).once('value', snapshot => {
       firebaseRef.child(`users/${currentUserIDHashed}/chatCount`).set(snapshot.val() - 1);
     });
-
-    chatRoomRef.off(); // @hmm: end subscription
-    chatRoomRef.set({null}); // @hmm: destroy chatRoom
-
-    // the destruction of the match requests is now conditional, and navigator.pop() is not part of this function
   },
 
   _handleAppStateChange(currentAppState) {

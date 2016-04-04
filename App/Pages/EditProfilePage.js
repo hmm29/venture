@@ -288,6 +288,7 @@ var EditProfilePage = React.createClass({
           autoCompleteRowHeight={34}
           onBlur={this._onBlurGender}
           onFocus={this._onFocusGender}
+          clearButtonMode='unless-editing'
           clearTextOnFocus={true}
           placeholder='How do you identify?'
           autoCompleteFontSize={15}

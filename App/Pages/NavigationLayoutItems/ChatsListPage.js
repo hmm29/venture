@@ -134,7 +134,7 @@ var User = React.createClass({
               // @hmm: account for case in which user already has received requests before first nav to chats list
               AlertIOS.alert(
                 'Someone Is Interested In Your Activity!',
-                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+                'Tap on their smiley face icon to match with them!'
               );
               this.props.firebaseRef
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
@@ -142,7 +142,7 @@ var User = React.createClass({
             else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
               AlertIOS.alert(
                 'You Matched With Someone!',
-                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+                'You matched with another user! Tap on the message bubble to chat!'
               );
               this.props.firebaseRef
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
@@ -176,7 +176,7 @@ var User = React.createClass({
             if (this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) {
               AlertIOS.alert(
                 'Someone Is Interested In Your Activity!',
-                'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+                'Tap on their smiley face icon to match with them!'
               );
               this.props.firebaseRef
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
@@ -184,7 +184,7 @@ var User = React.createClass({
             else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
               AlertIOS.alert(
                 'You Matched With Someone!',
-                'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+                'You matched with another user! Tap on the message bubble to chat!'
               );
               this.props.firebaseRef
                 .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
@@ -264,7 +264,7 @@ var User = React.createClass({
           if (this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
             AlertIOS.alert(
               'Someone Is Interested In Your Activity!',
-              'When someone\'s bar turns blue on your screen, it means they are interested. Tap on their smiley face icon to match with them!'
+              'Tap on their smiley face icon to match with them!'
             );
             nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
@@ -272,7 +272,7 @@ var User = React.createClass({
           else if (this.state.status === 'matched' && !nextProps.firstSession.hasMatched) {
             AlertIOS.alert(
               'You Matched With Someone!',
-              'Congratulations! You matched with another user. When the bar turns green, tap on the message bubble to talk to your match!'
+              'You matched with another user! Tap on the message bubble to chat!'
             );
             nextProps.firebaseRef
               .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasMatched`).set(true);
@@ -644,10 +644,14 @@ var User = React.createClass({
             targetUserRef = usersListRef.child(targetUserIDHashed),
             chatRoomRef = this.state.chatRoomId && firebaseRef.child(`chat_rooms/${this.state.chatRoomId}`);
 
-          if (currentUserRef && targetUserRef) {
+          if(this.props.data.isEventInvite) {
+            currentUserRef.child(`event_invite_match_requests/${targetUserIDHashed}`).set(null);
+            targetUserRef.child(`event_invite_match_requests/${currentUserIDHashed}`).set(null);
+          } else  {
             currentUserRef.child(`match_requests/${targetUserIDHashed}`).set(null);
             targetUserRef.child(`match_requests/${currentUserIDHashed}`).set(null);
           }
+
           if (chatRoomRef) {
             chatRoomRef.set(null)
           }
@@ -966,9 +970,13 @@ var ChatsListPage = React.createClass({
           }
           else {
             this.setTimeout(() => { // defer to prevent flash on load
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                this.setState({showFunFact: true});
-              }, 0);
+              // prevent flashing fun fact every time another user's object changes
+                this.setState({showFunFact: true, done: true});
+            }, 0);
+
+            if (!this.state.done) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            if(filteredUsersArray.length) this.setState({showFunFact: false});
+            this.setState({showFunFact: true, done: true});
           }
 
         });

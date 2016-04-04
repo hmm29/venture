@@ -46,7 +46,7 @@ var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('./Base/VentureAppPage');
 
 var {height, width} = Dimensions.get('window');
-var CHAT_DURATION_IN_MINUTES = 1/6;
+var CHAT_DURATION_IN_MINUTES = 5;
 var HEADER_CONTAINER_HEIGHT = height / 20;
 var MAX_TEXT_INPUT_VAL_LENGTH = 15;
 var MESSAGE_TEXT_INPUT_HEIGHT = 30;
@@ -152,7 +152,6 @@ var ChatPage = React.createClass({
     this.props.chatRoomRef && this.props.chatRoomRef.on('value', snapshot => {
       if(!snapshot.val()) {
         this.setState({chatExists: false});
-        this.props.navigator.pop();
         return;
       } else {
         var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;

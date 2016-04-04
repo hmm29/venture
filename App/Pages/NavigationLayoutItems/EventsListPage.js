@@ -170,7 +170,7 @@ var User = React.createClass({
             }
           }, 0);
         });
-    }, 90);
+    }, 200);
   },
 
   componentDidMount() {

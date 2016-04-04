@@ -161,13 +161,13 @@ var HomePage = React.createClass({
           }
         });
 
+        chatCountRef.on('value', snapshot => {
+          _this.setState({chatCount: snapshot.val(), chatCountRef});
+        });
+
         // @hmm: fetch first session object to update as tutorial gets completed
         firstSessionRef.on('value', snapshot => {
           _this.setState({firstSession: snapshot.val(), firstSessionRef});
-        });
-
-        chatCountRef.on('value', snapshot => {
-          _this.setState({chatCount: snapshot.val(), chatCountRef});
         });
 
         trendingItemsRef.once('value', snapshot => {

@@ -65,13 +65,13 @@ class ChatsListPageIcon extends Component {
     let badge = (
       <View ref="badge" style={{flex: 1, top: 8, left: 6}}>
         <Text
-          style={styles.badge}>{this.props.chatCount || this.state.chatCount}</Text>
+          style={styles.badge}>{this.props.chatCount}</Text>
       </View>
     );
 
     return (
       <TouchableOpacity activeOpacity={0.3} onPress={this.props.onPress}>
-        {(this.props.chatCount > 0 || this.state.chatCount > 0)&& this.state.animationDidFinish ? badge : undefined}
+        {(this.props.chatCount > 0) && this.state.animationDidFinish ? badge : undefined}
         <Animatable.View ref="chatsListPageIcon">
           <TouchableOpacity
             onPress={this.props.onPress}

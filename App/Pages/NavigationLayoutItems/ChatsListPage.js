@@ -970,13 +970,15 @@ var ChatsListPage = React.createClass({
           }
           else {
             this.setTimeout(() => { // defer to prevent flash on load
-              // prevent flashing fun fact every time another user's object changes
+              // extra sure
                 this.setState({showFunFact: true, done: true});
-            }, 0);
+            }, 10);
 
-            if (!this.state.done) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            if(filteredUsersArray.length) this.setState({showFunFact: false});
-            this.setState({showFunFact: true, done: true});
+            this.setTimeout(() => {
+              if (!this.state.done) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              if (filteredUsersArray.length) this.setState({showFunFact: false});
+              this.setState({showFunFact: true, done: true});
+            }, 0); // prevent flash
           }
 
         });

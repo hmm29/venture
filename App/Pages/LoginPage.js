@@ -305,15 +305,17 @@ var LoginPage = React.createClass({
     GoogleSignin.signIn()
       .then((user) => {
         if (user && _.endsWith(user.email, '@yale.edu')) {
-          this.setState({showEmailAuthScreen: false});
-          AsyncStorage.setItem('@AsyncStorage:Venture:isValidUser', 'true')
-            .then(() => {
-              if (this.state.showEmailAuthScreen) this.setState({showEmailAuthScreen: false});
-              AlertIOS.alert('Verification Successful', 'Welcome to Venture!\n\nSwipe to continue!');
-              console.log("Successfully verified as a valid user.")
-            })
-            .catch((error) => console.log(error.message))
-            .done();
+          this.setTimeout(() => {
+            this.setState({showEmailAuthScreen: false});
+            AsyncStorage.setItem('@AsyncStorage:Venture:isValidUser', 'true')
+              .then(() => {
+                if (this.state.showEmailAuthScreen) this.setState({showEmailAuthScreen: false});
+                AlertIOS.alert('Verification Successful', 'Welcome to Venture!\n\nSwipe to continue!');
+                console.log("Successfully verified as a valid user.")
+              })
+              .catch((error) => console.log(error.message))
+              .done();
+          }, 800);
         } else {
           this.setState({notificationModalText: IS_NOT_VALID_USER_TEXT});
         }

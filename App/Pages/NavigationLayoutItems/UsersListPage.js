@@ -212,15 +212,7 @@ var User = React.createClass({
 
         // @hmm: onboarding tutorial logic
         if (nextProps.firstSession && (status !== this.state.status)) { // @hmm: only fire if status has changed and previous status was not null
-          if (this.state.status === 'sent' && !nextProps.firstSession.hasSentFirstRequest) {
-            AlertIOS.alert(
-              'Activity Request Sent!',
-              'You have just shown interest in another user\'s activity! If they accept, you will match with them!'
-            );
-            nextProps.firebaseRef
-              .child(`users/${nextProps.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
-          }
-          else if (this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
+          if (this.state.status === 'received' && !nextProps.firstSession.hasReceivedFirstRequest) {
             AlertIOS.alert(
               'Someone Is Interested In Your Activity!',
               'Tap on their smiley face icon to match with them!'
@@ -326,6 +318,17 @@ var User = React.createClass({
           });
         });
     }, 0);
+
+    if (this.props.firstSession) { // @hmm: only fire if status has changed and previous status was not null
+      if (!this.props.firstSession.hasSentFirstRequest) {
+        AlertIOS.alert(
+          'Activity Request Sent!',
+          'You have just shown interest in another user\'s activity! If they accept, you will match with them!'
+        );
+        this.props.firebaseRef
+          .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
+      }
+    }
 
     // @hmm: use hashed targetUserID as key for data for user in list
     let targetUserIDHashed = this.props.data.ventureId,

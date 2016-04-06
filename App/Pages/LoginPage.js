@@ -237,7 +237,7 @@ var LoginPage = React.createClass({
             created: new Date(),
             updated: new Date()
           },
-          picture: `https://res.cloudinary.com/dwnyawluh/image/facebook/q_70/${this.state.user.userId}.jpg`,
+          picture: `https://res.cloudinary.com/dwnyawluh/image/facebook/q_65/${this.state.user.userId}.jpg`,
           gender: responseData.gender,
           bio: 'New to Venture!',
           email: responseData.email,

@@ -239,7 +239,7 @@ var User = React.createClass({
     return -1;
   },
 
-  handleMatchInteraction() {
+  handleDefaultInteraction() {
     let _this = this;
 
     _this.setTimeout(() => {
@@ -267,168 +267,229 @@ var User = React.createClass({
       targetUserEventInviteMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
       currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests');
 
-    if (this.state.status === 'sent') {
+    targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
+      eventTitle: this.props.eventTitle,
+      status: 'received',
+      _id: currentUserIDHashed
+    }, 200);
+    currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
+      eventTitle: this.props.eventTitle,
+      status: 'sent',
+      _id: targetUserIDHashed
+    }, 300);
 
-      // @hmm: delete the requests
-      targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).set(null);
-      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).set(null);
-    }
+    this.setTimeout(() => {
+      usersListRef.child(currentUserIDHashed).once('value', snapshot => {
+        let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
+          'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
 
-    else if (this.state.status === 'received') {
-
-      // @hmm: accept the request
-      // chatroom reference uses id of the user who accepts the received matchInteraction
-      targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({
-        _id: currentUserIDHashed,
-        status: 'matched',
-        role: 'recipient'
-      }, () => {});
-
-      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({
-        _id: targetUserIDHashed,
-        status: 'matched',
-        role: 'sender'
-      }, () => {});
-
-      fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'X-Parse-Application-Id': PARSE_APP_ID,
-          'Content-Type': 'application/json',
-        },
-        body: `{"channels": ["${targetUserIDHashed}"], "alert": "You have a new match!"}`
-      })
-        .then(response => {
-          console.log(JSON.stringify(response))
-        })
-        .catch(error => console.log(error))
-    }
-
-    else if (this.state.status === 'matched') {
-      let chatRoomActivityPreferenceTitle,
-        distance = this.state.distance + 'mi',
-        _id;
-
-      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
-
-        if (snapshot.val() && snapshot.val().role === 'sender') {
-          _id = 'EVENT_INVITE_' + targetUserIDHashed + '_TO_' + currentUserIDHashed;
-          chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
-        } else {
-          _id = 'EVENT_INVITE_' + currentUserIDHashed + '_TO_' + targetUserIDHashed;
-          chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
-        }
-
-        // @hmm: put chat ids in match request object so overlays know which chat to destroy
-        currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
-        targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
-
-        firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
-
-          let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
-
-          if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
-            // TODO: in the future should be able to account for timezone differences?
-            // probably not because if youre going to match with someone youll be in same timezone
-
-            let currentTime = new Date().getTime();
-
-            chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
-            chatRoomRef.child(`seenMessages_${currentUserIDHashed}`).set(0); // @hmm: set current user seen messages count
-            chatRoomRef.child(`seenMessages_${targetUserIDHashed}`).set(0); // @hmm: set target user seen messages count
-            chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
-            chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
-              .set(this.props.eventTitle);
-            chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed)
-              .set(this.props.eventTitle);
-          }
-
-          _this.props.navigator.push({
-            title: 'Chat',
-            component: ChatPage,
-            passProps: {
-              _id,
-              recipient: _this.props.data,
-              distance,
-              chatRoomEventTitle: this.props.eventTitle,
-              chatRoomRef,
-              currentUserData: _this.props.currentUserData,
-              currentUserRef,
-              firebaseRef,
-              targetUserRef
-            }
-          });
-
-          if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
-            AlertIOS.alert(
-              'Countdown Timer!',
-              'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
-            );
-            firstSessionRef.child('hasStartedFirstChat').set(true);
-          }
-
+        targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({
+          account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
         });
       });
-    }
 
-    else {
-      targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).setWithPriority({
-        eventTitle: this.props.eventTitle,
-        status: 'received',
-        _id: currentUserIDHashed
-      }, 200);
-      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).setWithPriority({
-        eventTitle: this.props.eventTitle,
-        status: 'sent',
-        _id: targetUserIDHashed
-      }, 300);
+      usersListRef.child(targetUserIDHashed).once('value', snapshot => {
+        let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
+          'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
 
-      this.setTimeout(() => {
-        usersListRef.child(currentUserIDHashed).once('value', snapshot => {
-          let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
-            'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
-
-          targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({
-            account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
-          });
+        currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({
+          account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
         });
 
-        usersListRef.child(targetUserIDHashed).once('value', snapshot => {
-          let accountObj = _.pick(snapshot.val(), 'ventureId', 'name', 'firstName',
-            'lastName', 'activityPreference', 'age', 'picture', 'bio', 'location', 'gender');
+      });
+    }, 0);
 
-          currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({
-            account: _.set(_.set(_.set(accountObj, 'isEventInvite', true), 'activityPreference.start.time', this.props.eventLogistics), 'activityPreference.title', this.props.eventTitle)
-          });
-
-        });
-      }, 0);
-
-      targetUserEventInviteMatchRequestsRef && targetUserEventInviteMatchRequestsRef.once('value', snapshot => {
-        if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 2 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 2
-          // @hmm: prevents spamming push notification invites on repeated tapping of user bar, but will reset with each dismount then mount
-          // only send if current time is not in push notification refractory period
-          const currentTime = new Date().getTime();
-          if(currentTime > (new Date(this.state.lastPushNotificationSentTime + (PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES * 60 * 1000))).getTime()) {
-            _this.setState({lastPushNotificationSentTime: (new Date()).getTime()});
-            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'X-Parse-Application-Id': PARSE_APP_ID,
-                'Content-Type': 'application/json',
-              },
-              body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in going to an event with you!"}`
-            }).then(response => {
-                console.log(JSON.stringify(response))
-              })
-              .catch(error => console.log(error))
-          }
-
+    targetUserEventInviteMatchRequestsRef && targetUserEventInviteMatchRequestsRef.once('value', snapshot => {
+      if(snapshot.val() && (_.size(snapshot.val()) === 1 || _.size(snapshot.val()) % 2 === 0)) { //send push notification if object just added was new/first or if size of match obj divisible by 2
+        // @hmm: prevents spamming push notification invites on repeated tapping of user bar, but will reset with each dismount then mount
+        // only send if current time is not in push notification refractory period
+        const currentTime = new Date().getTime();
+        if(currentTime > (new Date(this.state.lastPushNotificationSentTime + (PUSH_NOTIFICATION_REFRACTORY_DURATION_IN_MINUTES * 60 * 1000))).getTime()) {
+          _this.setState({lastPushNotificationSentTime: (new Date()).getTime()});
+          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'X-Parse-Application-Id': PARSE_APP_ID,
+              'Content-Type': 'application/json',
+            },
+            body: `{"channels": ["${targetUserIDHashed}"], "alert": "Someone is interested in going to an event with you!"}`
+          }).then(response => {
+            console.log(JSON.stringify(response))
+          })
+            .catch(error => console.log(error))
         }
+
+      }
+    })
+  },
+
+  handleMatchInteraction() {
+    // @hmm: use hashed targetUserID as key for data for user in list
+    let targetUserIDHashed = this.props.data.ventureId,
+      currentUserIDHashed = this.props.currentUserIDHashed,
+      firebaseRef = this.props.firebaseRef,
+      usersListRef = firebaseRef.child('users'),
+      currentUserRef = usersListRef.child(currentUserIDHashed),
+      targetUserRef = usersListRef.child(targetUserIDHashed),
+      firstSessionRef = currentUserRef.child('firstSession'),
+      targetUserEventInviteMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
+      currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests');
+
+    let chatRoomActivityPreferenceTitle,
+      distance = this.state.distance + 'mi',
+      _id;
+
+    currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).once('value', snapshot => {
+
+      if (snapshot.val() && snapshot.val().role === 'sender') {
+        _id = 'EVENT_INVITE_' + targetUserIDHashed + '_TO_' + currentUserIDHashed;
+        chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
+      } else {
+        _id = 'EVENT_INVITE_' + currentUserIDHashed + '_TO_' + targetUserIDHashed;
+        chatRoomActivityPreferenceTitle = this.props.currentUserData.activityPreference.title
+      }
+
+      // @hmm: put chat ids in match request object so overlays know which chat to destroy
+      currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({chatRoomId: _id});
+      targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({chatRoomId: _id});
+
+      firebaseRef.child(`chat_rooms/${_id}`).once('value', snapshot => {
+
+        let chatRoomRef = firebaseRef.child(`chat_rooms/${_id}`);
+
+        if (!snapshot.val() || !snapshot.val()._id) { // check if chat object has _id
+          // TODO: in the future should be able to account for timezone differences?
+          // probably not because if youre going to match with someone youll be in same timezone
+
+          let currentTime = new Date().getTime();
+
+          chatRoomRef.child('_id').set(_id); // @hmm: set unique chat Id
+          chatRoomRef.child(`seenMessages_${currentUserIDHashed}`).set(0); // @hmm: set current user seen messages count
+          chatRoomRef.child(`seenMessages_${targetUserIDHashed}`).set(0); // @hmm: set target user seen messages count
+          chatRoomRef.child('createdAt').set(currentTime); // @hmm: set unique chat Id
+          chatRoomRef.child('user_activity_preference_titles').child(currentUserIDHashed)
+            .set(this.props.eventTitle);
+          chatRoomRef.child('user_activity_preference_titles').child(targetUserIDHashed)
+            .set(this.props.eventTitle);
+        }
+
+        _this.props.navigator.push({
+          title: 'Chat',
+          component: ChatPage,
+          passProps: {
+            _id,
+            recipient: _this.props.data,
+            distance,
+            chatRoomEventTitle: this.props.eventTitle,
+            chatRoomRef,
+            currentUserData: _this.props.currentUserData,
+            currentUserRef,
+            firebaseRef,
+            targetUserRef
+          }
+        });
+
+        if(this.props.firstSession && !this.props.firstSession.hasStartedFirstChat) {
+          AlertIOS.alert(
+            'Countdown Timer!',
+            'Welcome to your first chat! After 5 minutes, this conversation will expire. Let your match know what you want to do. No time to waste!'
+          );
+          firstSessionRef.child('hasStartedFirstChat').set(true);
+        }
+
+      });
+    });
+  },
+
+  handleReceivedInteraction() {
+    let _this = this;
+
+    _this.setTimeout(() => {
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId
+      && this.props.currentUserIDHashed && this.props.firebaseRef
+        .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).on('value', snapshot => {
+          _this.setState({
+            chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+            status: snapshot.val() && snapshot.val().status,
+            expireTime: snapshot.val() && snapshot.val().expireTime
+          });
+        });
+    }, 0);
+
+    // @hmm: use hashed targetUserID as key for data for user in list
+    let targetUserIDHashed = this.props.data.ventureId,
+      currentUserIDHashed = this.props.currentUserIDHashed,
+      firebaseRef = this.props.firebaseRef,
+      usersListRef = firebaseRef.child('users'),
+      currentUserRef = usersListRef.child(currentUserIDHashed),
+      targetUserRef = usersListRef.child(targetUserIDHashed),
+      firstSessionRef = currentUserRef.child('firstSession'),
+      targetUserEventInviteMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
+      currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests');
+
+    // @hmm: accept the request
+    // chatroom reference uses id of the user who accepts the received matchInteraction
+    targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).update({
+      _id: currentUserIDHashed,
+      status: 'matched',
+      role: 'recipient'
+    }, () => {});
+
+    currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).update({
+      _id: targetUserIDHashed,
+      status: 'matched',
+      role: 'sender'
+    }, () => {});
+
+    fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'X-Parse-Application-Id': PARSE_APP_ID,
+        'Content-Type': 'application/json',
+      },
+      body: `{"channels": ["${targetUserIDHashed}"], "alert": "You have a new match!"}`
+    })
+      .then(response => {
+        console.log(JSON.stringify(response))
       })
-    }
+      .catch(error => console.log(error))
+  },
+
+  handleSentInteraction() {
+    let _this = this;
+
+    _this.setTimeout(() => {
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId
+      && this.props.currentUserIDHashed && this.props.firebaseRef
+        .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).on('value', snapshot => {
+          _this.setState({
+            chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+            status: snapshot.val() && snapshot.val().status,
+            expireTime: snapshot.val() && snapshot.val().expireTime
+          });
+        });
+    }, 0);
+
+    // @hmm: use hashed targetUserID as key for data for user in list
+    let targetUserIDHashed = this.props.data.ventureId,
+      currentUserIDHashed = this.props.currentUserIDHashed,
+      firebaseRef = this.props.firebaseRef,
+      usersListRef = firebaseRef.child('users'),
+      currentUserRef = usersListRef.child(currentUserIDHashed),
+      targetUserRef = usersListRef.child(targetUserIDHashed),
+      firstSessionRef = currentUserRef.child('firstSession'),
+      targetUserEventInviteMatchRequestsRef = targetUserRef.child('event_invite_match_requests'),
+      currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests');
+
+    // @hmm: delete the requests
+    targetUserEventInviteMatchRequestsRef.child(currentUserIDHashed).set(null);
+    currentUserEventInviteMatchRequestsRef.child(targetUserIDHashed).set(null);
   },
 
   _onPressItem() {
@@ -441,12 +502,12 @@ var User = React.createClass({
       case 'sent':
         return <SentRequestIcon
           color='rgba(0,0,0,0.2)'
-          onPress={this.handleMatchInteraction}
+          onPress={this.handleSentInteraction}
           style={{left: 10, bottom: 6}} />;
       case 'received':
         return <ReceivedRequestIcon
           color='rgba(0,0,0,0.2)'
-          onPress={this.handleMatchInteraction}
+          onPress={this.handleReceivedInteraction}
           style={{left: 10, bottom: 6}} />;
       case 'matched':
         return <MatchSuccessIcon
@@ -461,7 +522,7 @@ var User = React.createClass({
       default:
         return <DefaultMatchStatusIcon
           color='rgba(0,0,0,0.2)'
-          onPress={this.handleMatchInteraction}
+          onPress={this.handleDefaultInteraction}
           style={{left: 10, bottom: 6}} />
     }
   },

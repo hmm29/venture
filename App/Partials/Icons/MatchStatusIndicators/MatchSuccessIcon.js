@@ -41,7 +41,7 @@ class MatchSuccessIcon extends Component {
   constructor(props:Props) {
     super(props);
     this.state = {
-      chatRoomRef: null
+      chatRoomRef: null,
     };
   };
 
@@ -55,7 +55,7 @@ class MatchSuccessIcon extends Component {
   };
 
   componentWillUnmount() {
-    this.setState({badgeValue: 0}); // @hmm: is this necessary??
+    this.setState({badgeValue: 0});
     // @hmm: NOTE: pay attention to when you turn off refs.
     // like, you cant call chatRoomMessagesRef.off() or chatRoomRef.off() because will turn off other functionality
     if(this.state.chatRoomRef && this.state.chatRoomRef.off) this.state.chatRoomRef.off();
@@ -138,6 +138,18 @@ class MatchSuccessIcon extends Component {
     }
   };
 
+  _handleOnPress() {
+    this.setState({badgeValue: 0});
+    if(this.state.messageListCount && this.state.badgeValue && (this.state.messageListCount === this.state.badgeValue)) {
+    let currentTime = new Date().getTime(),
+    expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+      this.props.firebaseRef && this.props.chatRoomId && this.props.firebaseRef.child(`chat_rooms/${this.props.chatRoomId}/timer`).set({expireTime}); // @hmm: set chatroom expire time
+    }
+    this.setState({badgeValue: 0});
+    this.props.onPress && this.props.onPress();
+    this.setState({badgeValue: 0});
+  };
+
   render() {
     let badge = (
       <View style={{flex: 1, top: 8, left: 6}}>
@@ -149,15 +161,7 @@ class MatchSuccessIcon extends Component {
     return (
       <TouchableOpacity
         activeOpacity={0.3}
-        onPress={() => {
-         if(this.state.messageListCount && this.state.badgeValue && (this.state.messageListCount === this.state.badgeValue)) {
-            let currentTime = new Date().getTime(),
-              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
-
-            this.props.firebaseRef && this.props.chatRoomId && this.props.firebaseRef.child(`chat_rooms/${this.props.chatRoomId}/timer`).set({expireTime}); // @hmm: set chatroom expire time
-          }
-          this.props.onPress();
-        }}
+        onPress={() => this._handleOnPress()}
         style={[this.props.style,{justifyContent: 'center', bottom: 10, width: (this.props.size || SIZE) * 1.58,
                 height: (this.props.size || SIZE) * 1.58}]}>
         {this.state.badgeValue > 0 ? badge : undefined}

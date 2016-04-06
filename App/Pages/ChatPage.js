@@ -154,9 +154,7 @@ var ChatPage = React.createClass({
         this.setState({chatExists: false});
         return;
       } else {
-        var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
-        this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
-          && this.state.messageList.length || 0);
+        this.setState({chatRoomObjectCopy: snapshot.val()})
       }
 
       if(snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime) {
@@ -165,6 +163,9 @@ var ChatPage = React.createClass({
         this.setState({chatRoomObjectCopy: snapshot.val()})
       }
     });
+
+    var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
+    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList && this.state.messageList.length || 0);
   },
 
   componentWillUnmount() {
@@ -266,6 +267,10 @@ var ChatPage = React.createClass({
 
   _sendMessage() {
     if (this.state.hasTimerExpired) return;
+    if(!this.state.message.length) {
+      this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+      return;
+    }
 
     let messageObj = {
       senderIDHashed: this.props.currentUserData.ventureId,
@@ -284,37 +289,37 @@ var ChatPage = React.createClass({
 
       this.scrollToBottom();
 
-      //@hmm: if both users in chatroom when first message is sent
-      if(this.state.messageList && this.state.messageList.length === 1) {
-        this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
-          if (snapshot.val() > 0) {
-            let currentTime = new Date().getTime(),
-              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+        //@hmm: if both users in chatroom when first message is sent
+        if (this.state.messageList && this.state.messageList.length === 1) {
+          this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+            if (snapshot.val() > 0) {
+              let currentTime = new Date().getTime(),
+                expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
 
-            this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
-          }
-        })
-      }
-    });
-
-    this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
-      if(this.state.messageList && (this.state.messageList.length-snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
-
-        fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'X-Parse-Application-Id': PARSE_APP_ID,
-            'Content-Type': 'application/json',
-          },
-          body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
-        })
-          .then(response => {
-            console.log(JSON.stringify(response))
+              this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
+            }
           })
-          .catch(error => console.log(error))
-      }
-    })
+        }
+      });
+
+      this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
+        if (this.state.messageList && (this.state.messageList.length - snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
+
+          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'X-Parse-Application-Id': PARSE_APP_ID,
+              'Content-Type': 'application/json',
+            },
+            body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
+          })
+            .then(response => {
+              console.log(JSON.stringify(response))
+            })
+            .catch(error => console.log(error))
+        }
+      })
   },
 
   render() {
@@ -338,10 +343,22 @@ var ChatPage = React.createClass({
         .once('value', snapshot => {
                     if(snapshot.val())
                     this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(false);
+
+                      if(_.size(this.state.chatRoomObjectCopy) <= 3) { //@hmm: note that chat object still has isTyping and messages props even if other user destroyed chat, so not completely gone yet :(
+                        AlertIOS.alert(
+                          'Chat Ending...',
+                          'This chat has expired!',
+                          [
+                            {text: 'OK', onPress: () => {
+                              this.props.navigator.pop();
+                              this.props.chatRoomRef.set(null);
+                            }}
+                          ]
+                        );
+                      }
                 })}
         onFocus={() => {
-                    this.props.chatRoomRef && this.props.chatRoomRef.once('value', snapshot => {
-                      if(!snapshot.val()) {
+                      if(_.size(this.state.chatRoomObjectCopy) <= 3) {
                         AlertIOS.alert(
                           'Chat Ending...',
                           'This chat has expired!',
@@ -350,7 +367,6 @@ var ChatPage = React.createClass({
                           ]
                         );
                       }
-                    });
 
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
                     this.setState({hasKeyboardSpace: true, closeDropdownProfile: true});
@@ -427,26 +443,7 @@ var ChatPage = React.createClass({
             <View
               style={[styles.textBoxContainer, {marginBottom: this.state.hasKeyboardSpace ? height/3.1 : 0}]}>
               {messageTextInput}
-              <TouchableOpacity onPress={() => {
-                        if(this.state.message.length) {
-                          this.props.chatRoomRef && this.props.chatRoomRef.once('value', snapshot => {
-                            if(_.size(snapshot.val()) <= 3) { //@hmm: note that chat object still has isTyping and messages props even if other user destroyed chat, so not completely gone yet :(
-                              AlertIOS.alert(
-                                'Chat Ending...',
-                                'This chat has expired!',
-                                [
-                                  {text: 'OK', onPress: () => {
-                                  this.props.navigator.pop();
-                                  this.props.chatRoomRef.set(null);
-                                  }}
-                                ]
-                              );
-                            }
-                          });
-                          this._sendMessage();
-                        }
-                        else this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
-                    }}>
+              <TouchableOpacity onPress={() => this._sendMessage()}>
                 <Text
                   style={{color: 'white', fontFamily: 'AvenirNextCondensed-Regular', marginHorizontal: 20,
                   backgroundColor: 'rgba(255,255,255,0.3)', paddingHorizontal: 10, paddingVertical: 4,

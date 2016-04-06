@@ -179,7 +179,7 @@ var User = React.createClass({
   },
 
   componentDidMount() {
-    if (!this.props.isCurrentUser) this.refs.user.fadeIn(300);
+    //  if (!this.props.isCurrentUser) this.refs.user.fadeIn(300);
     //  this.refs.user.fadeIn(700 + this.props.rowID * 300); // @hmm: fade in consecutively
   },
 

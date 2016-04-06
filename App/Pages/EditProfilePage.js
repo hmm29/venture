@@ -184,7 +184,7 @@ var EditProfilePage = React.createClass({
       maxHeight: height, // photos only
       aspectX: 2, // aspectX:aspectY, the cropping image's ratio of width to height
       aspectY: 1, // aspectX:aspectY, the cropping image's ratio of width to height
-      quality: 0.8, // photos only
+      quality: 0.6, // photos only
       angle: 0, // photos only
       allowsEditing: true, // Built in functionality to resize/reposition the image
       noData: false, // photos only - disables the base64 `data` field from being generated (greatly improves performance on large photos)

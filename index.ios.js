@@ -32,10 +32,10 @@ class VentureApp extends Component {
   componentWillMount() {
     Parse.initialize(PARSE_APP_ID, PARSE_JAVASCRIPT_KEY);
     Parse.serverURL = 'http://45.55.201.172:9999/ventureparseserver';
+    Orientation.lockToPortrait();
   };
 
   componentDidMount() {
-    Orientation.lockToPortrait();
     StatusBarIOS.setStyle('light-content', true);
   };
 

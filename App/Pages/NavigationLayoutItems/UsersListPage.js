@@ -107,80 +107,79 @@ var User = React.createClass({
   },
 
   componentWillMount() {
-    let distance = this.props.currentUserLocationCoords && this.props.data && this.props.data.location
-        && this.props.data.location.coordinates && this.calculateDistance(this.props.currentUserLocationCoords,
-          [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
-      _this = this;
+    //let distance = this.props.currentUserLocationCoords && this.props.data && this.props.data.location
+    //    && this.props.data.location.coordinates && this.calculateDistance(this.props.currentUserLocationCoords,
+    //      [this.props.data.location.coordinates.latitude, this.props.data.location.coordinates.longitude]),
+    //  _this = this;
+    //
+    //// @hmm: must have this to clean up old Firebase match request subscriptions
+    //this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+    //&& this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
+    //  .child(this.props.data.ventureId)
+    //&& (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
+    //  .child(this.props.data.ventureId).off();
+    //
+    //this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+    //&& this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
+    //  .child(this.props.data.ventureId)
+    //&& (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
+    //  .child(this.props.data.ventureId).once('value', snapshot => {
+    //    _this.setState({
+    //      chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
+    //      distance,
+    //      status: snapshot.val() && snapshot.val().status,
+    //      expireTime: snapshot.val() && snapshot.val().expireTime
+    //    });
+    //
+    //    // @hmm: onboarding tutorial logic
+    //    if (this.props.firstSession) {
+    //      if (this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
+    //        // @hmm: account for case in which user already has received requests before first nav to users list
+    //        AlertIOS.alert(
+    //          'Someone Is Interested In Your Activity!',
+    //          'Tap on their smiley face icon to match with them!'
+    //        );
+    //        this.props.firebaseRef
+    //          .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
+    //      }
+    //      else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
+    //        AlertIOS.alert(
+    //          'You Matched With Someone!',
+    //          'You matched with another user! Tap on the message bubble to chat!'
+    //        );
+    //        this.props.firebaseRef
+    //          .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
+    //      }
+    //      else if (this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
+    //        AlertIOS.alert(
+    //          'Activity Request Sent!',
+    //          'You have just shown interest in another user\'s activity! If they accept, you will match with them!'
+    //        );
+    //        this.props.firebaseRef
+    //          .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
+    //      }
+    //    }
+    //  });
+  },
 
-    // @hmm: must have this to clean up old Firebase match request subscriptions
-    this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
-    && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
-      .child(this.props.data.ventureId)
-    && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
-      .child(this.props.data.ventureId).off();
-
-    this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
-    && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
-      .child(this.props.data.ventureId)
-    && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
-      .child(this.props.data.ventureId).once('value', snapshot => {
-        _this.setState({
-          chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
-          distance,
-          status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
-        });
-
-        // @hmm: onboarding tutorial logic
-        if (this.props.firstSession) {
-          if (this.state.status === 'received' && !this.props.firstSession.hasReceivedFirstRequest) { // @hmm: most probable for componentDidMount
-            // @hmm: account for case in which user already has received requests before first nav to users list
-            AlertIOS.alert(
-              'Someone Is Interested In Your Activity!',
-              'Tap on their smiley face icon to match with them!'
-            );
-            this.props.firebaseRef
-              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasReceivedFirstRequest`).set(true);
-          }
-          else if (this.state.status === 'matched' && !this.props.firstSession.hasMatched) {
-            AlertIOS.alert(
-              'You Matched With Someone!',
-              'You matched with another user! Tap on the message bubble to chat!'
-            );
-            this.props.firebaseRef
-              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasMatched`).set(true);
-          }
-          else if (this.state.status === 'sent' && !this.props.firstSession.hasSentFirstRequest) {
-            AlertIOS.alert(
-              'Activity Request Sent!',
-              'You have just shown interest in another user\'s activity! If they accept, you will match with them!'
-            );
-            this.props.firebaseRef
-              .child(`users/${this.props.currentUserIDHashed}/firstSession/hasSentFirstRequest`).set(true);
-          }
-        }
-      });
+  componentDidMount() {
+    // if (!this.props.isCurrentUser) this.refs.user.fadeIn(30);
+    //  this.refs.user.fadeIn(700 + this.props.rowID * 300); // @hmm: fade in consecutively
 
     this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
     && this.props.firebaseRef.child(`users/${this.props.data.ventureId}/match_requests`)
       .child(this.props.currentUserIDHashed)
     && (this.props.firebaseRef).child(`users/${this.props.data.ventureId}/match_requests`)
       .child(this.props.currentUserIDHashed).on('value', snapshot => {
-          if(!snapshot.val()) this.setState({status: ''});
-          else if(snapshot.val() && snapshot.val().status === 'sent') {
-            this.setState({status: 'received'});
-          } else if(snapshot.val() && snapshot.val().status === 'received') {
-            this.setState({status: 'sent'});
-          } else {
-            this.setState({status: 'matched'});
-          }
+        if(!snapshot.val()) this.setState({status: ''});
+        else if(snapshot.val() && snapshot.val().status === 'sent') {
+          this.setState({status: 'received'});
+        } else if(snapshot.val() && snapshot.val().status === 'received') {
+          this.setState({status: 'sent'});
+        } else {
+          this.setState({status: 'matched'});
+        }
       });
-
-  },
-
-  componentDidMount() {
-    //  if (!this.props.isCurrentUser) this.refs.user.fadeIn(300);
-    //  this.refs.user.fadeIn(700 + this.props.rowID * 300); // @hmm: fade in consecutively
   },
 
   componentWillReceiveProps(nextProps) {
@@ -206,7 +205,9 @@ var User = React.createClass({
           chatRoomId: snapshot.val() && snapshot.val().chatRoomId,
           distance,
           status: snapshot.val() && snapshot.val().status,
-          expireTime: snapshot.val() && snapshot.val().expireTime
+          expireTime: snapshot.val() && snapshot.val().expireTime,
+          ref: (nextProps.firebaseRef).child(`users/${nextProps.currentUserIDHashed}/match_requests`)
+            .child(nextProps.data.ventureId)
         });
 
         // @hmm: onboarding tutorial logic
@@ -251,6 +252,8 @@ var User = React.createClass({
       .child(this.props.currentUserIDHashed)
     && (this.props.firebaseRef).child(`users/${this.props.data.ventureId}/match_requests`)
       .child(this.props.currentUserIDHashed).off();
+
+    this.state.ref && this.state.ref.off();
   },
 
   calculateDistance(location1:Array, location2:Array) {
@@ -660,7 +663,7 @@ var User = React.createClass({
 
     return (
       <Swipeout autoClose={true} right={!this.props.isCurrentUser && !_.isEmpty(swipeoutBtns) ? swipeoutBtns : null}>
-        <Animatable.View ref="user">
+        <View ref="user">
           <TouchableHighlight
             underlayColor={WHITE_HEX_CODE}
             activeOpacity={0.3}
@@ -713,7 +716,7 @@ var User = React.createClass({
               {this.state.dir === 'column' ? profileModal : <View />}
             </View>
           </TouchableHighlight>
-        </Animatable.View>
+        </View>
       </Swipeout>
     );
   }

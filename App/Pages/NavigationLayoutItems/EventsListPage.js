@@ -106,7 +106,7 @@ var User = React.createClass({
     }
   },
 
-  componentWillMount() {
+  componentDidMount() {
     // TODO: fix this issue
     // @hmm: note, there is currently a bug that doesnt reactively update color status when one user unsends a request
     // its helpful for now bc the recipient user will still have the blue bar and can create a match, which hides the unmatch and ends up in a match :)
@@ -175,9 +175,9 @@ var User = React.createClass({
         });
   },
 
-  componentDidMount() {
-    //this.refs.attendee.fadeIn(600);
-  },
+  //componentDidMount() {
+  //  //this.refs.attendee.fadeIn(600);
+  //},
 
   componentWillUnmount() {
     this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
@@ -243,6 +243,13 @@ var User = React.createClass({
     let _this = this;
 
     _this.setTimeout(() => {
+      // clear old data
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).off();
+
       this.props.firebaseRef && this.props.data && this.props.data.ventureId
       && this.props.currentUserIDHashed && this.props.firebaseRef
         .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
@@ -406,6 +413,13 @@ var User = React.createClass({
     let _this = this;
 
     _this.setTimeout(() => {
+      // clear old data
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).off();
+
       this.props.firebaseRef && this.props.data && this.props.data.ventureId
       && this.props.currentUserIDHashed && this.props.firebaseRef
         .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)
@@ -463,6 +477,13 @@ var User = React.createClass({
     let _this = this;
 
     _this.setTimeout(() => {
+      // clear old data
+      this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId)
+      && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`)
+        .child(this.props.data.ventureId).off();
+
       this.props.firebaseRef && this.props.data && this.props.data.ventureId
       && this.props.currentUserIDHashed && this.props.firebaseRef
         .child(`users/${this.props.currentUserIDHashed}/event_invite_match_requests`).child(this.props.data.ventureId)

@@ -143,13 +143,13 @@ class TabBarLayout extends Component {
   };
 
   componentWillUnmount() {
-    // @hmm: this.state.firstSessionRef && this.state.firstSessionRef.off(); // @hmm: don't dismount this so that first Session obj persists and isnt overriden by home page firstSession prop
-    this.state.currentUserMatchRequestsRef && this.state.currentUserMatchRequestsRef.off();
-    this.state.currentUserEventInviteMatchRequestsRef && this.state.currentUserEventInviteMatchRequestsRef.off();
-
     AsyncStorage.setItem('@AsyncStorage:Venture:currentUserFriends', 'null')
       .catch(error => console.log(error.message))
       .done();
+
+    // @hmm: this.state.firstSessionRef && this.state.firstSessionRef.off(); // @hmm: don't dismount this so that first Session obj persists and isnt overriden by home page firstSession prop
+    this.state.currentUserMatchRequestsRef && this.state.currentUserMatchRequestsRef.off();
+    this.state.currentUserEventInviteMatchRequestsRef && this.state.currentUserEventInviteMatchRequestsRef.off();
   };
 
   navigateToLoginPage() {

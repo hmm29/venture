@@ -36,7 +36,7 @@ class BrandLogo extends Component {
   };
 
   componentDidMount() {
-    this.timer = setTimeout(this._animate, 0);
+    this.timer = setTimeout(() => this._animate(), 10);
   };
 
   componentWillUnmount() {

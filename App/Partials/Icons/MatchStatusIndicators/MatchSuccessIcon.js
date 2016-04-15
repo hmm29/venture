@@ -147,7 +147,6 @@ class MatchSuccessIcon extends Component {
     }
     this.setState({badgeValue: 0});
     this.props.onPress && this.props.onPress();
-    this.setState({badgeValue: 0});
   };
 
   render() {

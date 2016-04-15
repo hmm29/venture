@@ -310,7 +310,7 @@ var EditProfilePage = React.createClass({
           {this._renderHeader()}
         </View>
         <View style={{bottom: this.state.hasKeyboardSpace ? height/ 3 : 0}}>
-          <Image defaultSource={require('../../img/about.png')} style={styles.backdrop}>
+          <Image defaultSource={require('../../img/about.jpg')} style={styles.backdrop}>
 
             {editPhoto}
             <Text

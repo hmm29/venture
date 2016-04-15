@@ -125,8 +125,6 @@ var ProfilePage = React.createClass({
       currentUserRef.child('match_requests').set(null); // @hmm: clear users match interactions
       currentUserRef.child('event_invite_match_requests').set(null); // @hmm: clear users match interactions
       currentUserRef.child('chatCount').set(0); //@hmm: set chat count to 0
-
-      return;
     }
   },
 
@@ -165,7 +163,7 @@ var ProfilePage = React.createClass({
                           this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,
                           passProps: {
                           defaultFacebookProfilePhoto:
-                          this.state.user && `https://res.cloudinary.com/dwnyawluh/image/facebook/q_20/${this.state.user.userId}.jpg`,
+                          this.state.user && `https://res.cloudinary.com/dwnyawluh/image/facebook/q_18/${this.state.user.userId}.jpg`,
                           firebaseRef: this.state.firebaseRef,
                           firstSession: this.props.firstSession,
                           ventureId: this.state.ventureId}});
@@ -184,7 +182,7 @@ var ProfilePage = React.createClass({
         <View>
           {this.renderHeader()}
         </View>
-        <Image defaultSource={require('../../../img/about.png')}
+        <Image defaultSource={require('../../../img/about.jpg')}
                style={styles.backdrop}>
           <View style={styles.loginContainer}>
             <View>
@@ -299,7 +297,7 @@ var Photo = React.createClass({
                     }
                   }
               source={{uri: this.state.currentPic
-                            || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_20/${this.props.user && this.props.user.userId}.jpg`}}
+                            || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_18/${this.props.user && this.props.user.userId}.jpg`}}
               />
           </TouchableOpacity>
         </Animatable.View>

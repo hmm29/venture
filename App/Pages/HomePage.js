@@ -241,78 +241,6 @@ var HomePage = React.createClass({
             }
           });
         });
-
-
-        // @hmm: PUSH NOTIFICATION LOGIC
-
-        /*
-        // TODO: once React Native supports background tasks, can send local notifications
-        // until then rely on self-hosted Parse push notification server to handle notifications in background state
-        // listener: for notifications when user receives a new request
-        currentUserRef.child('match_requests').on('child_added', childSnapshot => {
-          childSnapshot.val() && childSnapshot.val()._id && firebaseRef
-            .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
-              if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
-                // send local notification that message has been received
-                if(this.state.currentAppState === 'background') {
-                  this._sendNotification({alertBody: `You just received an activity request from ${snapshot.val()}!`})
-                }
-              }
-            })
-        });
-
-        // listener: for notifications when user receives a new event invite request
-        currentUserRef.child('event_invite_match_requests').on('child_added', childSnapshot => {
-          childSnapshot.val() && childSnapshot.val()._id && firebaseRef
-            .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
-              if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
-                // send local notification that event message has been received
-                if(this.state.currentAppState === 'background') {
-                  this._sendNotification({alertBody: `You just received an activity request from ${snapshot.val()}!`})
-                }
-              }
-            })
-        });
-
-        // listener: for notifications when match occurs
-        currentUserRef.child('match_requests').on('child_changed', childSnapshot => {
-          childSnapshot.val() && childSnapshot.val()._id && firebaseRef
-            .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
-              if (childSnapshot.val() && (childSnapshot.val().status === 'received')) {
-                // send local notification that user has received request
-               // if(this.state.currentAppState === 'background') {
-                  this._sendNotification({alertBody: `You just matched with ${snapshot.val()}!`})
-               // }
-              }
-            })
-        });
-
-        // listener: for notifications when match occurs
-        currentUserRef.child('match_requests').on('child_changed', childSnapshot => {
-          childSnapshot.val() && childSnapshot.val()._id && firebaseRef
-            .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
-              if (childSnapshot.val() && (childSnapshot.val().status === 'matched')) {
-                // send local notification that user has matched
-                if(this.state.currentAppState === 'background') {
-                  this._sendNotification({alertBody: `You just matched with ${snapshot.val()}!`})
-                }
-              }
-            })
-        });
-
-        // listener: for notifications when event invite match occurs
-        currentUserRef.child('event_invite_match_requests').on('child_changed', childSnapshot => {
-          childSnapshot.val() && childSnapshot.val()._id && firebaseRef
-            .child(`users/${childSnapshot.val()._id}/firstName`).once('value', snapshot => {
-              if (childSnapshot.val() && (childSnapshot.val().status === 'matched')) {
-                // send local notification that user has matched over an event
-                if(this.state.currentAppState === 'background') {
-                  this._sendNotification({alertBody: `You just matched with ${snapshot.val()}!`})
-                }
-              }
-            })
-        });
-      */
       })
       .catch((error) => console.log(error.message))
       .done();
@@ -989,8 +917,8 @@ var HomePage = React.createClass({
     return (
       <VentureAppPage>
         <Image
-          defaultSource={require('../../img/home_background.png')}
-          source={require('../../img/home_background.png')}
+          defaultSource={require('../../img/home_background.jpg')}
+          source={require('../../img/home_background.jpg')}
           onLoad={() => {
                         this.setState({ready: true});
                     }}

@@ -974,8 +974,8 @@ var ChatsListPage = React.createClass({
                 && matchingPreferences.privacy.indexOf('friends+') > -1) {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                  /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -988,8 +988,8 @@ var ChatsListPage = React.createClass({
                   && _.findIndex(this.props.currentUserFriends, {name: user.name}) > -1) {
                   if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                     && user.location.coordinates.latitude && user.location.coordinates.longitude
-                    && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                    /*&& GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                         .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -1000,8 +1000,8 @@ var ChatsListPage = React.createClass({
               } else {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                  /*&& GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender

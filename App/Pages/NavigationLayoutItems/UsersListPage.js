@@ -382,6 +382,7 @@ var User = React.createClass({
       usersListRef = firebaseRef.child('users'),
       currentUserRef = usersListRef.child(currentUserIDHashed),
       targetUserRef = usersListRef.child(targetUserIDHashed),
+      firstSessionRef = currentUserRef.child('firstSession'),
       targetUserMatchRequestsRef = targetUserRef.child('match_requests'),
       currentUserMatchRequestsRef = currentUserRef.child('match_requests'),
       _this = this;
@@ -811,9 +812,9 @@ var UsersListPage = React.createClass({
                   .indexOf('friends+') > -1) {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  && GeoFire.distance(this.props.currentUserLocationCoords,
+                  /* && GeoFire.distance(this.props.currentUserLocationCoords,
                     [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
                   if (matchingPreferences && matchingPreferences.gender
                     && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender
@@ -828,8 +829,8 @@ var UsersListPage = React.createClass({
                   if (this.props.currentUserLocationCoords && user.location
                     && user.location.coordinates && user.location.coordinates.latitude
                     && user.location.coordinates.longitude
-                    && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
+                    /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
                     if (matchingPreferences && matchingPreferences.gender
                       && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
                     if (matchingPreferences && matchingPreferences.gender
@@ -841,9 +842,9 @@ var UsersListPage = React.createClass({
               } else {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  && GeoFire.distance(this.props.currentUserLocationCoords,
+                  /* && GeoFire.distance(this.props.currentUserLocationCoords,
                     [user.location.coordinates.latitude, user.location.coordinates.longitude])
-                  <= maxSearchDistance * 1.609) {
+                  <= maxSearchDistance * 1.609 */) {
                   if (matchingPreferences && matchingPreferences.gender
                     && matchingPreferences.gender.indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender
@@ -993,9 +994,9 @@ var UsersListPage = React.createClass({
           // renderScrollComponent={props => <SGListView {...props} premptiveLoading={10}/>}
           initialListSize={INITIAL_LIST_SIZE}
           pageSize={PAGE_SIZE}
-          minPulldownDistance={15} // 15 px
-          minBetweenTime={500} // 500 ms
-          minDisplayTime={10} // 10 ms
+          minPulldownDistance={35} // 35 px
+          minBetweenTime={500} // 1000 ms
+          minDisplayTime={40} // 40 ms
           automaticallyAdjustContentInsets={false}
           loadData={this.shuffleUsers}
           onChangeVisibleRows={(visibleRows, changedRows) => {

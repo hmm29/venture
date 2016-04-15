@@ -48,6 +48,7 @@ var GOOGLE_LOGIN_REF = 'googleLogin';
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 
+var DEFAULT_CITY_COORDINATES = {latitude: 41.310809, longitude: -72.924953}; // New Haven coords
 var IS_NOT_VALID_USER_TEXT = "Oops! It appears you are not eligible to use Venture at this time! \n\nBut no worries: the app will be coming to your area very soon!"
 var VERIFY_UNIVERSITY_EMAIL_TEXT = "At the moment, Venture is exclusively for Yale University students. \n\nTo use Venture, please verify your Yale email address below!";
 
@@ -237,13 +238,13 @@ var LoginPage = React.createClass({
             created: new Date(),
             updated: new Date()
           },
-          picture: `https://res.cloudinary.com/dwnyawluh/image/facebook/q_20/${this.state.user.userId}.jpg`,
+          picture: `https://res.cloudinary.com/dwnyawluh/image/facebook/q_18/${this.state.user.userId}.jpg`,
           gender: responseData.gender,
           bio: 'New to Venture!',
           email: responseData.email,
           location: {
             type: 'Point',
-            coordinates: []
+            coordinates: {latitude: DEFAULT_CITY_COORDINATES.latitude, longitude: DEFAULT_CITY_COORDINATES.longitude}
           },
           matchingPreferences: {
             maxSearchDistance: 10.0,

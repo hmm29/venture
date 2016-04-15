@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302AC1ABCB8CE00DB3ED1 /* libRCTActionSheet.a */; };
 		00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302BA1ABCB90400DB3ED1 /* libRCTGeolocation.a */; };
@@ -21,6 +20,7 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		146834051AC3E58100842450 /* libReact.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 146834041AC3E56700842450 /* libReact.a */; };
+		18D35FAFDA23441996AE8329 /* libRCTActionSheet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EB1E2A010EFD4C53B40F45FF /* libRCTActionSheet.a */; };
 		2F77B5E7F9104EBABB0A700C /* libRCTFBSDKShare.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A057B11D16474CFDA2DC4F1D /* libRCTFBSDKShare.a */; };
 		421118201C9B791D006826B1 /* Bolts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4211181F1C9B791D006826B1 /* Bolts.framework */; };
 		421118241C9B8B6D006826B1 /* FBSDKCoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 421118211C9B8B6D006826B1 /* FBSDKCoreKit.framework */; };
@@ -143,6 +143,20 @@
 			proxyType = 2;
 			remoteGlobalIDString = 134814201AA4EA6300B7C361;
 			remoteInfo = RCTPushNotification;
+		};
+		426057FD1CB9EB9B00770BBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A1678A1D5BB44D594ECC2BA /* reactnativeswipeout.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 13B07F961A680F5B00A75B9A;
+			remoteInfo = reactnativeswipeout;
+		};
+		426057FF1CB9EB9B00770BBF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A1678A1D5BB44D594ECC2BA /* reactnativeswipeout.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 00E356EE1AD99517003FC87E;
+			remoteInfo = reactnativeswipeoutTests;
 		};
 		42D555A81CA8705E00530EFE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -288,10 +302,12 @@
 		78C398B01ACF4ADC00677621 /* RCTLinking.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTLinking.xcodeproj; path = "../node_modules/react-native/Libraries/LinkingIOS/RCTLinking.xcodeproj"; sourceTree = "<group>"; };
 		7BC2888F79B7405C923219C8 /* Ionicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Ionicons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Ionicons.ttf"; sourceTree = "<group>"; };
 		832341B01AAA6A8300B99B32 /* RCTText.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTText.xcodeproj; path = "../node_modules/react-native/Libraries/Text/RCTText.xcodeproj"; sourceTree = "<group>"; };
+		8A1678A1D5BB44D594ECC2BA /* reactnativeswipeout.xcodeproj */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "wrapper.pb-project"; name = reactnativeswipeout.xcodeproj; path = "../node_modules/react-native-swipeout/ios/reactnativeswipeout.xcodeproj"; sourceTree = "<group>"; };
 		A057B11D16474CFDA2DC4F1D /* libRCTFBSDKShare.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRCTFBSDKShare.a; sourceTree = "<group>"; };
 		A3D4D081F3B24B1AB0456CB3 /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
 		B28B0D27BCBA4E0389E2CD88 /* Entypo.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Entypo.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Entypo.ttf"; sourceTree = "<group>"; };
 		D6DD2FCC86424DE8812DBBB9 /* libRCTFBSDKCore.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRCTFBSDKCore.a; sourceTree = "<group>"; };
+		EB1E2A010EFD4C53B40F45FF /* libRCTActionSheet.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRCTActionSheet.a; sourceTree = "<group>"; };
 		EDDA9628653F4BCFAFF60B1E /* Zocial.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Zocial.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Zocial.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -345,6 +361,7 @@
 				DCF5F13905BF42FB84BD8BC2 /* libRCTFBSDKCore.a in Frameworks */,
 				2F77B5E7F9104EBABB0A700C /* libRCTFBSDKShare.a in Frameworks */,
 				795DFD39A1FE4C059B3F17F6 /* libRCTDeviceUUID.a in Frameworks */,
+				18D35FAFDA23441996AE8329 /* libRCTActionSheet.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -479,6 +496,15 @@
 			path = Batch.embeddedframework;
 			sourceTree = "<group>";
 		};
+		426057E41CB9EB9B00770BBF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				426057FE1CB9EB9B00770BBF /* reactnativeswipeout.app */,
+				426058001CB9EB9B00770BBF /* reactnativeswipeoutTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		42D5559F1CA8705E00530EFE /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -609,6 +635,7 @@
 				266C8FB737A24730A6B6830E /* RCTFBSDKCore.xcodeproj */,
 				167CD755F9D64E7BA9B1E52D /* RCTFBSDKShare.xcodeproj */,
 				5082D4630F154828A0EFBD85 /* RCTDeviceUUID.xcodeproj */,
+				8A1678A1D5BB44D594ECC2BA /* reactnativeswipeout.xcodeproj */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -832,6 +859,10 @@
 					ProjectRef = 42E5EE891C7124A6009C7A35 /* ReactNativeIcons.xcodeproj */;
 				},
 				{
+					ProductGroup = 426057E41CB9EB9B00770BBF /* Products */;
+					ProjectRef = 8A1678A1D5BB44D594ECC2BA /* reactnativeswipeout.xcodeproj */;
+				},
+				{
 					ProductGroup = 42F160131C8DF34C006F965E /* Products */;
 					ProjectRef = 42F160121C8DF34C006F965E /* RNImagePicker.xcodeproj */;
 				},
@@ -924,6 +955,20 @@
 			fileType = archive.ar;
 			path = libRCTPushNotification.a;
 			remoteRef = 421BEAFF1C71B9D20058D624 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		426057FE1CB9EB9B00770BBF /* reactnativeswipeout.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = reactnativeswipeout.app;
+			remoteRef = 426057FD1CB9EB9B00770BBF /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		426058001CB9EB9B00770BBF /* reactnativeswipeoutTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = reactnativeswipeoutTests.xctest;
+			remoteRef = 426057FF1CB9EB9B00770BBF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		42D555A91CA8705E00530EFE /* libRCTDeviceUUID.a */ = {
@@ -1109,6 +1154,7 @@
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VentureApp.app/VentureApp";
@@ -1129,6 +1175,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
@@ -1168,6 +1215,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-device-uuid",
+					"$(SRCROOT)/../node_modules/react-native-swipeout/ios/reactnativeswipeout",
 				);
 				INFOPLIST_FILE = VentureApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -1210,6 +1258,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-device-uuid",
+					"$(SRCROOT)/../node_modules/react-native-swipeout/ios/reactnativeswipeout",
 				);
 				INFOPLIST_FILE = VentureApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -1267,6 +1316,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-device-uuid",
+					"$(SRCROOT)/../node_modules/react-native-swipeout/ios/reactnativeswipeout",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
@@ -1314,6 +1364,7 @@
 					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-device-uuid",
+					"$(SRCROOT)/../node_modules/react-native-swipeout/ios/reactnativeswipeout",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				MTL_ENABLE_DEBUG_INFO = NO;

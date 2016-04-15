@@ -37,6 +37,7 @@ var Dimensions = require('Dimensions');
 var DynamicCheckBoxIcon = require('../Partials/Icons/DynamicCheckBoxIcon');
 var Firebase = require('firebase');
 var GeoFire = require('geofire');
+var GiftedMessenger = require('react-native-gifted-messenger');
 var Header = require('../Partials/Header');
 var Icon = require('react-native-vector-icons/Ionicons');
 var LinearGradient = require('react-native-linear-gradient');
@@ -62,23 +63,193 @@ var GREEN_HEX_CODE = '#84FF9B';
 var YELLOW_HEX_CODE = '#ffe770';
 var WHITE_HEX_CODE = '#fff';
 
-var ChatMateTypingLoader = React.createClass({
+var Messenger = React.createClass({
+  getInitialState() {
+    return {
+      loaded: false,
+      message: '',
+      messageList: Object,
+    }
+  },
+
   componentDidMount() {
-    this.refs.chatMateTypingLoader.zoomIn(500);
+
+
+  },
+
+  getMessages() {
+    return [
+      {text: 'Are you building a chat app?', name: 'React-Native', image: {uri: 'https://facebook.github.io/react/img/logo_og.png'}, position: 'left', date: new Date(2015, 10, 16, 19, 0)},
+      {
+        text: "Yes, and I use Gifted Messenger!",
+        name: 'Developer',
+        image: null,
+        position: 'right',
+        date: new Date(2015, 10, 17, 19, 0)
+        // If needed, you can add others data (eg: userId, messageId)
+      },
+      {
+        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
+        name: 'Developer',
+        image: null,
+        position: 'right',
+        date: new Date(2014, 0, 1, 20, 0),
+      }, {
+        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
+        name: 'React-Native',
+        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
+        position: 'left',
+        date: new Date(2013, 0, 1, 12, 0),
+      },
+      {
+        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
+        name: 'Developer',
+        image: null,
+        position: 'right',
+        date: new Date(2014, 0, 1, 20, 0),
+      }, {
+        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
+        name: 'React-Native',
+        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
+        position: 'left',
+        date: new Date(2013, 0, 1, 12, 0),
+      },
+      {
+        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
+        name: 'Developer',
+        image: null,
+        position: 'right',
+        date: new Date(2014, 0, 1, 20, 0),
+      }, {
+        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
+        name: 'React-Native',
+        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
+        position: 'left',
+        date: new Date(2013, 0, 1, 12, 0),
+      },
+    ];
+  },
+
+  handleSend(message = {}, rowID = null) {
+    // Your logic here
+    // Send message.text to your server
+
+    // this._GiftedMessenger.setMessageStatus('Sent', rowID);
+    // this._GiftedMessenger.setMessageStatus('Seen', rowID);
+    // this._GiftedMessenger.setMessageStatus('Custom label status', rowID);
+    if (this.isMounted()) {
+      this._GiftedMessenger.setMessageStatus('ErrorButton', rowID); // => In this case, you need also to set onErrorButtonPress
+    }
+  },
+
+  // @oldestMessage is the oldest message already added to the list
+  onLoadEarlierMessages(oldestMessage = {}, callback = () => {}) {
+
+    // Your logic here
+    // Eg: Retrieve old messages from your server
+
+    // newest messages have to be at the begining of the array
+    var earlierMessages = [
+      {
+        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
+        name: 'Developer',
+        image: null,
+        position: 'right',
+        date: new Date(2014, 0, 1, 20, 0),
+      }, {
+        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
+        name: 'React-Native',
+        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
+        position: 'left',
+        date: new Date(2013, 0, 1, 12, 0),
+      },
+    ];
+
+    setTimeout(() => {
+      callback(earlierMessages, false); // when second parameter is true, the "Load earlier messages" button will be hidden
+    }, 1000);
+  },
+
+  handleReceive(message = {}) {
+    if (this.isMounted()) {
+      this._GiftedMessenger.appendMessage(message);
+    }
+  },
+
+  onErrorButtonPress(message = {}, rowID = null) {
+    // Your logic here
+    // Eg: Re-send the message to your server
+
+    setTimeout(() => {
+      // will set the message to a custom status 'Sent' (you can replace 'Sent' by what you want - it will be displayed under the row)
+      if (this.isMounted()) {
+        this._GiftedMessenger.setMessageStatus('Sent', rowID);
+      }
+      setTimeout(() => {
+        // will set the message to a custom status 'Seen' (you can replace 'Seen' by what you want - it will be displayed under the row)
+        if (this.isMounted()) {
+          this._GiftedMessenger.setMessageStatus('Seen', rowID);
+        }
+        setTimeout(() => {
+          // append an answer
+          this.handleReceive({text: 'I saw your message', name: 'React-Native', image: {uri: 'https://facebook.github.io/react/img/logo_og.png'}, position: 'left', date: new Date()});
+        }, 500);
+      }, 1000);
+    }, 500);
+  },
+
+  // will be triggered when the Image of a row is touched
+  onImagePress(rowData = {}, rowID = null) {
+    // Your logic here
+    // Eg: Navigate to the user profile
   },
 
   render() {
     return (
-      <Animatable.View ref="chatMateTypingLoader" style={{alignSelf: 'center', bottom: height/20}}>
+      <GiftedMessenger
+        ref={(c) => this._GiftedMessenger = c}
+
+        styles={{
+          bubbleRight: {
+            marginLeft: 70,
+            backgroundColor: '#007aff',
+          },
+        }}
+
+        autoFocus={false}
+        messages={this.state.messages}
+        handleSend={this.handleSend.bind(this)}
+        onErrorButtonPress={this.onErrorButtonPress.bind(this)}
+        maxHeight={Dimensions.get('window').height-(HEADER_CONTAINER_HEIGHT+RECIPIENT_INFO_BAR_HEIGHT+TIMER_BAR_HEIGHT)}
+        loadEarlierMessagesButton={true}
+        onLoadEarlierMessages={this.onLoadEarlierMessages.bind(this)}
+        senderName='Developer'
+        senderImage={null}
+        onImagePress={this.onImagePress.bind(this)}
+        displayNames={true}
+        parseText={true} // enable handlePhonePress and handleUrlPress
+        inverted={true}
+        />
+
+    );
+  }
+});
+
+var ChatMateTypingLoader = React.createClass({
+  componentDidMount() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  },
+
+  render() {
+    return (
+      <View ref="chatMateTypingLoader" style={{alignSelf: 'center', bottom: height/20}}>
         <TouchableOpacity onPress={() => {this.refs.chatMateTypingLoader.jello(300)}}>
-          <Animatable.View ref="chatMateTypingLoader">
-            <Text
-              style={{color: '#ccc', fontFamily: 'AvenirNextCondensed-UltraLight', textAlign: 'center', fontSize: 50}}>
-              <Text style={{fontSize: height/30, top: 15}}>{this.props.recipientFirstName + ' is typing ...'}</Text>
-            </Text>
-          </Animatable.View>
+          <Text
+            style={{color: '#ccc', fontFamily: 'AvenirNextCondensed-UltraLight', textAlign: 'center', fontSize: 50}}>
+            <Text style={{fontSize: height/30, top: 15}}>{this.props.recipientFirstName + ' is typing ...'}</Text>
+          </Text>
         </TouchableOpacity>
-      </Animatable.View>
+      </View>
     )
   }
 });
@@ -102,9 +273,6 @@ var ChatPage = React.createClass({
       hasKeyboardSpace: false,
       hasTimerExpired: false,
       infoContentVisible: false,
-      loaded: false,
-      message: '',
-      messageList: Object,
       showExtendChatModal: false,
     };
   },
@@ -116,66 +284,62 @@ var ChatPage = React.createClass({
 
   componentWillMount() {
     InteractionManager.runAfterInteractions(() => {
-      let chatRoomRef = this.props.chatRoomRef,
-        chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages'), _this = this;
+        let chatRoomRef = this.props.chatRoomRef,
+          chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages');
 
-      this.bindAsObject(chatRoomMessagesRef, 'messageList');
+        this.bindAsObject(chatRoomMessagesRef, 'messageList');
+        this.scrollResponder = this.refs[MESSAGES_LIST_REF] && this.refs[MESSAGES_LIST_REF].getScrollResponder();
 
-      chatRoomMessagesRef.on('value', (snapshot) => {
-        // if user has sent messages and other user closes chat
-        let messageListLength = this.state.messageListLength;
-        if(messageListLength > _.size(snapshot.val())) {
-          this.props.navigator.pop();
-        }
-
-        _this.setState({
+        this.setState({
           chatRoomMessagesRef,
-          contentOffsetYValue: 0,
-          message: '',
-          messageList: snapshot.val() && _.cloneDeep(_.values(snapshot.val()))
+          message: ''
         });
-        _this.updateMessages(_.cloneDeep(_.values(snapshot.val())))
-      });
+
+        this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).on('value', snapshot => {
+          this.setState({chatMateIsTyping: snapshot.val()});
+        });
+
     });
   },
 
   componentDidMount() {
-    this.scrollResponder = this.refs[MESSAGES_LIST_REF] && this.refs[MESSAGES_LIST_REF].getScrollResponder();
-    this.props.chatRoomRef.child('messageListHeightRef').once('value', snapshot => {
-      if (!snapshot.val()) return;
-      this.footerY = snapshot.val();
-    });
-    this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).on('value', snapshot => {
-      this.setState({chatMateIsTyping: snapshot.val()});
-    });
+    InteractionManager.runAfterInteractions(() => {
+        this.setTimeout(() => {
+          let chatRoomRef = this.props.chatRoomRef,
+            chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages');
 
-    this.props.chatRoomRef && this.props.chatRoomRef.on('value', snapshot => {
-      if(!snapshot.val()) {
-        this.setState({chatExists: false});
-        return;
-      } else {
-        this.setState({chatRoomObjectCopy: snapshot.val()})
-      }
+          chatRoomRef.once('value', snapshot => {
+            if (!snapshot.val() || _.size(snapshot.val()) <= 4) {
+              this.props.navigator.pop();
+            }
 
-      if(snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime) {
-        // save object here whenever changes are made for easy recreation
-        // only save if snapshot is not null
-        this.setState({chatRoomObjectCopy: snapshot.val()})
-      }
+            var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
+            chatRoomRef.child(seenMessagesId).set(snapshot.val() && snapshot.val().messages && _.size(snapshot.val().messages) || 0);
+
+            this.footerY = snapshot.val() && snapshot.val().layoutMarkers
+              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId]
+              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId].messageListHeightRef;
+            this.setState({
+              contentOffsetYValue: snapshot.val() && snapshot.val().layoutMarkers
+              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId]
+              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId].contentOffsetYValue,
+              chatRoomObjectCopy: snapshot.val(),
+              expireTime: snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime
+            });
+            if (!_.isEmpty(snapshot.val().messages)) {
+              this.updateMessages(snapshot.val() && snapshot.val().messages && _.cloneDeep(_.values(snapshot.val().messages)));
+            }
+          });
+        }, 0);
     });
-
-    var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
-    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList && this.state.messageList.length || 0);
   },
 
   componentWillUnmount() {
-    this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).off();
-    this.state.chatRoomMessagesRef && this.state.chatRoomMessagesRef.off();
-
-    this.state.chatRoomMessagesRef && this.state.chatRoomMessagesRef.once('value', snapshot => {
-            if(snapshot.val() && !this.state.hasTimerExpired) this.props.chatRoomRef.update({messageListHeightRef: this.footerY});
-    })
-    this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+    this.props.chatRoomRef.child(`layoutMarkers/${this.props.currentUserData.ventureId}`).update({messageListHeightRef: this.footerY || 0});
+    this.props.chatRoomRef.child(`layoutMarkers/${this.props.currentUserData.ventureId}`).update({contentOffsetYValue: this.state.contentOffsetYValue || 0});
+    let seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
+    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
+      && (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length || 0);
   },
 
   closeKeyboard() {
@@ -183,8 +347,8 @@ var ChatPage = React.createClass({
     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
   },
 
-  containerTouched(event) {
-    this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+  containerTouched(evt) {
+    this.closeKeyboard();
     return false;
   },
 
@@ -196,7 +360,7 @@ var ChatPage = React.createClass({
     //this.setState({hasTimerExpired, showExtendChatModal: hasTimerExpired});
     this.setState({hasTimerExpired});
     // if user in chat that partner has ended but hasnt tried typing anything
-    if(!this.state.chatExists) this.props.navigator.pop();
+    if (!this.state.chatExists) this.props.navigator.pop();
   },
 
   updateMessages(messages:Array<Object>) {
@@ -233,7 +397,6 @@ var ChatPage = React.createClass({
     );
     return (
       <LinearGradient
-        onLayout={this.scrollToBottom}
         colors={(!sentByCurrentUser) ? ['#000', '#111', '#222'] : ['#fff', '#fff']}
         start={[0,1]}
         end={[1,0.9]}
@@ -265,33 +428,34 @@ var ChatPage = React.createClass({
     }
   },
 
+  // TODO: reorganize this function
   _sendMessage() {
-    if (this.state.hasTimerExpired) return;
-    if(!this.state.message.length) {
-      this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
-      return;
-    }
+    this.closeKeyboard();
 
-    let messageObj = {
-      senderIDHashed: this.props.currentUserData.ventureId,
-      body: this.state.message
-    }, _this = this;
+    InteractionManager.runAfterInteractions(() => {
+      if (!this.state.message.length) {
+        return;
+      }
 
-    this.state.chatRoomMessagesRef.push(messageObj);
-    this.state.chatRoomMessagesRef.once('value', (snapshot) => {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-      _this.setState({
-        message: '',
-        messageListLength: _.size(snapshot.val())
+      let messageObj = {
+        senderIDHashed: this.props.currentUserData.ventureId,
+        body: this.state.message
+      }, _this = this;
+
+      this.state.chatRoomMessagesRef.push(messageObj);
+      this.setState({message: ''})
+      this.updateMessages(_.cloneDeep(_.values(_.omit(this.state.messageList, '.key'))));
+      this.setState({
+        messageListLength: (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length,
       });
-      _this.updateMessages(_.cloneDeep(_.values(snapshot.val())));
-      _this.refs[MESSAGE_TEXT_INPUT_REF] && _this.refs[MESSAGE_TEXT_INPUT_REF].blur();
 
-      this.scrollToBottom();
+      InteractionManager.runAfterInteractions(() => {
 
+        // TODO I don't get this
         //@hmm: if both users in chatroom when first message is sent
-        if (this.state.messageList && this.state.messageList.length === 1) {
+        if (this.state.messageList && (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length === 1) {
           this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+            // if other user's seen messages count is above 0, then start
             if (snapshot.val() > 0) {
               let currentTime = new Date().getTime(),
                 expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
@@ -300,31 +464,32 @@ var ChatPage = React.createClass({
             }
           })
         }
-      });
 
-      this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
-        if (this.state.messageList && (this.state.messageList.length - snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
+        this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
+          if (this.state.messageList && ((_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length - snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
 
-          fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'X-Parse-Application-Id': PARSE_APP_ID,
-              'Content-Type': 'application/json',
-            },
-            body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
-          })
-            .then(response => {
-              console.log(JSON.stringify(response))
+            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'X-Parse-Application-Id': PARSE_APP_ID,
+                'Content-Type': 'application/json',
+              },
+              body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
             })
-            .catch(error => console.log(error))
-        }
-      })
+              .then(response => {
+                console.log(JSON.stringify(response))
+              })
+              .catch(error => console.log(error))
+          }
+        });
+      });
+    });
   },
 
   render() {
-    let chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle :
-      this.props.chatRoomEventTitle + '?');
+    const chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle :
+    this.props.chatRoomEventTitle + '?');
 
     let messageTextInput = (
       <TextInput
@@ -332,66 +497,42 @@ var ChatPage = React.createClass({
         ref={MESSAGE_TEXT_INPUT_REF}
         onBlur={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                    this.setState({hasKeyboardSpace: false, closeDropdownProfile: false})
+                    this.setState({hasKeyboardSpace: false, closeDropdownProfile: false});
                     }}
-        onChange={() => this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`)
-        .once('value', snapshot => {
-                    if(!snapshot.val())
-                    this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(true);
-                })}
-        onEndEditing={() => this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`)
-        .once('value', snapshot => {
-                    if(snapshot.val())
-                    this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(false);
-
-                      if(_.size(this.state.chatRoomObjectCopy) <= 3) { //@hmm: note that chat object still has isTyping and messages props even if other user destroyed chat, so not completely gone yet :(
-                        AlertIOS.alert(
-                          'Chat Ending...',
-                          'This chat has expired!',
-                          [
-                            {text: 'OK', onPress: () => {
-                              this.props.navigator.pop();
-                              this.props.chatRoomRef.set(null);
-                            }}
-                          ]
-                        );
-                      }
-                })}
-        onFocus={() => {
-                      if(_.size(this.state.chatRoomObjectCopy) <= 3) {
-                        AlertIOS.alert(
-                          'Chat Ending...',
-                          'This chat has expired!',
-                          [
-                            {text: 'OK', onPress: () => this.props.navigator.pop()}
-                          ]
-                        );
-                      }
-
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+        onChange={() => {
+                     }}
+        onEndEditing={() => {
+                      this.setTimeout(() => {
+                      this.scrollToBottom();
+                      InteractionManager.runAfterInteractions(() => {
+                        this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(false);
+                      })}, 0);
+                      }}
+        onFocus={() => {             
                     this.setState({hasKeyboardSpace: true, closeDropdownProfile: true});
-                    this.scrollToBottom();
+
+                    InteractionManager.runAfterInteractions(() => {
+                       this.scrollToBottom();
+                       if (this.state.hasTimerExpired) this.props.navigator.pop();
+
+                       this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(true);
+                    })
                     }}
         multiline={true}
         style={styles.messageTextInput}
         onChangeText={(text) => this.setState({message: text})}
         value={this.state.message}
         returnKeyType='default'
-        keyboardType='default'
-        />
+        keyboardType='default'/>
     );
 
     return (
       <VentureAppPage backgroundColor='rgba(0,0,0,0.96)'>
         <Header containerStyle={{backgroundColor: '#000'}}>
           <BackIcon onPress={() => {
-                                    this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
-                                    var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
-                                    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
-                                      && this.state.messageList.length || 0);
-                                    this.props.navigator.pop();
-                }} style={{right: 10, bottom: 5}}
-            />
+            this.updateMessages([]);
+            this.props.navigator.pop();
+          }} style={{right: 10, bottom: 5}}/>
           <Text
             style={styles.activityPreferenceTitle}>
             {chatRoomTitle && chatRoomTitle.toUpperCase()} </Text>
@@ -403,39 +544,16 @@ var ChatPage = React.createClass({
                             closeDropdownProfile={this.state.closeDropdownProfile}
                             closeKeyboard={this.closeKeyboard}
                             currentUserRef={this.props.currentUserRef}
+                            expireTime={this.state.expireTime}
                             firebaseRef={this.state.firebaseRef}
                             handleInfoContentVisibility={this.handleInfoContentVisibility}
                             handleSetHasTimerExpiredState={this.handleSetHasTimerExpiredState}
                             _id={this.props._id}
-                            messageListLength={this.state.messageList && this.state.messageList.length}
+                            messageListLength={this.state.messageList && _.size(_.omit(this.state.messageList, '.key', '.value')) || 0}
                             navigator={this.props.navigator}
                             recipientData={this.props}
                             targetUserRef={this.props.targetUserRef}/>
-          <ListView
-            ref={MESSAGES_LIST_REF}
-            contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
-            dataSource={this.state.dataSource}
-            renderRow={this._renderMessage}
-            onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
-            onLayout={this.scrollToBottom}
-            initialListSize={15}
-            onLayout={(e)=>{
-                          this.listHeight = e.nativeEvent && e.nativeEvent.layout && (_.isNumber(e.nativeEvent.layout.height) && parseFloat(e.nativeEvent.layout.height)) || (_.isNumber(e.nativeEvent.layout.height.y) && parseFloat(e.nativeEvent.layout.height.y));
-                        }}
-            onScroll={() => {
-                        }}
-            onMomentumScrollEnd={() => {
-                        }}
-            pageSize={15}
-            renderFooter={() => {
-                          return <View onLayout={(e)=> {
-                            this.footerY = e.nativeEvent && e.nativeEvent.layout && (_.isNumber(e.nativeEvent.layout.y) && parseFloat(e.nativeEvent.layout.y)) || (_.isNumber(e.nativeEvent.layout.y.y) && parseFloat(e.nativeEvent.layout.y.y));
-                            this.scrollToBottom();
-                          }}/>
-                        }}
-            scrollsToTop={false}
-            automaticallyAdjustContentInsets={false}
-            style={{backgroundColor: 'rgba(0,0,0,0.01)', width: width}}/>
+          <Messenger/>
           {this.state.chatMateIsTyping && !this.state.infoContentVisible ? <ChatMateTypingLoader
             recipientFirstName={this.props.recipient && this.props.recipient.firstName}/> : undefined}
           <View style={{height: width / 8}}/>
@@ -443,7 +561,7 @@ var ChatPage = React.createClass({
             <View
               style={[styles.textBoxContainer, {marginBottom: this.state.hasKeyboardSpace ? height/3.1 : 0}]}>
               {messageTextInput}
-              <TouchableOpacity onPress={() => this._sendMessage()}>
+              <TouchableOpacity onPress={this._sendMessage}>
                 <Text
                   style={{color: 'white', fontFamily: 'AvenirNextCondensed-Regular', marginHorizontal: 20,
                   backgroundColor: 'rgba(255,255,255,0.3)', paddingHorizontal: 10, paddingVertical: 4,
@@ -452,166 +570,6 @@ var ChatPage = React.createClass({
             </View>
           </View>
         </View>
-        {/*<ModalBase
-          animated={true}
-          onLayout={() => {
-            this._handle = this.setInterval(() => {
-              this.setState({extendChatCountdownTimerVal: this.state.extendChatCountdownTimerVal-1})
-              if(this.state.extendChatCountdownTimerVal-1 < 0) {
-                this.clearInterval(this._handle);
-                // logically the same as saying no, which is why theres a countdown timer
-                // destroy match objects first
-                 let currentUserData = this.props.currentUserData,
-                  currentUserIDHashed = currentUserData.ventureId,
-                  firebaseRef = this.state.firebaseRef,
-                  currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
-                  recipient = this.props.recipient,
-                  targetUserIDHashed = recipient.ventureId,
-                  targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests');
-
-
-                if(this.props.chatRoomEventTitle) {
-                  currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests'),
-                  targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests');
-                }
-
-                // @hmm: destroy match requests
-                targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
-                currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
-
-                this.setState({showExtendChatModal: false});
-                this.props.navigator.pop();
-              }
-            }, 1000);
-          }}
-          modalStyle={styles.extendChatModalStyle}
-          modalVisible={this.state.showExtendChatModal}
-          transparent={false}>
-          <View style={styles.modalView}>
-            <TouchableOpacity activeOpacity={0.8}>
-              <Text
-                style={styles.extendChatModalText}>
-                <Text
-                  style={[styles.extendChatModalTextTitle, {color: '#E16F7C', fontFamily: 'AvenirNextCondensed-Medium'}]}>{this.state.extendChatCountdownTimerVal} {'\n\n'}</Text>
-                <Text style={styles.extendChatModalTextTitle}>Continue?</Text>
-                {'\n\n'} The chat has expired! {'\n'} Would you like to extend it?{'\n'}</Text>
-              <View style={{alignSelf: 'center', width: width/2.5, flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                <DynamicCheckBoxIcon
-                  selected={this.state.willExtendChat === true}
-                  caption='Yes'
-                  captionStyle={styles.captionStyle}
-                  onPress={() => {
-                    this.setState({willExtendChat: true});
-                    if(this.state.showExtendChatModal) {
-                      this.setTimeout(() => {
-                        // recreate the chat object, reset it and make sure certain fields are set to
-                        // reset messages, reset expireTime to null, reset seen messages, and get rid of extendChat field altogether
-                        // firebase will not recreate them if theyre already in the db/ are the same :)
-                        let chatRoomObj = this.state.chatRoomObjectCopy,
-                          currentUserData = this.props.currentUserData,
-                          currentUserIDHashed = currentUserData.ventureId,
-                          firebaseRef = this.state.firebaseRef,
-                          currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
-                          recipient = this.props.recipient,
-                          targetUserIDHashed = recipient.ventureId,
-                          targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests');
-
-                          if(this.props.chatRoomEventTitle) {
-                            currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests'),
-                            targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests');
-                          }
-
-                        chatRoomObj.messages = chatRoomObj.expireTime = chatRoomObj.extendChat = null;
-                        chatRoomObj[`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`] = chatRoomObj[`seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`] = 0;
-                        this.props.chatRoomRef && this.props.chatRoomRef.set(chatRoomObj);
-
-                        // @hmm: if agree to extend chat
-                        this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.currentUserData && this.props.currentUserData.ventureId}`).set(true);
-                        currentUserMatchRequestsRef.child(targetUserIDHashed).update({hasRequestedExtension: true}); // so that question mark appears over thumbnail for both users
-                        targetUserMatchRequestsRef.child(currentUserIDHashed).update({hasRequestedExtension: true});
-
-                        this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
-                          if(snapshot.val() === true) {
-                            // reset chat process, make extra sure expireTime is null
-                            this.props.chatRoomRef && this.props.chatRoomRef.child('timer/expireTime').set(null);
-                            currentUserMatchRequestsRef.child(targetUserIDHashed).update({hasRequestedExtension: false}); // stop showing +5 ? overlay
-                            targetUserMatchRequestsRef.child(currentUserIDHashed).update({hasRequestedExtension: false});
-
-                            // send push notification that chat has been extended
-                            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-                                method: 'POST',
-                                headers: {
-                                  'Accept': 'application/json',
-                                  'X-Parse-Application-Id': PARSE_APP_ID,
-                                  'Content-Type': 'application/json',
-                                },
-                                body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "Your chat with ${this.props.currentUserData && this.props.currentUserData.firstName} has been extended!"}`
-                              })
-                                .then(response => {
-                                  console.log(JSON.stringify(response))
-                                })
-                                .catch(error => console.log(error))
-
-                            this.setState({showExtendChatModal: false});
-                          } else {
-                            this.props.navigator.pop();
-
-                            // send push notification that this person wants to extend chat
-                            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-                              method: 'POST',
-                              headers: {
-                                'Accept': 'application/json',
-                                'X-Parse-Application-Id': PARSE_APP_ID,
-                                'Content-Type': 'application/json',
-                              },
-                              body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "Someone would like to extend their chat with you!"}`
-                            })
-                              .then(response => {
-                                console.log(JSON.stringify(response))
-                              })
-                              .catch(error => console.log(error))
-                          }
-                        })
-                      }, 400)
-                    }
-                  }}/>
-                <DynamicCheckBoxIcon
-                  selected={this.state.willExtendChat === false}
-                  caption='No'
-                  captionStyle={styles.captionStyle}
-                  onPress={() => {
-                    this.setState({willExtendChat: false});
-                    if(this.state.showExtendChatModal) {
-                      this.setTimeout(() => {
-                        // destroy match objects first
-                         let currentUserData = this.props.currentUserData,
-                          currentUserIDHashed = currentUserData.ventureId,
-                          firebaseRef = this.state.firebaseRef,
-                          currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/match_requests'),
-                          recipient = this.props.recipient,
-                          targetUserIDHashed = recipient.ventureId,
-                          targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/match_requests');
-
-
-                        if(this.props.chatRoomEventTitle) {
-                          currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests'),
-                          targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests');
-                        }
-
-                        // @hmm: destroy match requests
-                        targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
-                        currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);
-
-                        this.setState({showExtendChatModal: false});
-                        this.props.navigator.pop();
-                        // just pop back, chat will have been destroyed :)
-                      }, 400)
-                    }
-                  }}/>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </ModalBase>*/}
       </VentureAppPage>
     );
   }
@@ -624,6 +582,7 @@ var RecipientInfoBar = React.createClass({
     closeDropdownProfile: React.PropTypes.bool,
     closeKeyboard: React.PropTypes.func.isRequired,
     currentUserRef: React.PropTypes.object,
+    expireTime: React.PropTypes.number,
     firebaseRef: React.PropTypes.object,
     handleInfoContentVisibilityChange: React.PropTypes.func,
     handleSetHasTimerExpiredState: React.PropTypes.func.isRequired,
@@ -664,15 +623,17 @@ var RecipientInfoBar = React.createClass({
       })
 
     this.props.targetUserRef.child('location/coordinates').on('value', snapshot => {
-      this.setState({distance: snapshot.val() && this.calculateDistance([snapshot.val() && snapshot.val().latitude, snapshot.val() && snapshot.val().longitude],
-        [this.props.recipientData && this.props.recipientData.currentUserData && this.props.recipientData.currentUserData.location && this.props.recipientData.currentUserData.location.coordinates && this.props.recipientData.currentUserData.location.coordinates.latitude,
-          this.props.recipientData && this.props.recipientData.currentUserData && this.props.recipientData.currentUserData.location && this.props.recipientData.currentUserData.location.coordinates && this.props.recipientData.currentUserData.location.coordinates.longitude])})
+      this.setState({
+        distance: snapshot.val() && this.calculateDistance([snapshot.val() && snapshot.val().latitude, snapshot.val() && snapshot.val().longitude],
+          [this.props.recipientData && this.props.recipientData.currentUserData && this.props.recipientData.currentUserData.location && this.props.recipientData.currentUserData.location.coordinates && this.props.recipientData.currentUserData.location.coordinates.latitude,
+            this.props.recipientData && this.props.recipientData.currentUserData && this.props.recipientData.currentUserData.location && this.props.recipientData.currentUserData.location.coordinates && this.props.recipientData.currentUserData.location.coordinates.longitude])
+      })
     })
   },
 
   componentDidMount() {
     this.props.chatRoomRef && this.props.chatRoomRef.child('timer/expireTime').on('value', snapshot => {
-      if(snapshot.val()) {
+      if (snapshot.val()) {
         this.setState({backgroundColor: GREEN_HEX_CODE});
       }
     });
@@ -694,68 +655,68 @@ var RecipientInfoBar = React.createClass({
   _getBackgroundColor() {
     let distance = this.state.distance;
 
-    if(distance <= 5.0){
-      if(distance >= 4.0) {
+    if (distance <= 5.0) {
+      if (distance >= 4.0) {
         return '#de994e';
       }
-      else if(distance < 4.0 && distance >= 3.0) {
+      else if (distance < 4.0 && distance >= 3.0) {
         return '#e2b853';
       }
-      else if(distance < 3.0 && distance >= 2.0) {
+      else if (distance < 3.0 && distance >= 2.0) {
         return '#e5d659';
       }
-      else if(distance < 2.0 && distance >= 1.0) {
-          return '#dee95f';
+      else if (distance < 2.0 && distance >= 1.0) {
+        return '#dee95f';
       }
-      else if(distance < 1.0 && distance >= 0.0) {
-        if(distance >= 0.9) {
+      else if (distance < 1.0 && distance >= 0.0) {
+        if (distance >= 0.9) {
           return '#d7eb64';
         }
-        else if(distance < 0.9 && distance >= 0.8) {
+        else if (distance < 0.9 && distance >= 0.8) {
           return '#cfed69';
         }
-        else if(distance < 0.8 && distance >= 0.7) {
+        else if (distance < 0.8 && distance >= 0.7) {
           return '#c7ee6e';
         }
-        else if(distance < 0.7 && distance >= 0.6) {
+        else if (distance < 0.7 && distance >= 0.6) {
           return '#c0f073';
         }
-        else if(distance < 0.6 && distance >= 0.5) {
+        else if (distance < 0.6 && distance >= 0.5) {
           return '#b8f278';
         }
-        else if(distance < 0.5 && distance >= 0.4) {
+        else if (distance < 0.5 && distance >= 0.4) {
           return '#b1f47d';
         }
-        else if(distance < 0.4 && distance >= 0.3) {
+        else if (distance < 0.4 && distance >= 0.3) {
           return '#aaf682';
         }
-        else if(distance < 0.3 && distance >= 0.2) {
+        else if (distance < 0.3 && distance >= 0.2) {
           return '#a2f887';
         }
-        else if(distance < 0.2 && distance >= 0.1) {
+        else if (distance < 0.2 && distance >= 0.1) {
           return '#9bfa8c';
         }
-        else if(distance < 0.1 && distance >= 0.0) {
-            if(distance == 0.0) {
-              return GREEN_HEX_CODE;
-            }
-            else if(distance <= 0.05) {
-              return '#8bfd96';
-            }
-            else {
-              return '#93fb91';
-            }
+        else if (distance < 0.1 && distance >= 0.0) {
+          if (distance == 0.0) {
+            return GREEN_HEX_CODE;
+          }
+          else if (distance <= 0.05) {
+            return '#8bfd96';
+          }
+          else {
+            return '#93fb91';
+          }
         }
       }
 
     }
-    else if(distance > 5.0 && distance <= 10.0) {
+    else if (distance > 5.0 && distance <= 10.0) {
       return '#da7948';
     }
-    else if(distance > 10.0 && distance <= 15.0) {
+    else if (distance > 10.0 && distance <= 15.0) {
       return '#d75943';
     }
-    else if(distance >= 15.0) {
+    else if (distance >= 15.0) {
       return '#d33e43'
     }
     else {
@@ -774,7 +735,7 @@ var RecipientInfoBar = React.createClass({
       user = (this.state.infoContent === 'recipient' ? recipient : currentUserData);
 
     let tagsSection = (
-      <View style={[styles.tagBar, {bottom: 10}]}>
+      <View style={[styles.tagBar, {bottom: (this.state.infoContent === 'recipient' ? 15 : 0), marginLeft: width/8}]}>
         <Text style={styles.tagsTitle}>TAGS: </Text>
         <ScrollView
           automaticallyAdjustContentInsets={false}
@@ -896,6 +857,7 @@ var RecipientInfoBar = React.createClass({
                   chatRoomRef={this.props.chatRoomRef}
                   closeKeyboard={this.props.closeKeyboard}
                   currentUserData={currentUserData}
+                  expireTime={this.props.expireTime}
                   firebaseRef={this.props.firebaseRef}
                   handleSetHasTimerExpiredState={this.props.handleSetHasTimerExpiredState}
                   _id={this.props._id}
@@ -979,6 +941,7 @@ var TimerBar = React.createClass({
     chatRoomRef: React.PropTypes.object.isRequired,
     closeKeyboard: React.PropTypes.func.isRequired,
     currentUserData: React.PropTypes.object.isRequired,
+    expireTime: React.PropTypes.number,
     firebaseRef: React.PropTypes.object,
     handleSetHasTimerExpiredState: React.PropTypes.func.isRequired,
     _id: React.PropTypes.string.isRequired,
@@ -1009,79 +972,76 @@ var TimerBar = React.createClass({
   componentWillMount() {
     let chatRoomRef = this.props.chatRoomRef,
       currentUserData = this.props.currentUserData,
+      expireTime = this.props.expireTime,
       firebaseRef = this.props.firebaseRef,
       recipient = this.props.recipient,
       _this = this;
 
-    chatRoomRef.child('timer/expireTime').on('value', snapshot => {
-      // @hmm: if no timer value then return from function
-      if(!snapshot.val() && _.isNumber(this.state.timerValInSeconds) && this.state.timerValInSeconds < CHAT_DURATION_IN_MINUTES*60) {
-        this.props.navigator.pop();
+    // TODO: change to look at props and
+    // @hmm: if no timer value then return from function
+    if (!expireTime && _.isNumber(this.state.timerValInSeconds) && this.state.timerValInSeconds < CHAT_DURATION_IN_MINUTES * 60) {
+      this.props.navigator.pop();
+    }
+    else if (!expireTime) {
+      this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES * 60, timerActive: false});
+      return;
+    }
+
+    // @hmm: for creator of chatroom
+    if (Math.floor((expireTime - this.state.currentTime) / 1000) > CHAT_DURATION_IN_MINUTES * 60) {
+      this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES * 60});
+    } else {
+      this.setState({timerValInSeconds: Math.floor((expireTime - this.state.currentTime) / 1000)});
+    }
+
+    // @hmm: update in match_request objects so it can be referenced in users list for timer overlays
+    if (this.props.recipientData.chatRoomEventTitle) {
+      firebaseRef.child(`users/${currentUserData.ventureId}/event_invite_match_requests/${recipient.ventureId}`)
+        .update({expireTime});
+      firebaseRef.child(`users/${recipient.ventureId}/event_invite_match_requests/${currentUserData.ventureId}`)
+        .update({expireTime});
+    } else {
+      firebaseRef.child(`users/${currentUserData.ventureId}/match_requests/${recipient.ventureId}`)
+        .update({expireTime});
+      firebaseRef.child(`users/${recipient.ventureId}/match_requests/${currentUserData.ventureId}`)
+        .update({expireTime});
+    }
+
+    this.handle = this.setInterval(() => {
+      if (this.state.timerValInSeconds - 1 <= 0) {
+        this._destroyChatroom(chatRoomRef);
+        this.clearInterval(this.handle);
       }
-      else if (!snapshot.val()) {
-        this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES*60, timerActive: false});
-        return;
-      }
 
-
-      if (!this.state.timerActive) this.setState({timerActive: true});
-
-      // @hmm: for creator of chatroom
-        if(Math.floor((snapshot.val() - this.state.currentTime) / 1000) > CHAT_DURATION_IN_MINUTES*60) {
-          this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES*60});
-        } else {
-          this.setState({timerValInSeconds: Math.floor((snapshot.val() - this.state.currentTime) / 1000)});
-        }
-
-      // @hmm: update in match_request objects so it can be referenced in users list for timer overlays
-      if (this.props.recipientData.chatRoomEventTitle) {
-        firebaseRef.child(`users/${currentUserData.ventureId}/event_invite_match_requests/${recipient.ventureId}`)
-          .update({expireTime: snapshot.val()});
-        firebaseRef.child(`users/${recipient.ventureId}/event_invite_match_requests/${currentUserData.ventureId}`)
-          .update({expireTime: snapshot.val()});
+      if (this.state.timerValInSeconds > CHAT_DURATION_IN_MINUTES * 60) {
+        this.setState({timerValInSeconds: (CHAT_DURATION_IN_MINUTES * 60) - 1})
       } else {
-        firebaseRef.child(`users/${currentUserData.ventureId}/match_requests/${recipient.ventureId}`)
-          .update({expireTime: snapshot.val()});
-        firebaseRef.child(`users/${recipient.ventureId}/match_requests/${currentUserData.ventureId}`)
-          .update({expireTime: snapshot.val()});
+        this.setState({timerValInSeconds: this.state.timerValInSeconds - 1});
+        // send you have new messages push notification at 1:30 chat duration mark
+        if (this.state.timerValInSeconds === 90) {
+          this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+            // if other user has unread messages
+            if (snapshot.val() !== this.props.messageListLength) {
+              fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'X-Parse-Application-Id': PARSE_APP_ID,
+                  'Content-Type': 'application/json',
+                },
+                body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have new messages!"}`
+              })
+                .then(response => {
+                  console.log(JSON.stringify(response))
+                })
+                .catch(error => console.log(error))
+            }
+          });
+        }
       }
 
-      _this.handle = _this.setInterval(() => {
-        if (this.state.timerValInSeconds-1 <= 0) {
-          _this._destroyChatroom(chatRoomRef);
-          _this.clearInterval(_this.handle);
-        }
+    }, 1000);
 
-        if(this.state.timerValInSeconds > CHAT_DURATION_IN_MINUTES*60) {
-          this.setState({timerValInSeconds: (CHAT_DURATION_IN_MINUTES*60)-1})
-        } else {
-          this.setState({timerValInSeconds: this.state.timerValInSeconds-1});
-          // send you have new messages push notification at 1:30 chat duration mark
-          if(this.state.timerValInSeconds === 90) {
-            this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
-              // if other user has unread messages
-              if(snapshot.val() !== this.props.messageListLength) {
-                fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-                  method: 'POST',
-                  headers: {
-                    'Accept': 'application/json',
-                    'X-Parse-Application-Id': PARSE_APP_ID,
-                    'Content-Type': 'application/json',
-                  },
-                  body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have new messages!"}`
-                })
-                  .then(response => {
-                    console.log(JSON.stringify(response))
-                  })
-                  .catch(error => console.log(error))
-              }
-            });
-          }
-        }
-
-      }, 1000);
-
-    });
   },
 
   componentDidMount() {
@@ -1120,13 +1080,13 @@ var TimerBar = React.createClass({
     // the destruction of the match requests is now conditional, and navigator.pop() is not part of this function
     this.props.navigator.pop();
 
-    if(this.props.chatRoomEventTitle) {
+    if (this.props.chatRoomEventTitle) {
       currentUserMatchRequestsRef = firebaseRef.child('users/' + currentUserIDHashed + '/event_invite_match_requests'),
-      targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests');
+        targetUserMatchRequestsRef = firebaseRef.child('users/' + targetUserIDHashed + '/event_invite_match_requests');
     }
 
     targetUserMatchRequestsRef.once('value', snapshot => {
-      if(snapshot.val()) { // first user to leave chat
+      if (snapshot.val()) { // first user to leave chat
         // @hmm: destroy match requests
         targetUserMatchRequestsRef.child(currentUserIDHashed).set(null);
         currentUserMatchRequestsRef.child(targetUserIDHashed).set(null);

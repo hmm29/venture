@@ -63,6 +63,7 @@ var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
+var MAX_LIST_SIZE = 80;
 var PAGE_SIZE = 10;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
@@ -967,15 +968,15 @@ var ChatsListPage = React.createClass({
               maxSearchDistance = matchingPreferences && matchingPreferences.maxSearchDistance;
 
             compositeUsersList && _.each(compositeUsersList, (user) => {
-              if (!user) return;
+              if (!user || !(user && user.status && user.status.isOnline)) return;
 
               // @hmm: because of cumulative privacy selection, only have to check for friends+ for both 'friends+' and 'all'
               if (matchingPreferences && matchingPreferences.privacy
                 && matchingPreferences.privacy.indexOf('friends+') > -1) {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  /* && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
+                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -988,8 +989,8 @@ var ChatsListPage = React.createClass({
                   && _.findIndex(this.props.currentUserFriends, {name: user.name}) > -1) {
                   if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                     && user.location.coordinates.latitude && user.location.coordinates.longitude
-                    /*&& GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
+                    && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                      user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                         .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                     if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -1000,8 +1001,8 @@ var ChatsListPage = React.createClass({
               } else {
                 if (this.props.currentUserLocationCoords && user.location && user.location.coordinates
                   && user.location.coordinates.latitude && user.location.coordinates.longitude
-                  /*&& GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
-                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609*/) {
+                  && GeoFire.distance(this.props.currentUserLocationCoords, [user.location.coordinates.latitude,
+                    user.location.coordinates.longitude]) <= maxSearchDistance * 1.609) {
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
                       .indexOf(user.gender) > -1) filteredUsersArray.push(user);
                   if (matchingPreferences && matchingPreferences.gender && matchingPreferences.gender
@@ -1083,6 +1084,10 @@ var ChatsListPage = React.createClass({
   updateRows(userRows:Array) {
     // @hmm: sorting logic goes here, sort by match status which
     // happens to be alphabetical => "matched" > "received" > "sent"
+
+    if(userRows.length > MAX_LIST_SIZE) {
+      userRows = _.take(userRows, MAX_LIST_SIZE);
+    }
 
     userRows = _.orderBy(userRows, [`match_requests.${this.props.ventureId}.status`], ['asc']);
 

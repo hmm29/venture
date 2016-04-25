@@ -39,7 +39,7 @@ var GeoFire = require('geofire');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');
-var SGListView = require('react-native-sglistview');
+var RefreshableListView = require('../../Partials/RefreshableListView');
 var Swipeout = require('react-native-swipeout');
 var sha256 = require('sha256');
 var TimerMixin = require('react-timer-mixin');
@@ -59,9 +59,11 @@ var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRe
 // Globals
 var {height, width} = Dimensions.get('window');
 var CHAT_DURATION_IN_MINUTES = 5;
-var INITIAL_LIST_SIZE = 8;
+var INITIAL_ATTENDEE_LIST_SIZE = 24;
+var INITIAL_EVENTS_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
+var MAX_EVENTS_LIST_SIZE = 20;
 var PAGE_SIZE = 10;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
@@ -685,15 +687,8 @@ var AttendeeList = React.createClass({
   _handle: null,
 
   componentWillMount() {
-    let attendeesListRef = this.props.eventsListRef && this.props.eventData && this.props.eventData.id
-        && this.props.eventsListRef.child(`${this.props.eventData.id}/attendees`),
-      usersListRef = this.props.firebaseRef && this.props.firebaseRef.child('users'),
+    let usersListRef = this.props.firebaseRef && this.props.firebaseRef.child('users'),
       _this = this;
-
-    attendeesListRef && attendeesListRef.on('value', snapshot => {
-      _this.updateRows(_.cloneDeep(_.values(snapshot.val())));
-      _this.setState({rows: _.cloneDeep(_.values(snapshot.val())), attendeesListRef, usersListRef});
-    });
 
     this.bindAsArray(usersListRef, 'rows');
 
@@ -706,8 +701,15 @@ var AttendeeList = React.createClass({
     this.state.attendeesListRef && this.state.attendeesListRef.off();
   },
 
-  updateRows(rows) {
-    this.setState({dataSource: this.state.dataSource.cloneWithRows(rows)});
+  getMoreUsers(rows, startIndex, amountToAdd, callback){
+    var endIndex = (startIndex + amountToAdd) < rows.length ? (startIndex + amountToAdd) : rows.length;
+    if(startIndex < endIndex) {
+      callback(_.slice(rows, startIndex, endIndex));
+    } else {
+      callback([]);
+    }
+
+    this.setState({lastIndex: endIndex});
   },
 
   _renderHeader() {
@@ -716,8 +718,8 @@ var AttendeeList = React.createClass({
       <Header>
         <View />
         <Text>{(this.props.eventData
-        && this.props.eventData.title 
-        && this.props.eventData.title.length < 24 ? "WHO'S GOING TO : " : "")} 
+        && this.props.eventData.title
+        && this.props.eventData.title.length < 24 ? "WHO'S GOING TO : " : "")}
         <Text style={{color: '#F06449', width: width/3, overflow: 'hidden'}}>{this.props.eventData
         && this.props.eventData.title}</Text></Text>
         <CloseIcon style={{bottom: height / 15, left: (width < 420 ? width/21 : 0)}}
@@ -753,15 +755,29 @@ var AttendeeList = React.createClass({
         <View>
         {this._renderHeader()}
         </View>
-        <ListView
-          style={{height: height/1.35}}
-          dataSource={this.state.dataSource}
-          renderRow={this._renderUser}
-          initialListSize={INITIAL_LIST_SIZE}
-          onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
-          pageSize={PAGE_SIZE}
-          automaticallyAdjustContentInsets={false}
-          scrollRenderAheadDistance={600}/>
+        <RefreshableListView
+          initialListSize={INITIAL_ATTENDEE_LIST_SIZE}
+          loadMoreText={this.state.rows.length > INITIAL_ATTENDEE_LIST_SIZE ? 'Load More...' : ''}
+          scrollRenderAheadDistance={height/1.5}
+          renderRow={(row) => this._renderUser(row)}
+          onRefresh={(page, callback) => {
+            if (page != 1 && this.state.rows){
+                  this.getMoreUsers(this.state.rows, this.state.lastIndex, INITIAL_ATTENDEE_LIST_SIZE, callback);
+             } else {
+                let attendeesListRef = this.props.eventsListRef && this.props.eventData && this.props.eventData.id
+                  && this.props.eventsListRef.child(`${this.props.eventData.id}/attendees`),
+                usersListRef = this.props.firebaseRef && this.props.firebaseRef.child('users'),
+                _this = this;
+
+              attendeesListRef && attendeesListRef.on('value', snapshot => {
+                callback(_.shuffle(_.slice(_.cloneDeep(_.values(snapshot.val())), 0, INITIAL_ATTENDEE_LIST_SIZE)));
+                _this.setState({rows: _.cloneDeep(_.values(snapshot.val())), attendeesListRef, usersListRef});
+              });
+              _this.setState({lastIndex: INITIAL_ATTENDEE_LIST_SIZE});
+             }
+          }}
+          backgroundColor={'#F6F6EF'}
+          />
       </View>
     )
   }
@@ -1081,6 +1097,10 @@ var EventsListPage = React.createClass({
   },
 
   updateRows(eventsRows:Array) {
+    if(eventsRows.length > MAX_EVENTS_LIST_SIZE) {
+      eventsRows = _.take(eventsRows, MAX_EVENTS_LIST_SIZE);
+    }
+
     this.setState({dataSource: this.state.dataSource.cloneWithRows(eventsRows)});
   },
   _renderHeader() {
@@ -1120,8 +1140,7 @@ var EventsListPage = React.createClass({
         <ListView
           dataSource={this.state.dataSource}
           renderRow={this._renderEvent}
-          // renderScrollComponent={props => <SGListView {...props} premptiveLoading={5} />}
-          initialListSize={INITIAL_LIST_SIZE}
+          initialListSize={INITIAL_EVENTS_LIST_SIZE}
           pageSize={PAGE_SIZE}
           onChangeVisibleRows={(visibleRows, changedRows) => this.setState({visibleRows, changedRows})}
           automaticallyAdjustContentInsets={false}
@@ -1317,7 +1336,8 @@ var styles = StyleSheet.create({
   userRow: {
     flex: 1,
     backgroundColor: '#fefefb',
-    width
+    width,
+    overflow: 'hidden'
   },
   eventTitle: {
     width: width / 3.2,

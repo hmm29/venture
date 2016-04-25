@@ -41,12 +41,43 @@ class MatchSuccessIcon extends Component {
   constructor(props:Props) {
     super(props);
     this.state = {
+      badgeValue: 0,
       chatRoomRef: null,
     };
   };
 
+  _createCallbacksWithCurrentProps(props) {
+    let chatRoomsListRef = props.firebaseRef && props.firebaseRef.child('chat_rooms'),
+      currentUserIDHashed = props.currentUserIDHashed,
+      targetUserIDHashed = props.targetUserIDHashed;
+
+    if(props.chatRoomId) {
+
+      let chatRoomRef = chatRoomsListRef.child(props.chatRoomId);
+      this._calculateBadgeValue(chatRoomRef);
+
+    } else {
+      let eventInviteMatchRequestChatIDPossibility2, matchRequestChatIDPossibility2;
+      eventInviteMatchRequestChatIDPossibility2 = 'EVENT_INVITE_' + targetUserIDHashed + '_TO_' + currentUserIDHashed;
+      matchRequestChatIDPossibility2 = targetUserIDHashed + '_TO_' + currentUserIDHashed;
+
+      chatRoomsListRef.child(matchRequestChatIDPossibility2).once('value')
+        .then(snapshot => {
+          if(!snapshot.val()) {
+            chatRoomsListRef.child(eventInviteMatchRequestChatIDPossibility2).once('value')
+              .then(snapshot => {
+                if(snapshot.val()) {
+                  this._calculateBadgeValue(chatRoomsListRef.child(eventInviteMatchRequestChatIDPossibility2))
+                }
+              })
+          } else {
+            this._calculateBadgeValue(chatRoomsListRef.child(matchRequestChatIDPossibility2));
+          }
+        }, error => console.log(error))
+    }
+  };
+
   componentWillMount() {
-    this.setState({badgeValue: 0});
     this._createCallbacksWithCurrentProps(this.props);
   };
 
@@ -87,55 +118,6 @@ class MatchSuccessIcon extends Component {
 
       this.setState({badgeValue, messageListCount})
       });
-  };
-
-  _createCallbacksWithCurrentProps(props) {
-    let chatRoomsListRef = props.firebaseRef && props.firebaseRef.child('chat_rooms'),
-      currentUserIDHashed = props.currentUserIDHashed,
-      targetUserIDHashed = props.targetUserIDHashed;
-
-    if(props.chatRoomId) {
-
-      let chatRoomRef = chatRoomsListRef.child(props.chatRoomId);
-      this._calculateBadgeValue(chatRoomRef);
-
-    } else {
-      let eventInviteMatchRequestChatIDPossibility1, eventInviteMatchRequestChatIDPossibility2, matchRequestChatIDPossibility1, matchRequestChatIDPossibility2;
-      eventInviteMatchRequestChatIDPossibility1 = 'EVENT_INVITE_' + currentUserIDHashed + '_TO_' + targetUserIDHashed;
-      eventInviteMatchRequestChatIDPossibility2 = 'EVENT_INVITE_' + targetUserIDHashed + '_TO_' + currentUserIDHashed;
-      matchRequestChatIDPossibility1 = currentUserIDHashed + '_TO_' + targetUserIDHashed;
-      matchRequestChatIDPossibility2 = targetUserIDHashed + '_TO_' + currentUserIDHashed;
-
-      chatRoomsListRef.child(matchRequestChatIDPossibility1).once('value')
-        .then(snapshot => {
-          if(!snapshot.val()) {
-            chatRoomsListRef.child(matchRequestChatIDPossibility2).once('value')
-              .then(snapshot => {
-                if(!snapshot.val()) {
-                  chatRoomsListRef.child(eventInviteMatchRequestChatIDPossibility1).once('value')
-                    .then(snapshot => {
-                      if(!snapshot.val()) {
-                        chatRoomsListRef.child(eventInviteMatchRequestChatIDPossibility2).once('value')
-                          .then(snapshot => {
-                            if(!snapshot.val()) {
-                              return;
-                            } else {
-                              chatRoomsListRef.child(eventInviteMatchRequestChatIDPossibility2).once('value')
-                            }
-                          });
-                          } else {
-                        this._calculateBadgeValue(eventInviteMatchRequestChatIDPossibility1)
-                      }
-                    });
-                    } else {
-                  this._calculateBadgeValue(chatRoomsListRef.child(matchRequestChatIDPossibility2))
-                }
-              })
-          } else {
-            this._calculateBadgeValue(chatRoomsListRef.child(matchRequestChatIDPossibility1));
-          }
-        }, error => console.log(error))
-    }
   };
 
   _handleOnPress() {

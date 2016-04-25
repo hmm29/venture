@@ -163,7 +163,7 @@ var ProfilePage = React.createClass({
                           this.props.navigator.push({title: 'Edit Profile', component: EditProfilePage,
                           passProps: {
                           defaultFacebookProfilePhoto:
-                          this.state.user && `https://res.cloudinary.com/dwnyawluh/image/facebook/q_18/${this.state.user.userId}.jpg`,
+                          this.state.user && `https://res.cloudinary.com/dwnyawluh/image/facebook/q_10/${this.state.user.userId}.jpg`,
                           firebaseRef: this.state.firebaseRef,
                           firstSession: this.props.firstSession,
                           ventureId: this.state.ventureId}});
@@ -297,7 +297,7 @@ var Photo = React.createClass({
                     }
                   }
               source={{uri: this.state.currentPic
-                            || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_18/${this.props.user && this.props.user.userId}.jpg`}}
+                            || `https://res.cloudinary.com/dwnyawluh/image/facebook/q_10/${this.props.user && this.props.user.userId}.jpg`}}
               />
           </TouchableOpacity>
         </Animatable.View>

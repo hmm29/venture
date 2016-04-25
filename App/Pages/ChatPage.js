@@ -15,13 +15,17 @@
 var React = require('react-native');
 
 var {
+  ActionSheetIOS,
   AlertIOS,
   AppStateIOS,
+  Component,
   Image,
   InteractionManager,
   LayoutAnimation,
+  Linking,
   ListView,
   Navigator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,6 +37,7 @@ var {
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
 var BackIcon = require('../Partials/Icons/NavigationButtons/BackIcon');
+var Communications = require('react-native-communications');
 var Dimensions = require('Dimensions');
 var DynamicCheckBoxIcon = require('../Partials/Icons/DynamicCheckBoxIcon');
 var Firebase = require('firebase');
@@ -63,194 +68,232 @@ var GREEN_HEX_CODE = '#84FF9B';
 var YELLOW_HEX_CODE = '#ffe770';
 var WHITE_HEX_CODE = '#fff';
 
-var Messenger = React.createClass({
+var STATUS_BAR_HEIGHT = Navigator.NavigationBar.Styles.General.StatusBarHeight;
+
+var GiftedMessengerContainer = React.createClass({
+  mixins: [TimerMixin, ReactFireMixin],
+
   getInitialState() {
     return {
-      loaded: false,
       message: '',
-      messageList: Object,
+      messages: [],
+      isLoadingEarlierMessages: false,
+      typingMessage: '',
+      allLoaded: false
     }
   },
 
   componentDidMount() {
+    let chatRoomRef = this.props.chatRoomRef,
+      chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages');
 
+    this.bindAsArray(chatRoomMessagesRef, 'messages');
+    this.setState({chatRoomMessagesRef});
 
+    this.getInitialMessages();
+    this._isMounted = true;
   },
 
-  getMessages() {
-    return [
-      {text: 'Are you building a chat app?', name: 'React-Native', image: {uri: 'https://facebook.github.io/react/img/logo_og.png'}, position: 'left', date: new Date(2015, 10, 16, 19, 0)},
-      {
-        text: "Yes, and I use Gifted Messenger!",
-        name: 'Developer',
-        image: null,
-        position: 'right',
-        date: new Date(2015, 10, 17, 19, 0)
-        // If needed, you can add others data (eg: userId, messageId)
-      },
-      {
-        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
-        name: 'Developer',
-        image: null,
-        position: 'right',
-        date: new Date(2014, 0, 1, 20, 0),
-      }, {
-        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
-        name: 'React-Native',
-        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
-        position: 'left',
-        date: new Date(2013, 0, 1, 12, 0),
-      },
-      {
-        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
-        name: 'Developer',
-        image: null,
-        position: 'right',
-        date: new Date(2014, 0, 1, 20, 0),
-      }, {
-        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
-        name: 'React-Native',
-        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
-        position: 'left',
-        date: new Date(2013, 0, 1, 12, 0),
-      },
-      {
-        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
-        name: 'Developer',
-        image: null,
-        position: 'right',
-        date: new Date(2014, 0, 1, 20, 0),
-      }, {
-        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
-        name: 'React-Native',
-        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
-        position: 'left',
-        date: new Date(2013, 0, 1, 12, 0),
-      },
-    ];
+  componentWillUnmount() {
+    this._isMounted = false;
   },
 
-  handleSend(message = {}, rowID = null) {
-    // Your logic here
-    // Send message.text to your server
+  getInitialMessages() {
+    this.props.chatRoomRef.child('messages').once('value', snapshot => {
+      this.setMessages(snapshot.val() && _.cloneDeep(_.values(snapshot.val())) || [])
+      this.setState({allLoaded: _.size(snapshot.val() && _.cloneDeep(_.values(snapshot.val()))) <= 10});
+    })
+  },
 
-    // this._GiftedMessenger.setMessageStatus('Sent', rowID);
-    // this._GiftedMessenger.setMessageStatus('Seen', rowID);
-    // this._GiftedMessenger.setMessageStatus('Custom label status', rowID);
-    if (this.isMounted()) {
-      this._GiftedMessenger.setMessageStatus('ErrorButton', rowID); // => In this case, you need also to set onErrorButtonPress
+  setMessageStatus(uniqueId, status) {
+    let messages = [];
+    let found = false;
+
+    for (let i = 0; i < this.state.messages.length; i++) {
+      if (this.state.messages[i].uniqueId === uniqueId) {
+        let clone = Object.assign({}, this.state.messages[i]);
+        clone.status = status;
+        messages.push(clone);
+        found = true;
+      } else {
+        messages.push(this.state.messages[i]);
+      }
+    }
+
+    if (found === true) {
+      this.setMessages(messages);
     }
   },
 
-  // @oldestMessage is the oldest message already added to the list
-  onLoadEarlierMessages(oldestMessage = {}, callback = () => {}) {
+  setMessages(messages) {
+    // append the message
+    this.setState({
+      messages: messages,
+    });
+    this.props.getMessageListSize(_.size(messages));
+  },
+
+  handleSend(message = {}) {
+
+    // Your logic here
+    // Send message.text to your server
+
+    message.uniqueId = Math.round(Math.random() * 10000); // simulating server-side unique id generation
+    // mark the sent message as Seen
+      this.state.chatRoomMessagesRef.push(message).then(() => {
+        this.setMessages(_.cloneDeep(_.values(this.state.messages))); // here you can replace 'Seen' by any string you want
+      });
+
+    // if you couldn't send the message to your server :
+    // this.setMessageStatus(message.uniqueId, 'ErrorButton');
+  },
+
+  onLoadEarlierMessages() {
+
+    // display a loader until you retrieve the messages from your server
+    this.setState({
+      isLoadingEarlierMessages: true
+    });
 
     // Your logic here
     // Eg: Retrieve old messages from your server
 
-    // newest messages have to be at the begining of the array
-    var earlierMessages = [
-      {
-        text: 'This is a touchable phone number 0606060606 parsed by taskrabbit/react-native-parsed-text',
-        name: 'Developer',
-        image: null,
-        position: 'right',
-        date: new Date(2014, 0, 1, 20, 0),
-      }, {
-        text: 'React Native enables you to build world-class application experiences on native platforms using a consistent developer experience based on JavaScript and React. https://github.com/facebook/react-native',
-        name: 'React-Native',
-        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
-        position: 'left',
-        date: new Date(2013, 0, 1, 12, 0),
-      },
-    ];
+    // IMPORTANT
+    // Oldest messages have to be at the begining of the array
 
-    setTimeout(() => {
-      callback(earlierMessages, false); // when second parameter is true, the "Load earlier messages" button will be hidden
-    }, 1000);
+    let earlierMessages = [];
+
+    if(this.state.messages.length > 10) {
+      earlierMessages = _.slice(this.state.messages, 0, this.state.messages.length-8);
+    }
+
+    this.setTimeout(() => {
+      this.setMessages(earlierMessages.concat(this.state.messages)); // prepend the earlier messages to your list
+      this.setState({
+        isLoadingEarlierMessages: false, // hide the loader
+        allLoaded: true, // hide the `Load earlier messages` button
+      });
+    }, 1000); // simulating network
   },
 
   handleReceive(message = {}) {
-    if (this.isMounted()) {
-      this._GiftedMessenger.appendMessage(message);
-    }
+    // make sure that your message contains :
+    // text, name, image, position: 'left', date, uniqueId
+    this.setMessages(this.state.messages.concat(message));
+    this.setState({message: ''});
   },
 
-  onErrorButtonPress(message = {}, rowID = null) {
+  onErrorButtonPress(message = {}) {
     // Your logic here
-    // Eg: Re-send the message to your server
+    // re-send the failed message
 
-    setTimeout(() => {
-      // will set the message to a custom status 'Sent' (you can replace 'Sent' by what you want - it will be displayed under the row)
-      if (this.isMounted()) {
-        this._GiftedMessenger.setMessageStatus('Sent', rowID);
-      }
-      setTimeout(() => {
-        // will set the message to a custom status 'Seen' (you can replace 'Seen' by what you want - it will be displayed under the row)
-        if (this.isMounted()) {
-          this._GiftedMessenger.setMessageStatus('Seen', rowID);
-        }
-        setTimeout(() => {
-          // append an answer
-          this.handleReceive({text: 'I saw your message', name: 'React-Native', image: {uri: 'https://facebook.github.io/react/img/logo_og.png'}, position: 'left', date: new Date()});
-        }, 500);
-      }, 1000);
-    }, 500);
+    // remove the status
+    this.setMessageStatus(message.uniqueId, '');
   },
 
   // will be triggered when the Image of a row is touched
-  onImagePress(rowData = {}, rowID = null) {
+  onImagePress(message = {}) {
     // Your logic here
     // Eg: Navigate to the user profile
   },
 
   render() {
     return (
-      <GiftedMessenger
-        ref={(c) => this._GiftedMessenger = c}
+      <View style={{width, flex: 1}}>
+        <GiftedMessenger
+          ref={(c) => this._GiftedMessenger = c}
 
-        styles={{
+          styles={{
           bubbleRight: {
-            marginLeft: 70,
-            backgroundColor: '#007aff',
+            marginLeft: width/10,
+            backgroundColor: '#fff',
           },
+          bubbleLeft: {
+            marginRight: width/10,
+            backgroundColor: '#222',
+          },
+            textLeft: {
+            color: '#fff',
+            fontFamily: 'AvenirNextCondensed-Regular'
+          },
+          textRight: {
+            color: '#111',
+            fontFamily: 'AvenirNextCondensed-Regular'
+          }
         }}
 
-        autoFocus={false}
-        messages={this.state.messages}
-        handleSend={this.handleSend.bind(this)}
-        onErrorButtonPress={this.onErrorButtonPress.bind(this)}
-        maxHeight={Dimensions.get('window').height-(HEADER_CONTAINER_HEIGHT+RECIPIENT_INFO_BAR_HEIGHT+TIMER_BAR_HEIGHT)}
-        loadEarlierMessagesButton={true}
-        onLoadEarlierMessages={this.onLoadEarlierMessages.bind(this)}
-        senderName='Developer'
-        senderImage={null}
-        onImagePress={this.onImagePress.bind(this)}
-        displayNames={true}
-        parseText={true} // enable handlePhonePress and handleUrlPress
-        inverted={true}
-        />
+          autoFocus={false}
+          blurOnSubmit={true}
+          forceRenderImage={true}
+          messages={this.state.messages}
+          handleSend={this.handleSend.bind(this)}
+          onErrorButtonPress={this.onErrorButtonPress.bind(this)}
+          maxHeight={height-(HEADER_CONTAINER_HEIGHT+RECIPIENT_INFO_BAR_HEIGHT+TIMER_BAR_HEIGHT+3.2*MESSAGE_TEXT_INPUT_HEIGHT)}
 
+          loadEarlierMessagesButton={!this.state.allLoaded}
+          onLoadEarlierMessages={this.onLoadEarlierMessages.bind(this)}
+
+          senderName=''
+          senderImage={{uri: this.props.currentUserData.picture}}
+          onImagePress={this.onImagePress}
+          displayNames={true}
+          hideTextInput={false}
+          keyboardShouldPersistTaps={false}
+          onChangeText={() => {
+          }}
+
+          parseText={false} // enable handlePhonePress, handleUrlPress and handleEmailPress
+          handlePhonePress={this.handlePhonePress}
+          handleUrlPress={this.handleUrlPress}
+          handleEmailPress={this.handleEmailPress}
+
+          isLoadingEarlierMessages={this.state.isLoadingEarlierMessages}
+          typingMessage={this.state.typingMessage}
+          />
+      </View>
     );
-  }
-});
-
-var ChatMateTypingLoader = React.createClass({
-  componentDidMount() {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   },
 
-  render() {
-    return (
-      <View ref="chatMateTypingLoader" style={{alignSelf: 'center', bottom: height/20}}>
-        <TouchableOpacity onPress={() => {this.refs.chatMateTypingLoader.jello(300)}}>
-          <Text
-            style={{color: '#ccc', fontFamily: 'AvenirNextCondensed-UltraLight', textAlign: 'center', fontSize: 50}}>
-            <Text style={{fontSize: height/30, top: 15}}>{this.props.recipientFirstName + ' is typing ...'}</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    )
+  handleUrlPress(url) {
+    Linking.canOpenURL(url).then(supported => {
+      if (!supported) {
+        console.log('Can\'t handle url: ' + url);
+      } else {
+        return Linking.openURL(url);
+      }
+    }).catch(err => console.error('An error occurred', err));
+  },
+
+// TODO
+// make this compatible with Android
+  handlePhonePress(phone) {
+    if (Platform.OS !== 'android') {
+      var BUTTONS = [
+        'Text message',
+        'Call',
+        'Cancel',
+      ];
+      var CANCEL_INDEX = 2;
+
+      ActionSheetIOS.showActionSheetWithOptions({
+          options: BUTTONS,
+          cancelButtonIndex: CANCEL_INDEX
+        },
+        (buttonIndex) => {
+          switch (buttonIndex) {
+            case 0:
+              Communications.phonecall(phone, true);
+              break;
+            case 1:
+              Communications.text(phone);
+              break;
+          }
+        });
+    }
+  },
+
+  handleEmailPress(email) {
+    Communications.email(email, null, null, null, null);
   }
 });
 
@@ -261,7 +304,6 @@ var ChatPage = React.createClass({
   getInitialState() {
     return {
       chatExists: true,
-      chatMateIsTyping: false,
       chatRoomMessagesRef: null,
       chatRoomObjectCopy: {},
       contentOffsetYValue: 0,
@@ -273,73 +315,43 @@ var ChatPage = React.createClass({
       hasKeyboardSpace: false,
       hasTimerExpired: false,
       infoContentVisible: false,
+      messageListSize: 0,
       showExtendChatModal: false,
     };
   },
 
-  // @hmm: see http://stackoverflow.com/questions/33049731/scroll-to-bottom-of-scrollview-in-react-native
-  footerY: 0,
   _handle: null,
-  listHeight: 0,
 
-  componentWillMount() {
+  componentDidMount() {
     InteractionManager.runAfterInteractions(() => {
-        let chatRoomRef = this.props.chatRoomRef,
-          chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages');
-
-        this.bindAsObject(chatRoomMessagesRef, 'messageList');
-        this.scrollResponder = this.refs[MESSAGES_LIST_REF] && this.refs[MESSAGES_LIST_REF].getScrollResponder();
+        let chatRoomRef = this.props.chatRoomRef, chatRoomMessagesRef = chatRoomRef.child('messages');
 
         this.setState({
           chatRoomMessagesRef,
           message: ''
         });
 
-        this.props.chatRoomRef.child(`isTyping_${this.props.recipient.ventureId}`).on('value', snapshot => {
-          this.setState({chatMateIsTyping: snapshot.val()});
-        });
+        chatRoomRef.once('value', snapshot => {
+          if (!snapshot.val() || _.size(snapshot.val()) <= 4) {
+            this.props.navigator.pop();
+          }
 
-    });
-  },
+          var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
+          chatRoomRef.child(seenMessagesId).set(snapshot.val() && snapshot.val().messages && _.size(snapshot.val().messages) || 0);
 
-  componentDidMount() {
-    InteractionManager.runAfterInteractions(() => {
-        this.setTimeout(() => {
-          let chatRoomRef = this.props.chatRoomRef,
-            chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages');
+          chatRoomRef.child(`inChatRoom_${this.props.currentUserData && this.props.currentUserData.ventureId}`).set(true);
 
-          chatRoomRef.once('value', snapshot => {
-            if (!snapshot.val() || _.size(snapshot.val()) <= 4) {
-              this.props.navigator.pop();
-            }
-
-            var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
-            chatRoomRef.child(seenMessagesId).set(snapshot.val() && snapshot.val().messages && _.size(snapshot.val().messages) || 0);
-
-            this.footerY = snapshot.val() && snapshot.val().layoutMarkers
-              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId]
-              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId].messageListHeightRef;
-            this.setState({
-              contentOffsetYValue: snapshot.val() && snapshot.val().layoutMarkers
-              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId]
-              && snapshot.val().layoutMarkers[this.props.currentUserData && this.props.currentUserData.ventureId].contentOffsetYValue,
-              chatRoomObjectCopy: snapshot.val(),
-              expireTime: snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime
-            });
-            if (!_.isEmpty(snapshot.val().messages)) {
-              this.updateMessages(snapshot.val() && snapshot.val().messages && _.cloneDeep(_.values(snapshot.val().messages)));
-            }
+          this.setState({
+            seenMessagesId,
+            chatRoomObjectCopy: snapshot.val(),
+            expireTime: snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime
           });
-        }, 0);
+        });
     });
   },
 
   componentWillUnmount() {
-    this.props.chatRoomRef.child(`layoutMarkers/${this.props.currentUserData.ventureId}`).update({messageListHeightRef: this.footerY || 0});
-    this.props.chatRoomRef.child(`layoutMarkers/${this.props.currentUserData.ventureId}`).update({contentOffsetYValue: this.state.contentOffsetYValue || 0});
-    let seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
-    this.props.chatRoomRef.child(seenMessagesId).set(this.state.messageList
-      && (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length || 0);
+    this.props.chatRoomRef.child(`inChatRoom_${this.props.currentUserData.ventureId}`).set(false);
   },
 
   closeKeyboard() {
@@ -347,9 +359,8 @@ var ChatPage = React.createClass({
     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
   },
 
-  containerTouched(evt) {
-    this.closeKeyboard();
-    return false;
+  getMessageListSize(messageListSize) {
+    this.setState({messageListSize});
   },
 
   handleInfoContentVisibility(infoContentVisible:boolean) {
@@ -363,182 +374,92 @@ var ChatPage = React.createClass({
     if (!this.state.chatExists) this.props.navigator.pop();
   },
 
-  updateMessages(messages:Array<Object>) {
-    this.setState({
-      dataSource: new ListView.DataSource({
-        rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
-      }).cloneWithRows(messages),
-      loaded: true
-    });
-  },
-
-  _renderMessage(message:Object, sectionID:number, rowID:number) {
-    if (this.state.visibleRows && this.state.visibleRows[sectionID] && this.state.visibleRows[sectionID][rowID]
-      && !this.state.visibleRows[sectionID][rowID]) return <View />;
-
-    var recipient = this.props.recipient,
-      currentUserData = this.props.currentUserData,
-      currentUserIDHashed = this.props.currentUserData.ventureId,
-      messageRowStyle = styles.receivedMessageRow,
-      messageTextStyle = styles.receivedMessageText,
-      sentByCurrentUser = (message.senderIDHashed === currentUserIDHashed);
-
-    if (!sentByCurrentUser) {
-      messageRowStyle = styles.sentMessageRow;
-      messageTextStyle = styles.sentMessageText;
-    }
-
-    var avatarThumbnailURL = (!sentByCurrentUser) ? recipient.picture : currentUserData.picture;
-
-    var avatarThumbnail = (
-      <Image
-        source={{uri: avatarThumbnailURL}}
-        style={styles.recipientAlign}/>
-    );
-    return (
-      <LinearGradient
-        colors={(!sentByCurrentUser) ? ['#000', '#111', '#222'] : ['#fff', '#fff']}
-        start={[0,1]}
-        end={[1,0.9]}
-        locations={[0,1.0,0.9]}
-        style={styles.messageRow}>
-        { (!sentByCurrentUser) ? avatarThumbnail : null }
-        <View
-          style={messageRowStyle}>
-          <Text style={styles.baseText}>
-            <Text style={messageTextStyle}>
-              {message.body}
-            </Text>
-          </Text>
-        </View>
-        { (sentByCurrentUser) ? avatarThumbnail : null }
-      </LinearGradient>
-    );
-  },
-
-  scrollToBottom() {
-    // @hmm: see https://github.com/FaridSafi/react-native-gifted-messenger/blob/master/GiftedMessenger.js
-    // @hmm: listHeight > 10 make sure info content is not down and compressing list
-    if (this.listHeight && this.footerY && (this.footerY > this.listHeight) && (this.listHeight > 10)) {
-      var scrollDistance = this.listHeight - this.footerY;
-      this.scrollResponder.scrollTo({
-        y: -scrollDistance + RECIPIENT_INFO_BAR_HEIGHT + HEADER_CONTAINER_HEIGHT +
-        TIMER_BAR_HEIGHT + MESSAGE_TEXT_INPUT_HEIGHT * 3
-      }); // @hmm: leave some space so user tempted to add message
-    }
-  },
-
   // TODO: reorganize this function
   _sendMessage() {
-    this.closeKeyboard();
-
-    InteractionManager.runAfterInteractions(() => {
-      if (!this.state.message.length) {
-        return;
-      }
-
-      let messageObj = {
-        senderIDHashed: this.props.currentUserData.ventureId,
-        body: this.state.message
-      }, _this = this;
-
-      this.state.chatRoomMessagesRef.push(messageObj);
-      this.setState({message: ''})
-      this.updateMessages(_.cloneDeep(_.values(_.omit(this.state.messageList, '.key'))));
-      this.setState({
-        messageListLength: (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length,
-      });
-
-      InteractionManager.runAfterInteractions(() => {
-
-        // TODO I don't get this
-        //@hmm: if both users in chatroom when first message is sent
-        if (this.state.messageList && (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length === 1) {
-          this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
-            // if other user's seen messages count is above 0, then start
-            if (snapshot.val() > 0) {
-              let currentTime = new Date().getTime(),
-                expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
-
-              this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
-            }
-          })
-        }
-
-        this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
-          if (this.state.messageList && ((_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length - snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
-
-            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'X-Parse-Application-Id': PARSE_APP_ID,
-                'Content-Type': 'application/json',
-              },
-              body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
-            })
-              .then(response => {
-                console.log(JSON.stringify(response))
-              })
-              .catch(error => console.log(error))
-          }
-        });
-      });
+    this.setState({
+      messages: this.state.messages.concat([{
+        text: this.state.message,
+        name: this.props.currentUserData.ventureId,
+        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
+        position: 'right',
+        date: new Date(),
+        uniqueId: Math.round(Math.random() * 10000)
+      }]),
+      message: ''
     });
+
+    // InteractionManager.runAfterInteractions(() => {
+    //   if (!this.state.message.length) {
+    //     return;
+    //   }
+    //
+    //   let messageObj = {
+    //     senderIDHashed: this.props.currentUserData.ventureId,
+    //     body: this.state.message
+    //   }, _this = this;
+    //
+    //   this.state.chatRoomMessagesRef.push(messageObj);
+    //   this.setState({message: ''})
+    //   this.updateMessages(_.cloneDeep(_.values(_.omit(this.state.messageList, '.key'))));
+    //   this.setState({
+    //     messageListLength: (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length,
+    //   });
+    //
+    //   InteractionManager.runAfterInteractions(() => {
+    //
+    //     // TODO I don't get this
+    //     //@hmm: if both users in chatroom when first message is sent
+    //     if (this.state.messageList && (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length === 1) {
+    //       this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+    //         // if other user's seen messages count is above 0, then start
+    //         if (snapshot.val() > 0) {
+    //           let currentTime = new Date().getTime(),
+    //             expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+    //
+    //           this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
+    //         }
+    //       })
+    //     }
+    //
+    //     this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
+    //       if (this.state.messageList && ((_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length - snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
+    //
+    //         fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+    //           method: 'POST',
+    //           headers: {
+    //             'Accept': 'application/json',
+    //             'X-Parse-Application-Id': PARSE_APP_ID,
+    //             'Content-Type': 'application/json',
+    //           },
+    //           body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
+    //         })
+    //           .then(response => {
+    //             console.log(JSON.stringify(response))
+    //           })
+    //           .catch(error => console.log(error))
+    //       }
+    //     });
+    //   });
+    // });
   },
 
   render() {
     const chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle :
     this.props.chatRoomEventTitle + '?');
 
-    let messageTextInput = (
-      <TextInput
-        autoCorrect={false}
-        ref={MESSAGE_TEXT_INPUT_REF}
-        onBlur={() => {
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-                    this.setState({hasKeyboardSpace: false, closeDropdownProfile: false});
-                    }}
-        onChange={() => {
-                     }}
-        onEndEditing={() => {
-                      this.setTimeout(() => {
-                      this.scrollToBottom();
-                      InteractionManager.runAfterInteractions(() => {
-                        this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(false);
-                      })}, 0);
-                      }}
-        onFocus={() => {             
-                    this.setState({hasKeyboardSpace: true, closeDropdownProfile: true});
-
-                    InteractionManager.runAfterInteractions(() => {
-                       this.scrollToBottom();
-                       if (this.state.hasTimerExpired) this.props.navigator.pop();
-
-                       this.props.chatRoomRef.child(`isTyping_${this.props.currentUserData.ventureId}`).set(true);
-                    })
-                    }}
-        multiline={true}
-        style={styles.messageTextInput}
-        onChangeText={(text) => this.setState({message: text})}
-        value={this.state.message}
-        returnKeyType='default'
-        keyboardType='default'/>
-    );
-
     return (
       <VentureAppPage backgroundColor='rgba(0,0,0,0.96)'>
         <Header containerStyle={{backgroundColor: '#000'}}>
           <BackIcon onPress={() => {
-            this.updateMessages([]);
-            this.props.navigator.pop();
+              this.props.navigator.pop();
+              this.state.seenMessagesId && this.props.chatRoomRef.child(this.state.seenMessagesId).set(this.state.messageListSize);
           }} style={{right: 10, bottom: 5}}/>
           <Text
             style={styles.activityPreferenceTitle}>
             {chatRoomTitle && chatRoomTitle.toUpperCase()} </Text>
           <Text />
         </Header>
-        <View onStartShouldSetResponder={this.containerTouched} style={styles.container}>
+        <View style={styles.container}>
           <RecipientInfoBar chatRoomEventTitle={this.props.chatRoomEventTitle}
                             chatRoomRef={this.props.chatRoomRef}
                             closeDropdownProfile={this.state.closeDropdownProfile}
@@ -553,22 +474,12 @@ var ChatPage = React.createClass({
                             navigator={this.props.navigator}
                             recipientData={this.props}
                             targetUserRef={this.props.targetUserRef}/>
-          <Messenger/>
-          {this.state.chatMateIsTyping && !this.state.infoContentVisible ? <ChatMateTypingLoader
-            recipientFirstName={this.props.recipient && this.props.recipient.firstName}/> : undefined}
-          <View style={{height: width / 8}}/>
-          <View style={{position: 'absolute', bottom: 0}}>
-            <View
-              style={[styles.textBoxContainer, {marginBottom: this.state.hasKeyboardSpace ? height/3.1 : 0}]}>
-              {messageTextInput}
-              <TouchableOpacity onPress={this._sendMessage}>
-                <Text
-                  style={{color: 'white', fontFamily: 'AvenirNextCondensed-Regular', marginHorizontal: 20,
-                  backgroundColor: 'rgba(255,255,255,0.3)', paddingHorizontal: 10, paddingVertical: 4,
-                  borderRadius: 3}}>Send</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <GiftedMessengerContainer
+            chatRoomRef={this.props.chatRoomRef}
+            currentUserData={this.props.currentUserData}
+            getMessageListSize={this.getMessageListSize}
+            recipient={this.props.recipient}
+            />
         </View>
       </VentureAppPage>
     );
@@ -757,26 +668,18 @@ var RecipientInfoBar = React.createClass({
         style={{paddingVertical: (user === recipient ? height/30 : height/97), bottom: (this.state.hasKeyboardSpace ?
         height/3.5 : 0), backgroundColor: '#eee', flexDirection: 'column', justifyContent: 'center'}}>
         {this.state.infoContent === 'recipient' ?
-          <TouchableOpacity onPress={() => {
-                    if(!this.state.hasKeyboardSpace) this.refs.recipientPicture.tada(900)
-                    }}>
             <Animatable.View ref="recipientPicture" onLayout={() => this.refs.recipientPicture.fadeIn(400)}>
               <Image source={{uri: recipient.picture}}
                      style={{width: width/2, height: width/2, borderRadius: width/4, alignSelf: 'center',
-                     marginVertical: width/18}}/>
+                     marginVertical: width/8}}/>
             </Animatable.View>
-          </TouchableOpacity>
           :
-          <TouchableOpacity onPress={() => {
-                        if(!this.state.hasKeyboardSpace) this.refs.currentUserPicture.tada(900)
-                        }}>
             <Animatable.View ref="currentUserPicture"
                              onLayout={() => this.refs.currentUserPicture.fadeIn(400)}>
               <Image source={{uri: currentUserData.picture}}
                      style={{width: width/2, height: width/2, borderRadius: width/4, alignSelf: 'center',
-                     marginVertical: width/18}}/>
+                     marginVertical: width/8}}/>
             </Animatable.View>
-          </TouchableOpacity>
         }
         <Text
           style={{color: '#222', fontSize: 20, fontFamily: 'AvenirNextCondensed-Medium', textAlign: 'center'}}>
@@ -848,7 +751,7 @@ var RecipientInfoBar = React.createClass({
                     LayoutAnimation.configureNext(config);
                      this.props.handleInfoContentVisibility(this.state.infoContent === 'column');
                    this.setState({infoContent: 'currentUser', dir: (this.state.dir === 'column'
-                   && this.state.infoContent === 'currentUser' ? 'row' : 'column')})
+                   && this.state.infoContent === 'currentUser' ? 'row' : 'column')});
                 }}
             navigator={this.props.navigator}
             style={{marginRight: 20}}/>
@@ -1047,22 +950,8 @@ var TimerBar = React.createClass({
   componentDidMount() {
     if (this.state.timerValInSeconds <= 0) {
       this.props.navigator.pop();
-      // // if youve already done this, then just exit
-      // this.props.chatRoomRef && this.props.chatRoomRef.child(`extendChat/${this.props.currentUserData && this.props.currentUserData.ventureId}`).once('value', snapshot => {
-      //   if(snapshot.val() === true) {
-      //     // pop back
-      //     this.setTimeout(() => this.props.navigator.pop(), 1000);
-      //   } else {
-      //     // will only show if timer is 0
-      //     this.props.handleSetHasTimerExpiredState(true);
-      //   }
-      // });
     }
     AppStateIOS.addEventListener('change', this._handleAppStateChange);
-  },
-
-  componentWillReceiveProps(nextProps) {
-    this.setState({messageListLength: nextProps.messageListLength});
   },
 
   _destroyChatroom(chatRoomRef:string) {
@@ -1413,4 +1302,3 @@ var layoutAnimationConfigs = [
 ];
 
 module.exports = ChatPage;
-

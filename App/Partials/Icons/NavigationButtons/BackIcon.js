@@ -41,7 +41,7 @@ class BackIcon extends Component {
   render() {
     return (
       <TouchableOpacity
-        activeOpacity={0.3}
+        activeOpacity={0.1}
         onPress={this.props.onPress}
         style={[this.props.style,{width: (this.props.size || SIZE) * 3.88,
                 height: (this.props.size || SIZE) * 3.88, alignItems: 'flex-start'}]}>

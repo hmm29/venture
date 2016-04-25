@@ -271,6 +271,14 @@ var GiftedMessengerContainer = React.createClass({
           isLoadingEarlierMessages={this.state.isLoadingEarlierMessages}
           typingMessage={this.state.typingMessage}
           />
+        {!_.size(this.state.messages) ?
+          <View
+            style={[styles.timerBar, {backgroundColor: 'rgba(0,0,0,0.95)', position: 'absolute', top: 0}]}>
+            <Text
+              style={[styles.timer, {fontWeight: '400'}]}>
+              The countdown timer will begin after the first message is opened!
+            </Text>
+          </View> : <View/>}
       </View>
     );
   },
@@ -994,14 +1002,6 @@ var TimerBar = React.createClass({
             && _.parseInt(this.state.timerValInSeconds / 60) + 'm'} {!_.isString(this.state.timerValInSeconds)
           && (this.state.timerValInSeconds >= 0) && this.state.timerValInSeconds % 60 + 's'}</Text>
         </View>
-        {!this.state.messageListLength && !this.props.infoContentOpen ?
-          <View
-            style={[styles.timerBar, {position: 'absolute', top: TIMER_BAR_HEIGHT}]}>
-            <Text
-              style={[styles.timer, {fontWeight: '400'}]}>
-              The countdown timer will begin after the first message is opened!
-            </Text>
-          </View> : <View/>}
       </View>
     )
   }

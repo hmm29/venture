@@ -60,7 +60,7 @@ var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRe
 // Globals
 var {height, width} = Dimensions.get('window');
 var CHAT_DURATION_IN_MINUTES = 5;
-var INITIAL_LIST_SIZE = 8;
+var INITIAL_CHATS_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
 var MAX_CHATS_LIST_SIZE = 30;
@@ -1142,7 +1142,7 @@ var ChatsListPage = React.createClass({
           dataSource={this.state.dataSource}
           renderRow={this._renderUser}
           // renderScrollComponent={props => <SGListView {...props} premptiveLoading={5}/>}
-          initialListSize={INITIAL_LIST_SIZE}
+          initialListSize={INITIAL_CHATS_LIST_SIZE}
           onChangeVisibleRows={(visibleRows, changedRows) => {
             this.setState({visibleRows, changedRows})
           }}

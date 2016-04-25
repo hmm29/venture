@@ -64,7 +64,7 @@ var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_USERS_LIST_SIZE = 24;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
-var MAX_LIST_SIZE = 3;
+var MAX_USERS_LIST_SIZE = 100;
 var PAGE_SIZE = 10;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
@@ -778,8 +778,8 @@ var UsersListPage = React.createClass({
 
   updateRows(rows) {
     // @hmm: max length of list view
-    if (rows.length > MAX_LIST_SIZE) {
-      rows = _.take(rows, MAX_LIST_SIZE);
+    if (rows.length > MAX_USERS_LIST_SIZE) {
+      rows = _.take(rows, MAX_USERS_LIST_SIZE);
     }
 
     if (rows.length) this.setState({showLoadingModal: false});

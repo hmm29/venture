@@ -17,7 +17,6 @@ var {
   ActivityIndicatorIOS,
   AlertIOS,
   Component,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +29,7 @@ var Dimensions = require('Dimensions');
 var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 var Icon = require('react-native-vector-icons/Ionicons');
+var Image = require('react-native-image-progress');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var Swiper = require('react-native-swiper');
 var TimerMixin = require('react-timer-mixin');

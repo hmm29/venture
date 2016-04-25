@@ -17,7 +17,6 @@ var {
   ActivityIndicatorIOS,
   AlertIOS,
   Animated,
-  Image,
   LayoutAnimation,
   ListView,
   Navigator,
@@ -39,6 +38,7 @@ var Dimensions = require('Dimensions');
 var FiltersModal = require('../../Partials/Modals/FiltersModal');
 var Firebase = require('firebase');
 var GeoFire = require('geofire');
+var Image = require('react-native-image-progress');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var RefreshableListView = require('../../Partials/RefreshableListView');

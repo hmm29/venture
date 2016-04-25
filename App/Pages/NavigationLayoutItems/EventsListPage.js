@@ -16,7 +16,6 @@ var React = require('react-native');
 var {
   ActivityIndicatorIOS,
   AlertIOS,
-  Image,
   LayoutAnimation,
   ListView,
   Navigator,
@@ -36,6 +35,7 @@ var Dimensions = require('Dimensions');
 var DynamicCheckBoxIcon = require('../../Partials/Icons/DynamicCheckBoxIcon');
 var Firebase = require('firebase');
 var GeoFire = require('geofire');
+var Image = require('react-native-image-progress');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');

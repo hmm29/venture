@@ -17,7 +17,6 @@ var {
   ActivityIndicatorIOS,
   AlertIOS,
   AppStateIOS,
-  Image,
   InteractionManager,
   LayoutAnimation,
   ListView,
@@ -38,6 +37,7 @@ var ChatPage = require('../ChatPage');
 var Dimensions = require('Dimensions');
 var FiltersModal = require('../../Partials/Modals/FiltersModal');
 var GeoFire = require('geofire');
+var Image = require('react-native-image-progress');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var LinearGradient = require('react-native-linear-gradient');
 var ReactFireMixin = require('reactfire');

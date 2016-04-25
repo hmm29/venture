@@ -19,7 +19,6 @@ var {
   AlertIOS,
   AppStateIOS,
   Component,
-  Image,
   InteractionManager,
   LayoutAnimation,
   Linking,
@@ -45,6 +44,7 @@ var GeoFire = require('geofire');
 var GiftedMessenger = require('react-native-gifted-messenger');
 var Header = require('../Partials/Header');
 var Icon = require('react-native-vector-icons/Ionicons');
+var Image = require('react-native-image-progress');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../Partials/Modals/Base/ModalBase');
 var ReactFireMixin = require('reactfire');

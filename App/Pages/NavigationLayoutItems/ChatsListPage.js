@@ -63,7 +63,7 @@ var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_LIST_SIZE = 8;
 var LOGO_WIDTH = 200;
 var LOGO_HEIGHT = 120;
-var MAX_LIST_SIZE = 80;
+var MAX_CHATS_LIST_SIZE = 30;
 var PAGE_SIZE = 10;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
 var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
@@ -1082,8 +1082,8 @@ var ChatsListPage = React.createClass({
     // @hmm: sorting logic goes here, sort by match status which
     // happens to be alphabetical => "matched" > "received" > "sent"
 
-    if(userRows.length > MAX_LIST_SIZE) {
-      userRows = _.take(userRows, MAX_LIST_SIZE);
+    if(userRows.length > MAX_CHATS_LIST_SIZE) {
+      userRows = _.take(userRows, MAX_CHATS_LIST_SIZE);
     }
 
     userRows = _.orderBy(userRows, [`match_requests.${this.props.ventureId}.status`], ['asc']);

@@ -87,6 +87,7 @@ var ProfilePage = React.createClass({
     }
 
     let ventureId = this.state.ventureId,
+      eventsListRef = this.state.firebaseRef && this.state.firebaseRef.child('events'),
       usersListRef = this.state.firebaseRef && this.state.firebaseRef.child('users'),
       chatRoomsRef = this.state.firebaseRef && this.state.firebaseRef.child('chat_rooms'),
       currentUserRef = usersListRef && usersListRef.child(ventureId),
@@ -118,6 +119,15 @@ var ProfilePage = React.createClass({
           }
           if (match && match.chatRoomId) {
             chatRoomsRef.child(match.chatRoomId).set(null)
+          }
+        });
+      });
+
+      // @hmm: remove user from attendees lists of his or her events
+      currentUserRef.child('events').once('value', snapshot => {
+        snapshot.val() && _.each(snapshot.val(), (event) => {
+          if(event && event.id) {
+              eventsListRef.child(`${event.id}/attendees/${ventureId}`).set(null);
           }
         });
       });

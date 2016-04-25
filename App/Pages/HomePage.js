@@ -140,12 +140,13 @@ var HomePage = React.createClass({
           return;
         }
 
-        this.setState({userFullName: account.name});
+        this.setState({account, userFullName: account.name});
 
         this.setState({isLoggedIn: true, showTextInput: true, ventureId: account.ventureId});
         PushNotificationIOS.addEventListener('register', this._getDeviceToken);
 
         let firebaseRef = this.state.firebaseRef,
+          eventsListRef = firebaseRef && firebaseRef.child('events'),
           usersListRef = firebaseRef && firebaseRef.child('users'),
           currentUserRef = usersListRef.child(this.state.ventureId || account.ventureId),
           chatCountRef = currentUserRef.child('chatCount'),
@@ -180,6 +181,15 @@ var HomePage = React.createClass({
             LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
           }
         );
+
+        //@hmm: readd current user to attendee lists of events he/she rsvp'd to
+        currentUserRef.child('events').once('value', snapshot => {
+          snapshot.val() && _.each(snapshot.val(), (event) => {
+            if(event && event.id) {
+                eventsListRef.child(`${event.id}/attendees/${this.state.ventureId}`).set(_.pick(this.state.account, 'firstName', 'name', 'picture', 'ventureId', 'bio', 'age', 'location'));
+            }
+          });
+        });
 
         chatRoomsRef.set(null); //@hmm: reset chats
         PushNotificationIOS.setApplicationIconBadgeNumber(0);

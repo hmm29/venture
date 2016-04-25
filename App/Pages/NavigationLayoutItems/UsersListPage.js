@@ -712,6 +712,7 @@ var UsersListPage = React.createClass({
 
   componentWillMount() {
     // @hmm: handle must go in componentWillMount
+    // and DO NOT clear it in componentWillUnmount
     this._handle = this.setInterval(() => {
       this.setState({currentTimeInMs: (new Date()).getTime()})
     }, 1000);

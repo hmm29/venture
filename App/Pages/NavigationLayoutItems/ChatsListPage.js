@@ -931,9 +931,6 @@ var ChatsListPage = React.createClass({
   _handle: null,
 
   componentWillMount() {
-    this._handle = this.setInterval(() => {
-      this.setState({currentTimeInMs: (new Date()).getTime()})
-    }, 1000);
   },
 
   componentDidMount() {

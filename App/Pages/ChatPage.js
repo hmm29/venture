@@ -134,18 +134,46 @@ var GiftedMessengerContainer = React.createClass({
   },
 
   handleSend(message = {}) {
-
-    // Your logic here
-    // Send message.text to your server
-
     message.uniqueId = Math.round(Math.random() * 10000); // simulating server-side unique id generation
     // mark the sent message as Seen
-      this.state.chatRoomMessagesRef.push(message).then(() => {
-        this.setMessages(_.cloneDeep(_.values(this.state.messages))); // here you can replace 'Seen' by any string you want
-      });
+    this.state.chatRoomMessagesRef.push(message).then(() => {
+      this.setMessages(_.cloneDeep(_.values(this.state.messages))); // here you can replace 'Seen' by any string you want
+    });
 
     // if you couldn't send the message to your server :
     // this.setMessageStatus(message.uniqueId, 'ErrorButton');
+
+    this.setTimeout(() => {
+      if (_.size(_.cloneDeep(_.values(this.state.messages))) === 1) {
+        this.props.chatRoomRef && this.props.chatRoomRef.child(`inChatRoom_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`inChatRoom_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+          if (snapshot.val()) {
+            let currentTime = new Date().getTime(),
+              expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
+
+            this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
+            this.props.getExpireTime(expireTime);
+          }
+        })
+      } else {
+        this.props.chatRoomRef && this.props.chatRoomRef.child(`inChatRoom_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`inChatRoom_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+          if (!snapshot.val()) {
+            fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'X-Parse-Application-Id': PARSE_APP_ID,
+                'Content-Type': 'application/json',
+              },
+              body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
+            })
+              .then(response => {
+                console.log(JSON.stringify(response))
+              })
+              .catch(error => console.log(error))
+          }
+        })
+      }
+    }, 0);
   },
 
   onLoadEarlierMessages() {
@@ -163,8 +191,8 @@ var GiftedMessengerContainer = React.createClass({
 
     let earlierMessages = [];
 
-    if(this.state.messages.length > 10) {
-      earlierMessages = _.slice(this.state.messages, 0, this.state.messages.length-8);
+    if (this.state.messages.length > 10) {
+      earlierMessages = _.slice(this.state.messages, 0, this.state.messages.length - 8);
     }
 
     this.setTimeout(() => {
@@ -174,13 +202,6 @@ var GiftedMessengerContainer = React.createClass({
         allLoaded: true, // hide the `Load earlier messages` button
       });
     }, 1000); // simulating network
-  },
-
-  handleReceive(message = {}) {
-    // make sure that your message contains :
-    // text, name, image, position: 'left', date, uniqueId
-    this.setMessages(this.state.messages.concat(message));
-    this.setState({message: ''});
   },
 
   onErrorButtonPress(message = {}) {
@@ -228,7 +249,7 @@ var GiftedMessengerContainer = React.createClass({
           messages={this.state.messages}
           handleSend={this.handleSend.bind(this)}
           onErrorButtonPress={this.onErrorButtonPress.bind(this)}
-          maxHeight={height-(HEADER_CONTAINER_HEIGHT+RECIPIENT_INFO_BAR_HEIGHT+TIMER_BAR_HEIGHT+3.2*MESSAGE_TEXT_INPUT_HEIGHT)}
+          maxHeight={height-(HEADER_CONTAINER_HEIGHT+RECIPIENT_INFO_BAR_HEIGHT+3.2*MESSAGE_TEXT_INPUT_HEIGHT)}
 
           loadEarlierMessagesButton={!this.state.allLoaded}
           onLoadEarlierMessages={this.onLoadEarlierMessages.bind(this)}
@@ -310,6 +331,7 @@ var ChatPage = React.createClass({
       dataSource: new ListView.DataSource({
         rowHasChanged: (row1, row2) => !_.isEqual(row1, row2)
       }),
+      expireTime: 0,
       extendChatCountdownTimerVal: 60,
       firebaseRef: this.props.firebaseRef,
       hasKeyboardSpace: false,
@@ -324,29 +346,28 @@ var ChatPage = React.createClass({
 
   componentDidMount() {
     InteractionManager.runAfterInteractions(() => {
-        let chatRoomRef = this.props.chatRoomRef, chatRoomMessagesRef = chatRoomRef.child('messages');
+      let chatRoomRef = this.props.chatRoomRef, chatRoomMessagesRef = chatRoomRef.child('messages');
+
+      this.setState({
+        chatRoomMessagesRef,
+      });
+
+      chatRoomRef.once('value', snapshot => {
+        if (!snapshot.val() || _.size(snapshot.val()) <= 4) {
+          this.props.navigator.pop();
+        }
+
+        var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
+        chatRoomRef.child(seenMessagesId).set(snapshot.val() && snapshot.val().messages && _.size(snapshot.val().messages) || 0);
+
+        chatRoomRef.child(`inChatRoom_${this.props.currentUserData && this.props.currentUserData.ventureId}`).set(true);
 
         this.setState({
-          chatRoomMessagesRef,
-          message: ''
+          seenMessagesId,
+          chatRoomObjectCopy: snapshot.val(),
+          expireTime: snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime
         });
-
-        chatRoomRef.once('value', snapshot => {
-          if (!snapshot.val() || _.size(snapshot.val()) <= 4) {
-            this.props.navigator.pop();
-          }
-
-          var seenMessagesId = `seenMessages_${this.props.currentUserData && this.props.currentUserData.ventureId}`;
-          chatRoomRef.child(seenMessagesId).set(snapshot.val() && snapshot.val().messages && _.size(snapshot.val().messages) || 0);
-
-          chatRoomRef.child(`inChatRoom_${this.props.currentUserData && this.props.currentUserData.ventureId}`).set(true);
-
-          this.setState({
-            seenMessagesId,
-            chatRoomObjectCopy: snapshot.val(),
-            expireTime: snapshot.val() && snapshot.val().timer && snapshot.val().timer.expireTime
-          });
-        });
+      });
     });
   },
 
@@ -357,6 +378,10 @@ var ChatPage = React.createClass({
   closeKeyboard() {
     this.setState({hasKeyboardSpace: false, closeDropdownProfile: false});
     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
+  },
+
+  getExpireTime(expireTime) {
+    this.setState({expireTime});
   },
 
   getMessageListSize(messageListSize) {
@@ -374,75 +399,6 @@ var ChatPage = React.createClass({
     if (!this.state.chatExists) this.props.navigator.pop();
   },
 
-  // TODO: reorganize this function
-  _sendMessage() {
-    this.setState({
-      messages: this.state.messages.concat([{
-        text: this.state.message,
-        name: this.props.currentUserData.ventureId,
-        image: {uri: 'https://facebook.github.io/react/img/logo_og.png'},
-        position: 'right',
-        date: new Date(),
-        uniqueId: Math.round(Math.random() * 10000)
-      }]),
-      message: ''
-    });
-
-    // InteractionManager.runAfterInteractions(() => {
-    //   if (!this.state.message.length) {
-    //     return;
-    //   }
-    //
-    //   let messageObj = {
-    //     senderIDHashed: this.props.currentUserData.ventureId,
-    //     body: this.state.message
-    //   }, _this = this;
-    //
-    //   this.state.chatRoomMessagesRef.push(messageObj);
-    //   this.setState({message: ''})
-    //   this.updateMessages(_.cloneDeep(_.values(_.omit(this.state.messageList, '.key'))));
-    //   this.setState({
-    //     messageListLength: (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length,
-    //   });
-    //
-    //   InteractionManager.runAfterInteractions(() => {
-    //
-    //     // TODO I don't get this
-    //     //@hmm: if both users in chatroom when first message is sent
-    //     if (this.state.messageList && (_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length === 1) {
-    //       this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
-    //         // if other user's seen messages count is above 0, then start
-    //         if (snapshot.val() > 0) {
-    //           let currentTime = new Date().getTime(),
-    //             expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
-    //
-    //           this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
-    //         }
-    //       })
-    //     }
-    //
-    //     this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient.ventureId}`).once('value', snapshot => {
-    //       if (this.state.messageList && ((_.cloneDeep(_.values(_.omit(this.state.messageList, '.key')))).length - snapshot.val() >= 1)) { //@hmm: reset point when target user has seen all messages except one just sent
-    //
-    //         fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-    //           method: 'POST',
-    //           headers: {
-    //             'Accept': 'application/json',
-    //             'X-Parse-Application-Id': PARSE_APP_ID,
-    //             'Content-Type': 'application/json',
-    //           },
-    //           body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have a new message from ${this.props.currentUserData && this.props.currentUserData.firstName}!"}`
-    //         })
-    //           .then(response => {
-    //             console.log(JSON.stringify(response))
-    //           })
-    //           .catch(error => console.log(error))
-    //       }
-    //     });
-    //   });
-    // });
-  },
-
   render() {
     const chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle :
     this.props.chatRoomEventTitle + '?');
@@ -451,8 +407,10 @@ var ChatPage = React.createClass({
       <VentureAppPage backgroundColor='rgba(0,0,0,0.96)'>
         <Header containerStyle={{backgroundColor: '#000'}}>
           <BackIcon onPress={() => {
-              this.props.navigator.pop();
               this.state.seenMessagesId && this.props.chatRoomRef.child(this.state.seenMessagesId).set(this.state.messageListSize);
+              this.setTimeout(() => {
+              this.props.navigator.pop();
+              }, 0);
           }} style={{right: 10, bottom: 5}}/>
           <Text
             style={styles.activityPreferenceTitle}>
@@ -470,13 +428,14 @@ var ChatPage = React.createClass({
                             handleInfoContentVisibility={this.handleInfoContentVisibility}
                             handleSetHasTimerExpiredState={this.handleSetHasTimerExpiredState}
                             _id={this.props._id}
-                            messageListLength={this.state.messageList && _.size(_.omit(this.state.messageList, '.key', '.value')) || 0}
+                            messageListLength={this.state.messageListSize}
                             navigator={this.props.navigator}
                             recipientData={this.props}
                             targetUserRef={this.props.targetUserRef}/>
           <GiftedMessengerContainer
             chatRoomRef={this.props.chatRoomRef}
             currentUserData={this.props.currentUserData}
+            getExpireTime={this.getExpireTime}
             getMessageListSize={this.getMessageListSize}
             recipient={this.props.recipient}
             />
@@ -668,18 +627,18 @@ var RecipientInfoBar = React.createClass({
         style={{paddingVertical: (user === recipient ? height/30 : height/97), bottom: (this.state.hasKeyboardSpace ?
         height/3.5 : 0), backgroundColor: '#eee', flexDirection: 'column', justifyContent: 'center'}}>
         {this.state.infoContent === 'recipient' ?
-            <Animatable.View ref="recipientPicture" onLayout={() => this.refs.recipientPicture.fadeIn(400)}>
-              <Image source={{uri: recipient.picture}}
-                     style={{width: width/2, height: width/2, borderRadius: width/4, alignSelf: 'center',
+          <Animatable.View ref="recipientPicture" onLayout={() => this.refs.recipientPicture.fadeIn(400)}>
+            <Image source={{uri: recipient.picture}}
+                   style={{width: width/2, height: width/2, borderRadius: width/4, alignSelf: 'center',
                      marginVertical: width/8}}/>
-            </Animatable.View>
+          </Animatable.View>
           :
-            <Animatable.View ref="currentUserPicture"
-                             onLayout={() => this.refs.currentUserPicture.fadeIn(400)}>
-              <Image source={{uri: currentUserData.picture}}
-                     style={{width: width/2, height: width/2, borderRadius: width/4, alignSelf: 'center',
+          <Animatable.View ref="currentUserPicture"
+                           onLayout={() => this.refs.currentUserPicture.fadeIn(400)}>
+            <Image source={{uri: currentUserData.picture}}
+                   style={{width: width/2, height: width/2, borderRadius: width/4, alignSelf: 'center',
                      marginVertical: width/8}}/>
-            </Animatable.View>
+          </Animatable.View>
         }
         <Text
           style={{color: '#222', fontSize: 20, fontFamily: 'AvenirNextCondensed-Medium', textAlign: 'center'}}>
@@ -875,76 +834,79 @@ var TimerBar = React.createClass({
   componentWillMount() {
     let chatRoomRef = this.props.chatRoomRef,
       currentUserData = this.props.currentUserData,
-      expireTime = this.props.expireTime,
       firebaseRef = this.props.firebaseRef,
       recipient = this.props.recipient,
       _this = this;
 
-    // TODO: change to look at props and
-    // @hmm: if no timer value then return from function
-    if (!expireTime && _.isNumber(this.state.timerValInSeconds) && this.state.timerValInSeconds < CHAT_DURATION_IN_MINUTES * 60) {
-      this.props.navigator.pop();
-    }
-    else if (!expireTime) {
-      this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES * 60, timerActive: false});
-      return;
-    }
-
-    // @hmm: for creator of chatroom
-    if (Math.floor((expireTime - this.state.currentTime) / 1000) > CHAT_DURATION_IN_MINUTES * 60) {
-      this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES * 60});
-    } else {
-      this.setState({timerValInSeconds: Math.floor((expireTime - this.state.currentTime) / 1000)});
-    }
-
-    // @hmm: update in match_request objects so it can be referenced in users list for timer overlays
-    if (this.props.recipientData.chatRoomEventTitle) {
-      firebaseRef.child(`users/${currentUserData.ventureId}/event_invite_match_requests/${recipient.ventureId}`)
-        .update({expireTime});
-      firebaseRef.child(`users/${recipient.ventureId}/event_invite_match_requests/${currentUserData.ventureId}`)
-        .update({expireTime});
-    } else {
-      firebaseRef.child(`users/${currentUserData.ventureId}/match_requests/${recipient.ventureId}`)
-        .update({expireTime});
-      firebaseRef.child(`users/${recipient.ventureId}/match_requests/${currentUserData.ventureId}`)
-        .update({expireTime});
-    }
-
-    this.handle = this.setInterval(() => {
-      if (this.state.timerValInSeconds - 1 <= 0) {
-        this._destroyChatroom(chatRoomRef);
-        this.clearInterval(this.handle);
+    chatRoomRef.child('timer/expireTime').on('value', snapshot => {
+      // @hmm: if no timer value then return from function
+      if(!snapshot.val() && _.isNumber(this.state.timerValInSeconds) && this.state.timerValInSeconds < CHAT_DURATION_IN_MINUTES*60) {
+        this.props.navigator.pop();
+      }
+      else if (!snapshot.val()) {
+        this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES*60, timerActive: false});
+        return;
       }
 
-      if (this.state.timerValInSeconds > CHAT_DURATION_IN_MINUTES * 60) {
-        this.setState({timerValInSeconds: (CHAT_DURATION_IN_MINUTES * 60) - 1})
+
+      if (!this.state.timerActive) this.setState({timerActive: true});
+
+      // @hmm: for creator of chatroom
+      if(Math.floor((snapshot.val() - this.state.currentTime) / 1000) > CHAT_DURATION_IN_MINUTES*60) {
+        this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES*60});
       } else {
-        this.setState({timerValInSeconds: this.state.timerValInSeconds - 1});
-        // send you have new messages push notification at 1:30 chat duration mark
-        if (this.state.timerValInSeconds === 90) {
-          this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
-            // if other user has unread messages
-            if (snapshot.val() !== this.props.messageListLength) {
-              fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
-                method: 'POST',
-                headers: {
-                  'Accept': 'application/json',
-                  'X-Parse-Application-Id': PARSE_APP_ID,
-                  'Content-Type': 'application/json',
-                },
-                body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have new messages!"}`
-              })
-                .then(response => {
-                  console.log(JSON.stringify(response))
-                })
-                .catch(error => console.log(error))
-            }
-          });
-        }
+        this.setState({timerValInSeconds: Math.floor((snapshot.val() - this.state.currentTime) / 1000)});
       }
 
-    }, 1000);
+      // @hmm: update in match_request objects so it can be referenced in users list for timer overlays
+      if (this.props.recipientData.chatRoomEventTitle) {
+        firebaseRef.child(`users/${currentUserData.ventureId}/event_invite_match_requests/${recipient.ventureId}`)
+          .update({expireTime: snapshot.val()});
+        firebaseRef.child(`users/${recipient.ventureId}/event_invite_match_requests/${currentUserData.ventureId}`)
+          .update({expireTime: snapshot.val()});
+      } else {
+        firebaseRef.child(`users/${currentUserData.ventureId}/match_requests/${recipient.ventureId}`)
+          .update({expireTime: snapshot.val()});
+        firebaseRef.child(`users/${recipient.ventureId}/match_requests/${currentUserData.ventureId}`)
+          .update({expireTime: snapshot.val()});
+      }
 
+      _this._handle = _this.setInterval(() => {
+        if (this.state.timerValInSeconds-1 <= 0) {
+          _this._destroyChatroom(chatRoomRef);
+          _this.clearInterval(_this._handle);
+        }
+
+        if(this.state.timerValInSeconds > CHAT_DURATION_IN_MINUTES*60) {
+          this.setState({timerValInSeconds: (CHAT_DURATION_IN_MINUTES*60)-1})
+        } else {
+          this.setState({timerValInSeconds: this.state.timerValInSeconds-1});
+          // send you have new messages push notification at 1:30 chat duration mark
+          if(this.state.timerValInSeconds === 90) {
+            this.props.chatRoomRef && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`) && this.props.chatRoomRef.child(`seenMessages_${this.props.recipient && this.props.recipient.ventureId}`).once('value', snapshot => {
+              // if other user has unread messages
+              if(snapshot.val() !== this.props.messageListLength) {
+                fetch(PARSE_SERVER_URL + '/functions/sendPushNotification', {
+                  method: 'POST',
+                  headers: {
+                    'Accept': 'application/json',
+                    'X-Parse-Application-Id': PARSE_APP_ID,
+                    'Content-Type': 'application/json',
+                  },
+                  body: `{"channels": ["${this.props.recipient && this.props.recipient.ventureId}"], "alert": "You have new messages!"}`
+                })
+                  .then(response => {
+                    console.log(JSON.stringify(response))
+                  })
+                  .catch(error => console.log(error))
+              }
+            });
+          }
+        }
+
+      }, 1000);
+
+    });
   },
 
   componentDidMount() {
@@ -952,6 +914,10 @@ var TimerBar = React.createClass({
       this.props.navigator.pop();
     }
     AppStateIOS.addEventListener('change', this._handleAppStateChange);
+  },
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({messageListLength: nextProps.messageListLength})
   },
 
   _destroyChatroom(chatRoomRef:string) {
@@ -1030,12 +996,12 @@ var TimerBar = React.createClass({
         </View>
         {!this.state.messageListLength && !this.props.infoContentOpen ?
           <View
-            style={styles.timerBar}>
+            style={[styles.timerBar, {position: 'absolute', top: TIMER_BAR_HEIGHT}]}>
             <Text
               style={[styles.timer, {fontWeight: '400'}]}>
               The countdown timer will begin after the first message is opened!
             </Text>
-          </View> : <View />}
+          </View> : <View/>}
       </View>
     )
   }

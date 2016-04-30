@@ -5,6 +5,7 @@
 	};
 	objectVersion = 46;
 	objects = {
+
 /* Begin PBXBuildFile section */
 		00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302AC1ABCB8CE00DB3ED1 /* libRCTActionSheet.a */; };
 		00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 00C302BA1ABCB90400DB3ED1 /* libRCTGeolocation.a */; };
@@ -27,11 +28,8 @@
 		421118251C9B8B6D006826B1 /* FBSDKLoginKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 421118221C9B8B6D006826B1 /* FBSDKLoginKit.framework */; };
 		421118261C9B8B6D006826B1 /* FBSDKShareKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 421118231C9B8B6D006826B1 /* FBSDKShareKit.framework */; };
 		421BEB081C71B9E90058D624 /* libRCTPushNotification.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB001C71B9D20058D624 /* libRCTPushNotification.a */; };
-		421BEB111C7267730058D624 /* Batch.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 421BEB0F1C7267730058D624 /* Batch.bundle */; };
-		421BEB121C7267730058D624 /* Batch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB101C7267730058D624 /* Batch.framework */; };
 		421BEB171C7268AD0058D624 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB151C7268AD0058D624 /* libsqlite3.dylib */; };
 		421BEB181C7268AD0058D624 /* libz.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 421BEB161C7268AD0058D624 /* libz.1.dylib */; };
-		42646CEF1C7BA03F004FB7F8 /* Firebase.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42646CEE1C7BA03F004FB7F8 /* Firebase.framework */; };
 		42646CF21C7BA129004FB7F8 /* libc++.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 42646CF01C7BA129004FB7F8 /* libc++.1.dylib */; };
 		42646CF31C7BA129004FB7F8 /* libicucore.A.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 42646CF11C7BA129004FB7F8 /* libicucore.A.dylib */; };
 		42646CF51C7BA167004FB7F8 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42646CF41C7BA166004FB7F8 /* CFNetwork.framework */; };
@@ -266,11 +264,8 @@
 		421118221C9B8B6D006826B1 /* FBSDKLoginKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSDKLoginKit.framework; path = ../../../../Documents/FacebookSDK/FBSDKLoginKit.framework; sourceTree = "<group>"; };
 		421118231C9B8B6D006826B1 /* FBSDKShareKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSDKShareKit.framework; path = ../../../../Documents/FacebookSDK/FBSDKShareKit.framework; sourceTree = "<group>"; };
 		421BEAF01C71B9D20058D624 /* RCTPushNotification.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RCTPushNotification.xcodeproj; path = "../node_modules/react-native/Libraries/PushNotificationIOS/RCTPushNotification.xcodeproj"; sourceTree = "<group>"; };
-		421BEB0F1C7267730058D624 /* Batch.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Batch.bundle; sourceTree = "<group>"; };
-		421BEB101C7267730058D624 /* Batch.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Batch.framework; sourceTree = "<group>"; };
 		421BEB151C7268AD0058D624 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = ../../../../../../usr/lib/libsqlite3.dylib; sourceTree = "<group>"; };
 		421BEB161C7268AD0058D624 /* libz.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.dylib; path = ../../../../../../usr/lib/libz.1.dylib; sourceTree = "<group>"; };
-		42646CEE1C7BA03F004FB7F8 /* Firebase.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Firebase.framework; sourceTree = "<group>"; };
 		42646CF01C7BA129004FB7F8 /* libc++.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libc++.1.dylib"; path = "../../../../../../usr/lib/libc++.1.dylib"; sourceTree = "<group>"; };
 		42646CF11C7BA129004FB7F8 /* libicucore.A.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libicucore.A.dylib; path = ../../../../../../usr/lib/libicucore.A.dylib; sourceTree = "<group>"; };
 		42646CF41C7BA166004FB7F8 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
@@ -348,11 +343,9 @@
 				00C302E51ABCBA2D00DB3ED1 /* libRCTActionSheet.a in Frameworks */,
 				00C302E71ABCBA2D00DB3ED1 /* libRCTGeolocation.a in Frameworks */,
 				00C302E81ABCBA2D00DB3ED1 /* libRCTImage.a in Frameworks */,
-				421BEB121C7267730058D624 /* Batch.framework in Frameworks */,
 				133E29F31AD74F7200F7D852 /* libRCTLinking.a in Frameworks */,
 				421118241C9B8B6D006826B1 /* FBSDKCoreKit.framework in Frameworks */,
 				42EE2F901C97FCDD001A2541 /* GoogleSignIn.framework in Frameworks */,
-				42646CEF1C7BA03F004FB7F8 /* Firebase.framework in Frameworks */,
 				00C302E91ABCBA2D00DB3ED1 /* libRCTNetwork.a in Frameworks */,
 				139105C61AF99C1200B5F7CC /* libRCTSettings.a in Frameworks */,
 				832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */,
@@ -485,15 +478,6 @@
 				421BEB001C71B9D20058D624 /* libRCTPushNotification.a */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		421BEB0E1C7267730058D624 /* Batch.embeddedframework */ = {
-			isa = PBXGroup;
-			children = (
-				421BEB0F1C7267730058D624 /* Batch.bundle */,
-				421BEB101C7267730058D624 /* Batch.framework */,
-			);
-			path = Batch.embeddedframework;
 			sourceTree = "<group>";
 		};
 		426057E41CB9EB9B00770BBF /* Products */ = {
@@ -659,8 +643,6 @@
 				42646CF41C7BA166004FB7F8 /* CFNetwork.framework */,
 				42646CF01C7BA129004FB7F8 /* libc++.1.dylib */,
 				42646CF11C7BA129004FB7F8 /* libicucore.A.dylib */,
-				42646CEE1C7BA03F004FB7F8 /* Firebase.framework */,
-				421BEB0E1C7267730058D624 /* Batch.embeddedframework */,
 				42E728D11C69BB8000FF970D /* SystemConfiguration.framework */,
 				421BEB151C7268AD0058D624 /* libsqlite3.dylib */,
 				421BEB161C7268AD0058D624 /* libz.1.dylib */,
@@ -1065,7 +1047,6 @@
 				42E5EE931C712D71009C7A35 /* ionicons.ttf in Resources */,
 				42EE2F8F1C97FCDD001A2541 /* GoogleSignIn.bundle in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
-				421BEB111C7267730058D624 /* Batch.bundle in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
 				4290ECA01CB259BF00A7C749 /* Default-568h@2x.png in Resources */,
 			);

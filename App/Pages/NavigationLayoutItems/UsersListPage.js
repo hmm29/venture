@@ -42,7 +42,6 @@ var Image = require('react-native-image-progress');
 var LinearGradient = require('react-native-linear-gradient');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var RefreshableListView = require('../../Partials/RefreshableListView');
-var SGListView = require('react-native-sglistview');
 var Swipeout = require('react-native-swipeout');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
@@ -115,8 +114,6 @@ var User = React.createClass({
   },
 
   componentDidMount() {
-    // if (!this.props.isCurrentUser) this.refs.user.fadeIn(30);
-
     this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
     && this.props.firebaseRef.child(`users/${this.props.data.ventureId}/match_requests`)
       .child(this.props.currentUserIDHashed)

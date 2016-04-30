@@ -41,7 +41,6 @@ var Image = require('react-native-image-progress');
 var ModalBase = require('../../Partials/Modals/Base/ModalBase');
 var LinearGradient = require('react-native-linear-gradient');
 var ReactFireMixin = require('reactfire');
-var SGListView = require('react-native-sglistview');
 var Swipeout = require('react-native-swipeout');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');

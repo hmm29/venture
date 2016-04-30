@@ -36,7 +36,6 @@ var {
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
 var BackIcon = require('../Partials/Icons/NavigationButtons/BackIcon');
-var Communications = require('react-native-communications');
 var Dimensions = require('Dimensions');
 var DynamicCheckBoxIcon = require('../Partials/Icons/DynamicCheckBoxIcon');
 var Firebase = require('firebase');
@@ -83,6 +82,8 @@ var GiftedMessengerContainer = React.createClass({
     }
   },
 
+  _earlierMessages: null,
+
   componentDidMount() {
     let chatRoomRef = this.props.chatRoomRef,
       chatRoomMessagesRef = chatRoomRef && chatRoomRef.child('messages');
@@ -100,8 +101,10 @@ var GiftedMessengerContainer = React.createClass({
 
   getInitialMessages() {
     this.props.chatRoomRef.child('messages').once('value', snapshot => {
-      this.setMessages(snapshot.val() && _.cloneDeep(_.values(snapshot.val())) || [])
-      this.setState({allLoaded: _.size(snapshot.val() && _.cloneDeep(_.values(snapshot.val()))) <= 10});
+      this.setMessages(snapshot.val() && _.size(snapshot.val()) >= 8 ? _.slice(_.cloneDeep(_.values(snapshot.val())), _.size(snapshot.val())-8) : _.cloneDeep(_.values(snapshot.val())) || []);
+      if(_.size(snapshot.val()) >= 8) this._earlierMessages = _.slice(_.cloneDeep(_.values(snapshot.val())), 0, _.size(snapshot.val())-8);
+
+      this.setState({allLoaded: !this._earlierMessages});
     })
   },
 
@@ -134,10 +137,20 @@ var GiftedMessengerContainer = React.createClass({
   },
 
   handleSend(message = {}) {
+    let messages = [];
+
     message.uniqueId = Math.round(Math.random() * 10000); // simulating server-side unique id generation
+    message.date = (new Date()).toISOString();
     // mark the sent message as Seen
     this.state.chatRoomMessagesRef.push(message).then(() => {
-      this.setMessages(_.cloneDeep(_.values(this.state.messages))); // here you can replace 'Seen' by any string you want
+      if(_.size(_.cloneDeep(_.values(this.state.messages))) >= 8) {
+        if(this._earlierMessages) this.setState({allLoaded: false});
+        messages = _.slice(this.state.messages, _.size(this._earlierMessages)).concat([message]);
+      } else {
+        if(!this.state.allLoaded) this.setState({allLoaded: true});
+        messages = _.cloneDeep(_.values(this.state.messages));
+      }
+      this.setMessages(messages); // here you can replace 'Seen' by any string you want
     });
 
     // if you couldn't send the message to your server :
@@ -173,7 +186,7 @@ var GiftedMessengerContainer = React.createClass({
           }
         })
       }
-    }, 0);
+    }, 1);
   },
 
   onLoadEarlierMessages() {
@@ -191,8 +204,8 @@ var GiftedMessengerContainer = React.createClass({
 
     let earlierMessages = [];
 
-    if (this.state.messages.length > 10) {
-      earlierMessages = _.slice(this.state.messages, 0, this.state.messages.length - 8);
+    if (this._earlierMessages && !_.isEmpty(this._earlierMessages)) {
+      earlierMessages = this._earlierMessages; //@hmm: show last 8 messages
     }
 
     this.setTimeout(() => {
@@ -254,7 +267,7 @@ var GiftedMessengerContainer = React.createClass({
           loadEarlierMessagesButton={!this.state.allLoaded}
           onLoadEarlierMessages={this.onLoadEarlierMessages.bind(this)}
 
-          senderName=''
+          senderName={this.props.currentUserData.firstName}
           senderImage={{uri: this.props.currentUserData.picture}}
           onImagePress={this.onImagePress}
           displayNames={true}
@@ -311,10 +324,10 @@ var GiftedMessengerContainer = React.createClass({
         (buttonIndex) => {
           switch (buttonIndex) {
             case 0:
-              Communications.phonecall(phone, true);
+              // Communications.phonecall(phone, true);
               break;
             case 1:
-              Communications.text(phone);
+              // Communications.text(phone);
               break;
           }
         });
@@ -322,7 +335,7 @@ var GiftedMessengerContainer = React.createClass({
   },
 
   handleEmailPress(email) {
-    Communications.email(email, null, null, null, null);
+    // Communications.email(email, null, null, null, null);
   }
 });
 
@@ -415,10 +428,8 @@ var ChatPage = React.createClass({
       <VentureAppPage backgroundColor='rgba(0,0,0,0.96)'>
         <Header containerStyle={{backgroundColor: '#000'}}>
           <BackIcon onPress={() => {
-              this.state.seenMessagesId && this.props.chatRoomRef.child(this.state.seenMessagesId).set(this.state.messageListSize);
-              this.setTimeout(() => {
+              if(this.state.seenMessagesId) this.props.chatRoomRef.child(this.state.seenMessagesId).set(this.state.messageListSize);
               this.props.navigator.pop();
-              }, 0);
           }} style={{right: 10, bottom: 5}}/>
           <Text
             style={styles.activityPreferenceTitle}>

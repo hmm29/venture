@@ -10,9 +10,12 @@
  * @flow
  */
 
-var React = require('react-native');
+ 'use strict';
+
+var React = require('react');
+var ReactNative = require('react-native');
 var {
   DrawerLayoutAndroid
-  } = React;
+  } = ReactNative;
 
 var TabBarLayout = React.createClass({});

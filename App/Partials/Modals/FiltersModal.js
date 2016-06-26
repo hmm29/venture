@@ -4,7 +4,8 @@
 
 'use strict';
 
-var React = require('react-native');
+var React = require('react');
+var ReactNative = require('react-native');
 var {
   AsyncStorage,
   InteractionManager,
@@ -15,7 +16,7 @@ var {
   TouchableHighlight,
   TouchableOpacity,
   View,
-  } = React;
+  } = ReactNative;
 
 var _ = require('lodash');
 var CloseIcon = require('../Icons/CloseIcon');

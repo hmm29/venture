@@ -12,7 +12,8 @@
 
 'use strict';
 
-var React = require('react-native');
+var React = require('react');
+var ReactNative = require('react-native');
 
 var {
   ActionSheetIOS,
@@ -31,7 +32,7 @@ var {
   TextInput,
   TouchableOpacity,
   View,
-  } = React;
+  } = ReactNative;
 
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');

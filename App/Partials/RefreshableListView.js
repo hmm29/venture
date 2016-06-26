@@ -29,7 +29,10 @@
  *
  */
 
-var React = require('react-native');
+'use strict';
+
+var React = require('react');
+var ReactNative = require('react-native');
 
 var {
     Dimensions,
@@ -38,7 +41,7 @@ var {
     View,
     TouchableOpacity,
     Platform
-} = React;
+} = ReactNative;
 
 var {height, width} = Dimensions.get('window');
 var GiftedListView = require('react-native-gifted-listview');

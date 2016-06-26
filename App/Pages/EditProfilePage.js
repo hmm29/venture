@@ -12,7 +12,8 @@
 
 'use strict';
 
-var React = require('react-native');
+var React = require('react');
+var ReactNative = require('react-native');
 var {
   AlertIOS,
   Image,
@@ -23,7 +24,7 @@ var {
   TextInput,
   TouchableOpacity,
   View
-  } = React;
+  } = ReactNative;
 
 var _ = require('lodash');
 var AutoComplete = require('react-native-autocomplete');

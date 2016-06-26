@@ -12,7 +12,8 @@
 
 'use strict';
 
-var React = require('react-native');
+var React = require('react');
+var ReactNative = require('react-native');
 var {
   ActivityIndicatorIOS,
   AlertIOS,
@@ -22,7 +23,7 @@ var {
   Text,
   TouchableOpacity,
   View,
-  } = React;
+  } = ReactNative;
 
 var BrandLogo = require('../../Partials/BrandLogo');
 var Dimensions = require('Dimensions');

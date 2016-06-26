@@ -12,15 +12,15 @@
 
 'use strict';
 
-import React, {
-  Component,
+import React, { Component } from 'react';
+import {
   Image,
   StyleSheet,
   TouchableOpacity,
   View
 } from 'react-native';
 
-import Animatable from 'react-native-animatable';
+import * as Animatable from 'react-native-animatable';
 
 type Props = {
   onLayout: React.PropTypes.func,

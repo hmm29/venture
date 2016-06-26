@@ -68,6 +68,7 @@ module.exports = React.createClass({
                                 onFetch={this.onRefresh}
                                 pagination={true}
                                 firstLoader={true}
+                                enableEmptySections={true}
                                 paginationAllLoadedView={this.renderPaginationAllLoadedView}
                                 paginationWaitingView={this.renderPaginationWaitingView}
                                 headerView={this.renderHeaderView}

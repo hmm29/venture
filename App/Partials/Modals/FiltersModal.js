@@ -9,7 +9,7 @@ var {
   AsyncStorage,
   InteractionManager,
   Modal,
-  SliderIOS,
+  Slider,
   StyleSheet,
   Text,
   TouchableHighlight,
@@ -178,7 +178,7 @@ var FiltersModal = React.createClass({
                 </Text>
               </View>
               <View style={styles.sliderContainer}>
-                <SliderIOS
+                <Slider
                   style={styles.slider}
                   minimumTrackTintColor='#2B91FF'
                   onValueChange={(distance) => this.setState({distance})}

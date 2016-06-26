@@ -10,10 +10,12 @@
  * @flow
  */
 
-import React, {
+'use strict';
+
+import React, {Component} from 'react';
+import {
   AlertIOS,
   AsyncStorage,
-  Component,
   Dimensions,
   LayoutAnimation,
   PushNotificationIOS,

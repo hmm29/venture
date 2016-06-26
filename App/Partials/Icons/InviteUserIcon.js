@@ -16,8 +16,8 @@
 
 'use strict';
 
-import React, {
-  Component,
+import React, {Component} from 'react';
+import {
   InteractionManager,
   StyleSheet,
   Text,
@@ -27,7 +27,7 @@ import React, {
 
 const SIZE = 38;
 
-import Animatable from 'react-native-animatable';
+import * as Animatable from 'react-native-animatable';
 import {Icon, } from 'react-native-icons';
 
 type Props = {

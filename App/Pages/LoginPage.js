@@ -12,7 +12,8 @@
 
 'use strict';
 
-var React = require('react-native');
+var React = require('react');
+var ReactNative = require('react-native');
 
 var {
   AlertIOS,
@@ -26,7 +27,7 @@ var {
   Text,
   TouchableOpacity,
   View
-  } = React;
+  } = ReactNative;
 
 var _ = require('lodash');
 var BrandLogo = require('../Partials/BrandLogo');

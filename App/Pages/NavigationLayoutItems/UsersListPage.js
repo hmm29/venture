@@ -850,6 +850,7 @@ var UsersListPage = React.createClass({
           <ListView
             contentOffset={{x: 0, y: this.state.contentOffsetYValue}}
             dataSource={this.state.dataSource}
+            enableEmptySections={true}
             renderRow={this._renderUser}
             initialListSize={INITIAL_USERS_LIST_SIZE}
             pageSize={PAGE_SIZE}

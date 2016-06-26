@@ -12,11 +12,11 @@
 
 'use strict';
 
-import React, {
+import React, {Component} from 'react';
+import {
   AppRegistry,
-  Component,
   NavigatorIOS,
-  StatusBarIOS,
+  StatusBar,
   StyleSheet,
   View
   } from 'react-native';
@@ -36,7 +36,7 @@ class VentureApp extends Component {
   };
 
   componentDidMount() {
-    StatusBarIOS.setStyle('light-content', true);
+    StatusBar.setBarStyle('light-content', true);
   };
 
   render() {

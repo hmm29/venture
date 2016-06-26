@@ -12,8 +12,8 @@
 
 'use strict';
 
-import React, {
-  Component,
+import React, {Component} from 'react';
+import {
   InteractionManager,
   StyleSheet,
   Text,
@@ -21,7 +21,7 @@ import React, {
   View
 } from 'react-native';
 
-import Animatable from 'react-native-animatable';
+import * as Animatable from 'react-native-animatable';
 import {Icon, } from 'react-native-icons';
 
 const DIRECTIONS = ['up', 'down', 'right', 'left'], SIZE = 25;

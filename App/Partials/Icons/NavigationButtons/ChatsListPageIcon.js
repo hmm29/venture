@@ -12,8 +12,8 @@
 
 'use strict';
 
-import React, {
-  Component,
+import React, { Component } from 'react';
+import {
   Dimensions,
   LayoutAnimation,
   StyleSheet,
@@ -22,7 +22,7 @@ import React, {
   View
 } from 'react-native';
 
-import Animatable from 'react-native-animatable';
+import * as Animatable from 'react-native-animatable';
 import {Icon, } from 'react-native-icons';
 
 var {height, width} = Dimensions.get('window');

@@ -12,13 +12,11 @@
 
 'use strict';
 
-var React = require('react-native');
-
-var {
+import React, { Component } from 'react';
+import {
   AlertIOS,
   AppStateIOS,
   AsyncStorage,
-  Component,
   DatePickerIOS,
   Image,
   InteractionManager,
@@ -32,7 +30,7 @@ var {
   ScrollView,
   StyleSheet,
   View
-  } = React;
+  } from 'react-native';
 
 var _ = require('lodash');
 var Animatable = require('react-native-animatable');
@@ -1004,7 +1002,7 @@ const styles = StyleSheet.create({
   addInfoBox: {
     position: 'absolute',
     width: width / 1.2,
-    maxHeight: height/3,
+    height: height/3,
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.85)',
     marginHorizontal: (width - (width / 1.2)) / 2,

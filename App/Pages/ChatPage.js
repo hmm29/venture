@@ -69,6 +69,10 @@ var WHITE_HEX_CODE = '#fff';
 
 var STATUS_BAR_HEIGHT = Navigator.NavigationBar.Styles.General.StatusBarHeight;
 
+async function callAsync(func) {
+  func && func();
+}
+
 var GiftedMessengerContainer = React.createClass({
   mixins: [TimerMixin, ReactFireMixin],
 
@@ -129,7 +133,7 @@ var GiftedMessengerContainer = React.createClass({
   },
 
   setMessages(messages) {
-    this.props.getMessageListSize(_.size(messages));
+    callAsync(() => this.props.setMessageListSize(_.size(messages)));
     this.setState({
       messages: messages,
     });
@@ -402,10 +406,6 @@ var ChatPage = React.createClass({
     this.setState({expireTime});
   },
 
-  getMessageListSize(messageListSize) {
-    this.setState({messageListSize});
-  },
-
   handleInfoContentVisibility(infoContentVisible:boolean) {
     this.setState({infoContentVisible});
   },
@@ -417,6 +417,10 @@ var ChatPage = React.createClass({
     if (!this.state.chatExists) this.props.navigator.pop();
   },
 
+  setMessageListSize(messageListSize) {
+    this.setState({messageListSize});
+  },
+
   render() {
     const chatRoomTitle = (this.props.chatRoomActivityPreferenceTitle ? this.props.chatRoomActivityPreferenceTitle :
     this.props.chatRoomEventTitle + '?');
@@ -425,7 +429,7 @@ var ChatPage = React.createClass({
       <VentureAppPage backgroundColor='rgba(0,0,0,0.96)'>
         <Header containerStyle={{backgroundColor: '#000'}}>
           <BackIcon onPress={() => {
-              if(this.state.seenMessagesId) this.props.chatRoomRef.child(this.state.seenMessagesId).set(this.state.messageListSize);
+              if(this.state.seenMessagesId) callAsync(() => this.props.chatRoomRef.child(this.state.seenMessagesId).set(this.state.messageListSize));
               this.props.navigator.pop();
           }} style={{right: 10, bottom: 5}}/>
           <Text
@@ -452,7 +456,7 @@ var ChatPage = React.createClass({
             chatRoomRef={this.props.chatRoomRef}
             currentUserData={this.props.currentUserData}
             getExpireTime={this.getExpireTime}
-            getMessageListSize={this.getMessageListSize}
+            setMessageListSize={this.setMessageListSize}
             recipient={this.props.recipient}
             />
         </View>

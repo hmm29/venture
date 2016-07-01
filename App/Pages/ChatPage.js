@@ -132,10 +132,10 @@ var GiftedMessengerContainer = React.createClass({
     }
   },
 
-  setMessages(messages) {
-    callAsync(() => this.props.setMessageListSize(_.size(messages)));
+  setMessages(loadedMessages) {
+    callAsync(() => this.props.setMessageListSize(_.size(loadedMessages.concat(this._earlierMessages))));
     this.setState({
-      messages: messages,
+      messages: loadedMessages,
     });
   },
 

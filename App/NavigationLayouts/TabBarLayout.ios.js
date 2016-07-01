@@ -9,7 +9,6 @@
  * @providesModule TabBarLayout
  * @flow
  */
-
 'use strict';
 
 import React, {Component} from 'react';
@@ -25,7 +24,7 @@ import {
 } from 'react-native';
 
 import ChatsListPage from '../Pages/NavigationLayoutItems/ChatsListPage';
-import EventsListPage from '../Pages/NavigationLayoutItems/EventsListPage';
+// import EventsListPage from '../Pages/NavigationLayoutItems/EventsListPage';
 import Firebase from 'firebase';
 import HotPage from '../Pages/NavigationLayoutItems/HotPage';
 import LoginPage from '../Pages/LoginPage.js'
@@ -228,7 +227,7 @@ class TabBarLayout extends Component {
                   }}>
           {this._renderContent('hot')}
         </TabBarItemIOS>
-        <TabBarItemIOS
+        {/* <TabBarItemIOS
           title="Events"
           iconName="ion|ios-calendar-outline"
           selectedIconName="ion|ios-calendar"
@@ -240,7 +239,7 @@ class TabBarLayout extends Component {
                     });
                   }}>
           {this._renderContent('events')}
-        </TabBarItemIOS>
+        </TabBarItemIOS> */}
         <TabBarItemIOS
           title={TARGET_USERS || "Users"}
           iconName="ion|ios-people-outline"

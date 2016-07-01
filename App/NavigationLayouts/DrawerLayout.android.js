@@ -9,7 +9,6 @@
  * @providesModule DrawerLayout
  * @flow
  */
-
  'use strict';
 
 var React = require('react');

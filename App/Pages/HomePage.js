@@ -9,7 +9,6 @@
  * @providesModule HomePage
  * @flow
  */
-
 'use strict';
 
 import React, { Component } from 'react';
@@ -348,9 +347,10 @@ var HomePage = React.createClass({
       </TouchableOpacity>
     );
 
+    // TODO: View for now but eventually TouchableOpacity
     return (
-      <TouchableOpacity key={i} onPress={() => {
-                    this.props.navigator.push({
+      <View key={i} onPress={() => {
+                    /* this.props.navigator.push({
                     title: 'Events',
                     component: TabBarLayout,
                     passProps: {
@@ -360,10 +360,10 @@ var HomePage = React.createClass({
                       firstSession: this.state.firstSession,
                       selectedTab: 'events',
                       ventureId: this.state.ventureId
-                    }});
+                    }}); */
             }} style={styles.trendingItem}>
         <Image style={styles.trendingEventImg} source={{uri}}/>
-      </TouchableOpacity>
+      </View>
     )
 
   },

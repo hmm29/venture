@@ -9,7 +9,6 @@
  * @providesModule ChatsListPage
  * @flow
  */
-
 'use strict';
 
 var React = require('react');
@@ -159,6 +158,10 @@ var User = React.createClass({
         .child(this.props.data.ventureId)
       && (this.props.firebaseRef).child(`users/${this.props.currentUserIDHashed}/match_requests`)
         .child(this.props.data.ventureId).off();
+
+      //alert(this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
+      //  && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
+      //    .child(this.props.data.ventureId));
 
       this.props.firebaseRef && this.props.data && this.props.data.ventureId && this.props.currentUserIDHashed
       && this.props.firebaseRef.child(`users/${this.props.currentUserIDHashed}/match_requests`)
@@ -1011,7 +1014,6 @@ var ChatsListPage = React.createClass({
 
           _this.updateRows(filteredUsersArray);
           _this.setState({
-            currentUserVentureId: this.props.ventureId,
             userRows: _.cloneDeep(_.values(filteredUsersArray)),
             usersListRef
           });
@@ -1103,12 +1105,12 @@ var ChatsListPage = React.createClass({
   },
 
   _renderUser(user:Object, sectionID:number, rowID:number) {
-    if (user.ventureId === this.state.currentUserVentureId || (user.status && !user.status.isOnline)) return <View />;
+    if (user.ventureId === this.props.ventureId || (user.status && !user.status.isOnline)) return <View />;
 
     return <User chatsListHandle={this._handle}
                  currentTimeInMs={this.state.currentTimeInMs}
                  currentUserData={this.state.currentUserData}
-                 currentUserIDHashed={this.state.currentUserVentureId}
+                 currentUserIDHashed={this.props.ventureId}
                  currentUserLocationCoords={this.props.currentUserLocationCoords}
                  data={user}
                  firebaseRef={this.state.firebaseRef}

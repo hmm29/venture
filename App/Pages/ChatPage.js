@@ -9,7 +9,6 @@
  * @providesModule ChatPage
  * @flow
  */
-
 'use strict';
 
 var React = require('react');

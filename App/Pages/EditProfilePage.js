@@ -9,7 +9,6 @@
  * @providesModule EditProfilePage
  * @flow
  */
-
 'use strict';
 
 var React = require('react');

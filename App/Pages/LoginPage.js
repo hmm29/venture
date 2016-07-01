@@ -9,7 +9,6 @@
  * @providesModule LoginPage
  * @flow
  */
-
 'use strict';
 
 var React = require('react');
@@ -90,7 +89,7 @@ var LoginPage = React.createClass({
       loginError: false,
       mustVerify: false,
       notificationModalText: VERIFY_UNIVERSITY_EMAIL_TEXT,
-      showEmailAuthScreen: false,
+      showAuthScreen: false,
       user: null,
     }
   },
@@ -100,13 +99,13 @@ var LoginPage = React.createClass({
     // if(GoogleSignin.currentUser()) GoogleSignin.signOut();
 
     InteractionManager.runAfterInteractions(() => {
-      this.state.firebaseRef && this.state.firebaseRef.child('users/authPanel/showEmailAuthScreen').once('value', snapshot => {
+      this.state.firebaseRef && this.state.firebaseRef.child('users/0000auth0000/showAuthScreen').once('value', snapshot => {
         if (snapshot.val() === true || snapshot.val() === 'true') {
           AsyncStorage.getItem('@AsyncStorage:Venture:isValidUser')
             .then((isValidUser) => {
               if(!JSON.parse(isValidUser)) {
                 this.setTimeout(() => {
-                  this.setState({showEmailAuthScreen: true});
+                  this.setState({showAuthScreen: true});
                 }, 500);
               }
             })
@@ -308,10 +307,10 @@ var LoginPage = React.createClass({
       .then((user) => {
         if (user && _.endsWith(user.email, '@yale.edu')) {
           this.setTimeout(() => {
-            this.setState({showEmailAuthScreen: false});
+            this.setState({showAuthScreen: false});
             AsyncStorage.setItem('@AsyncStorage:Venture:isValidUser', 'true')
               .then(() => {
-                if (this.state.showEmailAuthScreen) this.setState({showEmailAuthScreen: false});
+                if (this.state.showAuthScreen) this.setState({showAuthScreen: false});
                 AlertIOS.alert('Verification Successful', 'Welcome to Venture!\n\nSwipe to continue!');
                 console.log("Successfully verified as a valid user.")
               })
@@ -385,7 +384,7 @@ var LoginPage = React.createClass({
 
     return (
       <VentureAppPage>
-        {!this.state.showEmailAuthScreen ? <Image>
+        {!this.state.showAuthScreen ? <Image>
           <Swiper style={styles.wrapper}
                   dot={<View style={{backgroundColor:'rgba(255,255,255,.3)', width: 13,
                             height: 13,borderRadius: 7, top: height / 30, marginLeft: 7, marginRight: 7}} />}
@@ -530,7 +529,7 @@ var LoginPage = React.createClass({
         </Image>
           :
           <View
-            style={styles.showEmailAuthScreen}>
+            style={styles.showAuthScreen}>
             <View style={styles.modalView}>
               <BrandLogo
                 logoContainerStyle={styles.logoContainerStyle}
@@ -593,7 +592,7 @@ const styles = StyleSheet.create({
   notificationModalTextTitle: {
     fontSize: height / 30
   },
-  showEmailAuthScreen: {
+  showAuthScreen: {
     flex: 1,
     justifyContent: 'center',
     padding: 20,

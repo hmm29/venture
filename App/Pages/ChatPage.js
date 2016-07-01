@@ -123,17 +123,16 @@ var GiftedMessengerContainer = React.createClass({
       }
     }
 
-    if (found === true) {
+    if (found) {
       this.setMessages(messages);
     }
   },
 
   setMessages(messages) {
-    // append the message
+    this.props.getMessageListSize(_.size(messages));
     this.setState({
       messages: messages,
     });
-    this.props.getMessageListSize(_.size(messages));
   },
 
   handleSend(message = {}) {
@@ -144,12 +143,11 @@ var GiftedMessengerContainer = React.createClass({
     // mark the sent message as Seen
     this.state.chatRoomMessagesRef.push(message).then(() => {
       if(_.size(_.cloneDeep(_.values(this.state.messages))) >= 8) {
-        if(this._earlierMessages) this.setState({allLoaded: false});
-        messages = _.slice(this.state.messages, _.size(this._earlierMessages)).concat([message]);
-      } else {
+        if(this._earlierMessages && this.state.allLoaded) this.setState({allLoaded: false});
+      } else { // for lists shorter than 8
         if(!this.state.allLoaded) this.setState({allLoaded: true});
-        messages = _.cloneDeep(_.values(this.state.messages));
       }
+      messages = _.cloneDeep(_.values(this.state.messages));
       this.setMessages(messages); // here you can replace 'Seen' by any string you want
     });
 
@@ -282,8 +280,7 @@ var GiftedMessengerContainer = React.createClass({
           handleEmailPress={this.handleEmailPress}
 
           isLoadingEarlierMessages={this.state.isLoadingEarlierMessages}
-          typingMessage={this.state.typingMessage}
-          />
+          typingMessage={this.state.typingMessage} />
         {!_.size(this.state.messages) ?
           <View
             style={[styles.timerBar, {backgroundColor: 'rgba(0,0,0,0.95)', position: 'absolute', top: 0}]}>
@@ -776,19 +773,21 @@ var RecipientAvatar = React.createClass({
   },
 
   componentWillMount() {
-    //if (this.props.targetUserRef) {
-    //  this.props.targetUserRef.child('status/appState').on('value', snapshot => {
-    //    if (snapshot.val() === 'active') this.setState({active: true})
-    //    else if (snapshot.val() === 'background') this.setState({active: false});
-    //  })
-    //}
-    //
-    //else if (this.props.currentUserRef) {
-    //  this.props.currentUserRef && this.props.currentUserRef.child('status/appState').on('value', snapshot => {
-    //    if (snapshot.val() === 'active') this.setState({active: true})
-    //    else if (snapshot.val() === 'background') this.setState({active: false});
-    //  })
-    //}
+    /*
+    if (this.props.targetUserRef) {
+     this.props.targetUserRef.child('status/appState').on('value', snapshot => {
+       if (snapshot.val() === 'active') this.setState({active: true})
+       else if (snapshot.val() === 'background') this.setState({active: false});
+     })
+    }
+    
+    else if (this.props.currentUserRef) {
+     this.props.currentUserRef && this.props.currentUserRef.child('status/appState').on('value', snapshot => {
+       if (snapshot.val() === 'active') this.setState({active: true})
+       else if (snapshot.val() === 'background') this.setState({active: false});
+     })
+    }
+    */
   },
 
   componentWillUnmount() {
@@ -866,7 +865,6 @@ var TimerBar = React.createClass({
         this.setState({timerValInSeconds: CHAT_DURATION_IN_MINUTES*60, timerActive: false});
         return;
       }
-
 
       if (!this.state.timerActive) this.setState({timerActive: true});
 

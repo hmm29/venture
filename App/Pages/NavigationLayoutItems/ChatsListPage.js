@@ -65,7 +65,7 @@ var LOGO_HEIGHT = 120;
 var MAX_CHATS_LIST_SIZE = 30;
 var PAGE_SIZE = 10;
 var PARSE_APP_ID = "ba2429b743a95fd2fe069f3ae4fe5c95df6b8f561bb04b62bc29dc0c285ab7fa";
-var PARSE_SERVER_URL = "http://45.55.201.172:9999/ventureparseserver";
+var PARSE_SERVER_URL = "http://104.236.211.208:9999/ventureparseserver";
 var THUMBNAIL_SIZE = 50;
 
 var BLUE_HEX_CODE = '#40cbfb';

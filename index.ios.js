@@ -31,7 +31,7 @@ const PARSE_JAVASCRIPT_KEY = "9a7de08c37355cbc3e2913fab10e6ae1b7fce47f4592412678
 class VentureApp extends Component {
   componentWillMount() {
     Parse.initialize(PARSE_APP_ID, PARSE_JAVASCRIPT_KEY);
-    Parse.serverURL = 'http://45.55.201.172:9999/ventureparseserver';
+    Parse.serverURL = 'http://104.236.211.208:9999/ventureparseserver';
     Orientation.lockToPortrait();
   };
 

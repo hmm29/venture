@@ -1147,9 +1147,8 @@ var ChatsListPage = React.createClass({
           }}
           pageSize={PAGE_SIZE}
           automaticallyAdjustContentInsets={false}
-          scrollRenderAheadDistance={600}
-          />
-        {this.state.showFunFact ? funFact : <View />}
+          scrollRenderAheadDistance={600} />
+        {this.state.showFunFact && this.state.done ? funFact : <View />}
         <View style={{height: 48}}></View>
         <ModalBase
           animated={true}

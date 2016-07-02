@@ -472,7 +472,7 @@ var LoginPage = React.createClass({
 
                                             ref.authWithOAuthToken("facebook", data.credentials.token, function(error, authData) {
                                              if (error) {
-                                               alert("Login Failed!", error);
+                                               console.log("Login Failed!", error);
                                              } else {
                                                console.log("Authenticated successfully with payload: "+JSON.stringify(authData));
                                              }

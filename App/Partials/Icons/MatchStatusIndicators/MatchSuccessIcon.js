@@ -121,7 +121,6 @@ class MatchSuccessIcon extends Component {
   };
 
   _handleOnPress() {
-    this.setState({badgeValue: 0});
     if(this.state.messageListCount && this.state.badgeValue && (this.state.messageListCount === this.state.badgeValue)) {
     let currentTime = new Date().getTime(),
     expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();

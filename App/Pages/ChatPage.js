@@ -144,6 +144,7 @@ var GiftedMessengerContainer = React.createClass({
 
     message.uniqueId = Math.round(Math.random() * 10000); // simulating server-side unique id generation
     message.date = (new Date()).toISOString();
+    message.position = (this.props.chatRoomRef.toString().indexOf(this.props.currentUserData.ventureId) < this.props.chatRoomRef.toString().indexOf(this.props.recipient.ventureId)) ? 'right' : 'left';
     // mark the sent message as Seen
     this.state.chatRoomMessagesRef.push(message).then(() => {
       if(_.size(_.cloneDeep(_.values(this.state.messages))) >= 8) {
@@ -166,7 +167,7 @@ var GiftedMessengerContainer = React.createClass({
               expireTime = new Date(currentTime + (CHAT_DURATION_IN_MINUTES * 60 * 1000)).getTime();
 
             this.props.chatRoomRef && this.props.chatRoomRef.child('timer') && this.props.chatRoomRef.child('timer').set({expireTime}); // @hmm: set chatroom expire time
-            this.props.getExpireTime(expireTime);
+            this.props.setExpireTime(expireTime);
           }
         })
       } else {
@@ -246,10 +247,10 @@ var GiftedMessengerContainer = React.createClass({
           },
           bubbleLeft: {
             marginRight: width/10,
-            backgroundColor: '#222',
+            backgroundColor: '#fff',
           },
             textLeft: {
-            color: '#fff',
+            color: '#111',
             fontFamily: 'AvenirNextCondensed-Regular'
           },
           textRight: {
@@ -402,10 +403,6 @@ var ChatPage = React.createClass({
     this.refs[MESSAGE_TEXT_INPUT_REF] && this.refs[MESSAGE_TEXT_INPUT_REF].blur();
   },
 
-  getExpireTime(expireTime) {
-    this.setState({expireTime});
-  },
-
   handleInfoContentVisibility(infoContentVisible:boolean) {
     this.setState({infoContentVisible});
   },
@@ -415,6 +412,10 @@ var ChatPage = React.createClass({
     this.setState({hasTimerExpired});
     // if user in chat that partner has ended but hasnt tried typing anything
     if (!this.state.chatExists) this.props.navigator.pop();
+  },
+
+  setExpireTime(expireTime) {
+    this.setState({expireTime});
   },
 
   setMessageListSize(messageListSize) {
@@ -455,7 +456,7 @@ var ChatPage = React.createClass({
           <GiftedMessengerContainer
             chatRoomRef={this.props.chatRoomRef}
             currentUserData={this.props.currentUserData}
-            getExpireTime={this.getExpireTime}
+            setExpireTime={this.setExpireTime}
             setMessageListSize={this.setMessageListSize}
             recipient={this.props.recipient}
             />
@@ -669,9 +670,9 @@ var RecipientInfoBar = React.createClass({
             && this.state.currentUserActivityPreferenceTitle.replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' ') :
             this.state.targetUserActivityPreferenceTitle && this.state.targetUserActivityPreferenceTitle
               .replace(/[^\w\s]|_/g, '').replace(/\s+/g, ' ')}
-              {this.props.recipientData.chatRoomEventTitle ? '' : ':'}</Text>
+              {this.props.recipientData.chatRoomEventTitle ? '' : '  ('}</Text>
             {this.props.recipientData.chatRoomEventTitle ? '' : user.activityPreference
-            && (user.activityPreference.start.time || user.activityPreference.status)}
+            && (user.activityPreference.start.time || user.activityPreference.status) + ')'} 
             {'\n'}
           </Text>
         </Text>

@@ -40,5 +40,9 @@ See [Running on device](https://facebook.github.io/react-native/docs/running-on-
 
 ## Functional Specification
 						
-#### Feature
-Feature description
+#### Reactive Geolocation
+#### Facebook Sign-Up, Yale Email Verification
+#### Transparent, Flexible Matching 
+#### Non-Gender Binary 
+#### 5 Minute Countdown Timers
+#### No Saved Conversations

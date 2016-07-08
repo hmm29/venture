@@ -1,0 +1,35 @@
+{
+  "user": {
+    "ventureId": "{VENTURE_ID}",
+    "name": "",
+    "firstName": "",
+    "lastName": "",
+    "activityPreference": {
+      "title": "{ACTIVITY_PREFERENCE_ALL_CAPS}?",
+      "status": "now",
+      "start": {
+        "time": "",
+        "dateTime": "",
+        "timeZoneOffsetInHours": ""
+      },
+      "tags": [
+        "", ""
+      ]
+    },
+    "age": {"value": 20},
+    "picture": "{CLOUDINARY_IMG_URL}",
+    "gender": "male",
+    "bio": "New to Venture!",
+    "email": "",
+    "location": {
+      "type": "Point",
+      "coordinates": {
+        "latitude": 41.310809,
+        "longitude": -72.958953
+      }
+    },
+    "status": {
+      "isOnline": true
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 ## Venture: Find activity partners anywhere.
 
-![Screenshot] (https://raw.githubusercontent.com/hmm29/VentureAppProduction/master/venture-onboarding-spread.png)
+![Screenshot] (https://raw.githubusercontent.com/hmm29/VentureAppProduction/updated/venture-onboarding-spread.png)
 
 Choose an activity. Share it with your local area. Match with other people who want to join.
 

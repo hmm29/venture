@@ -1073,7 +1073,7 @@ const styles = StyleSheet.create({
     height: width / 15
   },
   tagsInputText: {
-    top: 5,
+    top: 15,
     borderWidth: 0.5,
     borderColor: '#0f0f0f',
     backgroundColor: 'rgba(255,255,255,0.4)',

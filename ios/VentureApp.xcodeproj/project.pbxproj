@@ -54,7 +54,6 @@
 		42F309A21C9E9536006F0926 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 42F309A11C9E9536006F0926 /* StoreKit.framework */; };
 		795DFD39A1FE4C059B3F17F6 /* libRCTDeviceUUID.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7294E287AAD2430EBB1C22C5 /* libRCTDeviceUUID.a */; };
 		832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 832341B51AAA6A8300B99B32 /* libRCTText.a */; };
-		DCF5F13905BF42FB84BD8BC2 /* libRCTFBSDKCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6DD2FCC86424DE8812DBBB9 /* libRCTFBSDKCore.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -301,7 +300,6 @@
 		A057B11D16474CFDA2DC4F1D /* libRCTFBSDKShare.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRCTFBSDKShare.a; sourceTree = "<group>"; };
 		A3D4D081F3B24B1AB0456CB3 /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
 		B28B0D27BCBA4E0389E2CD88 /* Entypo.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Entypo.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Entypo.ttf"; sourceTree = "<group>"; };
-		D6DD2FCC86424DE8812DBBB9 /* libRCTFBSDKCore.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRCTFBSDKCore.a; sourceTree = "<group>"; };
 		EB1E2A010EFD4C53B40F45FF /* libRCTActionSheet.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRCTActionSheet.a; sourceTree = "<group>"; };
 		EDDA9628653F4BCFAFF60B1E /* Zocial.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 0; includeInIndex = 0; lastKnownFileType = unknown; name = Zocial.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Zocial.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -351,7 +349,6 @@
 				832341BD1AAA6AB300B99B32 /* libRCTText.a in Frameworks */,
 				00C302EA1ABCBA2D00DB3ED1 /* libRCTVibration.a in Frameworks */,
 				139FDEF61B0652A700C62182 /* libRCTWebSocket.a in Frameworks */,
-				DCF5F13905BF42FB84BD8BC2 /* libRCTFBSDKCore.a in Frameworks */,
 				2F77B5E7F9104EBABB0A700C /* libRCTFBSDKShare.a in Frameworks */,
 				795DFD39A1FE4C059B3F17F6 /* libRCTDeviceUUID.a in Frameworks */,
 				18D35FAFDA23441996AE8329 /* libRCTActionSheet.a in Frameworks */,
@@ -1188,11 +1185,6 @@
 					"$(SRCROOT)/../node_modules/react-native/React/**",
 					"$(SRCROOT)/../node_modules/apphub/AppHub/**",
 					"$(SRCROOT)/../node_modules/react-native/Libraries/PushNotificationIOS/**",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-device-uuid",
 					"$(SRCROOT)/../node_modules/react-native-swipeout/ios/reactnativeswipeout",
@@ -1230,11 +1222,6 @@
 					"$(SRCROOT)/../node_modules/react-native/React/**",
 					"$(SRCROOT)/../node_modules/apphub/AppHub/**",
 					"$(SRCROOT)/../node_modules/react-native/Libraries/PushNotificationIOS/**",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
-					"$(SRCROOT)/../node_modules/react-native-fbsdkcore/iOS",
 					"$(SRCROOT)/../node_modules/react-native-fbsdkshare/iOS",
 					"$(SRCROOT)/../node_modules/react-native-device-uuid",
 					"$(SRCROOT)/../node_modules/react-native-swipeout/ios/reactnativeswipeout",

@@ -9,7 +9,16 @@
  * @providesModule ChatsListPage
  * @flow
  */
+
+/*
+ * enables JS strict mode for any ES5 code
+ */
+
 'use strict';
+
+/*
+ * imports required modules
+ */
 
 var React = require('react');
 var ReactNative = require('react-native');
@@ -45,18 +54,27 @@ var Swipeout = require('react-native-swipeout');
 var TimerMixin = require('react-timer-mixin');
 var VentureAppPage = require('../Base/VentureAppPage');
 
-// Header Components
+/* 
+ * Header Components 
+ */
+
 var FiltersModalIcon = require('../../Partials/Icons/NavigationButtons/FiltersModalIcon');
 var Header = require('../../Partials/Header');
 var HomePageIcon = require('../../Partials/Icons/NavigationButtons/HomePageIcon');
 
-// Match Status Indicators
+/*
+ * Match Status Indicators
+ */
+
 var DefaultMatchStatusIcon = require('../../Partials/Icons/MatchStatusIndicators/DefaultMatchStatusIcon');
 var MatchSuccessIcon = require('../../Partials/Icons/MatchStatusIndicators/MatchSuccessIcon');
 var ReceivedRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/ReceivedRequestIcon');
 var SentRequestIcon = require('../../Partials/Icons/MatchStatusIndicators/SentRequestIcon');
 
-// Globals
+/* 
+ * Globals
+ */
+
 var {height, width} = Dimensions.get('window');
 var CHAT_DURATION_IN_MINUTES = 5;
 var INITIAL_CHATS_LIST_SIZE = 8;
@@ -77,7 +95,16 @@ String.prototype.capitalize = function () {
   return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
+/*
+ * defines the User component class
+ */
+
 var User = React.createClass({
+
+ /* 
+  * specifies types for properties that this component receives 
+  */
+
   propTypes: {
     chatsListHandle: React.PropTypes.number,
     currentUserLocationCoords: React.PropTypes.array,
@@ -89,7 +116,15 @@ var User = React.createClass({
     updateRows: React.PropTypes.func
   },
 
+  /*
+   * add mixin for timer functions (e.g. setTimeout, setInterval)
+   */
+
   mixins: [TimerMixin],
+
+  /* 
+   * getInitialState(): returns object with initialized component state variables 
+   */
 
   getInitialState() {
     return {
@@ -101,6 +136,10 @@ var User = React.createClass({
       showTimerVal: true
     }
   },
+
+  /*
+   * componentWillMount(): runs before component renders
+   */
 
   componentWillMount() {
     let distance = this.props.data && this.props.data.location && this.props.data.location.coordinates

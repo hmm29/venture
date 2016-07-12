@@ -9,7 +9,16 @@
  * @providesModule TabBarLayout
  * @flow
  */
+
+/* 
+ * enable JS strict mode for any ES5 code 
+ */
+
 'use strict';
+
+/*
+ * imports required modules
+ */
 
 import React, {Component} from 'react';
 import {
@@ -30,7 +39,7 @@ import HotPage from '../Pages/NavigationLayoutItems/HotPage';
 import LoginPage from '../Pages/LoginPage.js'
 import ProfilePage from '../Pages/NavigationLayoutItems/ProfilePage';
 import UsersListPage from '../Pages/NavigationLayoutItems/UsersListPage';
-import { TabBarIOS, } from 'react-native-icons';
+import { TabBarIOS, } from 'react-native-icons'; // @hmm: custom tab bar
 
 const TabBarItemIOS = TabBarIOS.Item;
 const {height} = Dimensions.get('window');
@@ -38,6 +47,10 @@ const TAB_BAR_ICON_SIZE = height / 24;
 const TARGET_USERS = "Near Me";
 
 import type { NavigationContext } from 'NavigationContext';
+
+/*
+ * define Navigator type object
+ */
 
 type Navigator = {
   navigationContext: NavigationContext,
@@ -54,7 +67,17 @@ type Props = {
   }
 };
 
+/*
+ * defines the TabBarLayout class
+ */
+
 class TabBarLayout extends Component {
+
+  /*
+   * constructor(): instantiate class and initialize the state variables
+   * @param: props, properties received from parent component
+   */
+
   constructor(props:Props) {
     super(props);
     this.state = {
@@ -66,6 +89,10 @@ class TabBarLayout extends Component {
       selectedTab: props.selectedTab
     }
   };
+
+  /*
+   * componentWillMount(): runs before component renders
+   */
 
   componentWillMount() {
     let firebaseRef = this.props.firebaseRef,
@@ -90,6 +117,10 @@ class TabBarLayout extends Component {
 
   }
 
+  /*
+   * componentDidMount(): runs once the component renders
+   */
+
   componentDidMount() {
     let firebaseRef = this.props.firebaseRef,
         ventureId = this.props.ventureId,
@@ -97,8 +128,10 @@ class TabBarLayout extends Component {
         currentUserEventInviteMatchRequestsRef = currentUserRef.child('event_invite_match_requests'),
         currentUserMatchRequestsRef = currentUserRef.child('match_requests');
 
+    // @hmm: create ref if did not exist
     if (!this.props.firebaseRef) firebaseRef = new Firebase('https://ventureappinitial.firebaseio.com/');
 
+    // @hmm: count the current user's matches
     currentUserMatchRequestsRef.on('value', snapshot => {
       let len;
 
@@ -110,7 +143,7 @@ class TabBarLayout extends Component {
       PushNotificationIOS.setApplicationIconBadgeNumber(this.state.chatCount)
     });
 
-    // @hmm: literally count chats with current user's id in it to ensure accuracy
+    // @hmm: literally count current user's event matches
     currentUserEventInviteMatchRequestsRef.on('value', snapshot => {
       let len;
 
@@ -143,6 +176,10 @@ class TabBarLayout extends Component {
       .done();
   };
 
+  /*
+   * componentWillUnmount(): runs before component dismounts
+   */
+
   componentWillUnmount() {
     AsyncStorage.setItem('@AsyncStorage:Venture:currentUserFriends', 'null')
       .catch(error => console.log(error.message))
@@ -153,10 +190,19 @@ class TabBarLayout extends Component {
     this.state.currentUserEventInviteMatchRequestsRef && this.state.currentUserEventInviteMatchRequestsRef.off();
   };
 
+  /*
+   * navigateToLoginPage(): replace (do not reset) current route with login page, if user not logged in
+   */
+
   navigateToLoginPage() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
     this.props.navigator.replace({title: 'Login', component: LoginPage});
   };
+
+  /*
+   * renderContent(): replace (do not reset) current route with login page, if user not logged in
+   * @param title, the name of the page we're displaying in the tab bar layout
+   */
 
   _renderContent(title:string) {
     if (title === 'hot') {
@@ -208,6 +254,10 @@ class TabBarLayout extends Component {
       return <View />;
     }
   };
+
+ /*
+  * render(): returns JSX that declaratively specifies component UI
+  */
 
   render() {
     return (
@@ -285,5 +335,14 @@ class TabBarLayout extends Component {
   };
 }
 
+/*
+ * CSS stylings
+ */ 
+
 const styles = StyleSheet.create({});
+
+/*
+ * export the module so it can be imported into other components
+ */
+
 module.exports = TabBarLayout;

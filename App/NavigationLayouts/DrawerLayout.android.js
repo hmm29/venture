@@ -9,7 +9,16 @@
  * @providesModule DrawerLayout
  * @flow
  */
+
+ /* 
+ * enable JS strict mode for any ES5 code 
+ */
+
  'use strict';
+
+ /*
+  * imports required modules
+  */
 
 var React = require('react');
 var ReactNative = require('react-native');
@@ -17,4 +26,25 @@ var {
   DrawerLayoutAndroid
   } = ReactNative;
 
-var TabBarLayout = React.createClass({});
+var DrawerLayout = React.createClass({
+
+   /*
+    * render(): returns JSX that declaratively specifies component UI
+    */
+
+	render() {
+
+	}
+});
+
+/*
+ * CSS stylings
+ */ 
+
+const styles = StyleSheet.create({});
+
+/*
+ * export the module so it can be imported into other components
+ */
+
+module.exports = DrawerLayout;

@@ -10,7 +10,15 @@
  * @flow
  */
 
+/* 
+ * enable JS strict mode for any ES5 code 
+ */
+
 'use strict';
+
+/*
+ * imports required modules
+ */
 
 import React, {Component} from 'react';
 import {
@@ -20,7 +28,16 @@ import {
   View
 } from 'react-native';
 
+/*
+ * defines the VentureApp class
+ */
+
 class VentureApp extends Component {
+
+  /*
+   * render(): returns JSX that declaratively specifies page UI
+   */
+
   render() {
     return (
       <View style={styles.container}>
@@ -28,6 +45,10 @@ class VentureApp extends Component {
     );
   };
 }
+
+/*
+ * CSS stylings
+ */
 
 const styles = StyleSheet.create({
   container: {
@@ -37,5 +58,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5FCFF',
   }
 });
+
+/*
+ * registers this component as the top-level app
+ */
 
 AppRegistry.registerComponent('VentureApp', () => VentureApp);

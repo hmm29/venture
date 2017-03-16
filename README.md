@@ -2,7 +2,7 @@
 
 ## Venture: Find activity partners anywhere.
 
-<img src="venture-onboarding-spread.png" width="350"/>
+<img src="venture-onboarding-spread.png" width="1334"/>
 
 Choose an activity. Share it with your local area. Match with other people who want to join.
 
